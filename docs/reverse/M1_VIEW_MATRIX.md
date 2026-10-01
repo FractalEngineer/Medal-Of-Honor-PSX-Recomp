@@ -847,3 +847,57 @@ left and right views exist, differ, and contain depth-ordered parallax rather
 than a uniform screen shift. What remains is M9+ (running both eyes per frame
 and OpenXR), plus the unresolved `H=133` vs `443` projection question.
 
+
+## The "H discrepancy" was not a bug â€” retracting the double-application concern
+
+I previously flagged that `CTC2 $v0, $H` at `0x8008BED4` wrote `H = 133`, which
+didn't match the `443` implied by `width*sqrt(3)/2`, and wondered whether the
+FOV scale was being applied twice. Having read both sides, **that concern is
+wrong** and I'm retracting it.
+
+**Framework side** (`runtime/src/gte.cpp`): the guest's `H` (GTE control reg 26)
+is scaled exactly once, at the perspective divide:
+
+```c
+static int32_t gte_h_scaled(const GTEState* gte) {
+    if (s_h_scale_num == s_h_scale_den) return gte->H;
+    int64_t h = (int64_t)gte->H * s_h_scale_num / s_h_scale_den;
+    ...
+}
+...
+int32_t h_div_sz = gte_divide(gte_h_scaled(gte), gte->SZ[3], gte->FLAG);
+```
+
+That is the correct design: the game picks its projection distance, the framework
+multiplies it. There is no second application anywhere.
+
+**Game side**: every `CTC2 ...,$H` in the captured disassembly, with the
+instruction that establishes the value:
+
+```text
+0x8008B4DC  CTC2 $s0, $H   <- ADDIU $s0, $zero, 400     constant 400
+0x8008B9D4  CTC2 $s1, $H   <- ADDIU $s1, $zero, 400     constant 400
+0x8008B9B0  CTC2 $v0, $H   <- LW    $v0, 8($v0)         from memory
+0x8008BED4  CTC2 $v0, $H   <- LW    $v0, 8($v0)         from memory
+```
+
+The level transformer uses **`H = 400`** for some draws and a memory-loaded value
+for others. Sanity check on `400` with psx-spx `fov = 2*atan(w / (2H))`: for a
+512-wide frame that is ~65 deg, a perfectly ordinary value. `443` was my own
+derivation, not this game's choice; nothing is required to match it.
+
+### What the `133` almost certainly was
+
+A sampled GTE register value, not a projection constant for this path. `H` is
+live state shared by every renderer, and I read it at a probe point rather than
+at the write site â€” so it reflected whichever routine had touched it most
+recently. That is the same class of error as the earlier screenshot-hash and
+"big RAM diff" false signals: reading a value detached from its producer.
+
+### Consequence
+
+- No fix is needed; `fov_scale` behaves correctly and multiplies the level's
+  `H = 400` as intended.
+- A correction: `H = 400` here, not 133, and the two are from different
+  renderers rather than one inconsistent one.
+
