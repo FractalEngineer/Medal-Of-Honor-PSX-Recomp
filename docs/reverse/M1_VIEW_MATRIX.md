@@ -400,3 +400,28 @@ baselines differ too. Per-region absolute difference with a `changed_px` count
 per column band is what makes the negative result trustworthy: a real world
 shift cannot leave a 256x90 block at exactly `max=0`.
 
+
+## Interior scene confirms it: offset moves the weapon ONLY
+
+Re-ran the A/B offset test in **slot 1 (interior room)** - a high-contrast scene
+where a world shift would be unmistakable, unlike the dark water scene.
+
+`A` (baseline) vs `B` (all entities, X +200), absolute per-pixel difference:
+
+```text
+rows   0-120  walls, windows, doorway   changed_px=0     max=0
+rows 120-240  the rifle region           changed_px=13377 max=344
+total changed: 13377 / 122880 (10.89%), all in the rifle's columns
+```
+
+Visually: both windows, the wall texture, the floor, the ceiling, the compass
+and the ammo counter are pixel-identical. The rifle has moved right and rotated.
+
+This is the same result as the water scene, now in a scene chosen to defeat the
+"maybe I just can't see it" objection. **`FUN_80084718` moves the viewmodel and
+nothing else. It is not the world/camera transform path.**
+
+Corroborating detail from the same run: the ammo counter reads 8 / **38** in this
+scene (vs 8 / 24 in slot 0), so these are different missions/states - the
+weapon-only behaviour is not an artifact of one particular game state.
+
