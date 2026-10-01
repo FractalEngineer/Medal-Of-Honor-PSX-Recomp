@@ -629,3 +629,55 @@ Next: widen or re-time the trace to catch the vertex-table writer, or hook the
 walker's call sites. That writer is the world projection step, and offsetting it
 is the last remaining candidate for a correct per-eye transform.
 
+
+## The render entry sees only THREE entities - the level is not among them
+
+Hooked `FUN_800824d0` (per-model render entry, driven by the scene drivers
+`FUN_8006d2e4` / `FUN_8006d460`) and logged distinct `a0` values across
+load -> idle -> strafe right. Interior scene, slot 1.
+
+```text
+vr-render: NEW a0=800EEF3C (distinct=1) at call 1
+vr-render: NEW a0=800ECD94 (distinct=2) at call 2
+vr-render: NEW a0=800EC1DC (distinct=3) at call 3
+vr-render: calls=200..1400 distinct=3
+```
+
+**Exactly three entities reach the per-model render entry, and the count never
+grows across 1400+ calls.** None of them is the level. Two of them
+(`800ECD94`, `800EC1DC`) are ones the `FUN_80084718` hook never sees, and
+`800BDAEC` / `800BB2D8` / `800B8AC4` from that hook never appear here - the two
+entity sets are disjoint.
+
+### Conclusion
+
+The whole chain
+
+```text
+FUN_8006d2e4 / FUN_8006d460    scene drivers
+  -> FUN_800824d0              per-model render entry   (3 entities only)
+  -> FUN_80082948              dispatcher
+  -> FUN_800814c4 / FUN_80080dd4   geometry + packets
+  -> FUN_80084718 -> FUN_80013AE4  entity transform + node walk
+```
+
+renders **dynamic objects**. The level geometry - the walls, windows and floor
+that are plainly on screen in the interior, and that respond correctly to strafe
+and turn - is drawn by a **separate path that this branch never touches**.
+
+That is why every offset tried on this branch moved only an object: the branch
+has nothing to do with the level.
+
+### Why this is worth having established
+
+It closes the question rather than leaving it ambiguous, and it explains all the
+negative results at once. Three injection points were tried and all moved only
+objects; the reason is now structural, not a near-miss.
+
+### Next
+
+The level renderer is the target. The largest per-frame RAM region is
+`0x800A012D` (41 KB, larger than both turn buffers) - tracing its writer is the
+cheapest way to find the main geometry/packet producer, and it is where the
+level's packets are most likely built.
+

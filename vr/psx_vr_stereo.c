@@ -34,6 +34,10 @@
  * entity+0x6c == 0x80 (FUN_80080dd4) else FUN_800814c4. */
 #define GEO_800814C4 0x800814c4u
 #define GEO_80080DD4 0x80080dd4u
+/* Per-model render entry: called from the scene drivers FUN_8006d2e4 /
+ * FUN_8006d460 and dispatches through FUN_80082948. Hooking here enumerates
+ * every entity rendered in a frame, top-down. */
+#define RENDER_800824D0 0x800824d0u
 
 #define VR_ENTITY_SLOTS 256
 #define VR_PROBE_PERIOD 20u   /* calls between entity position samples */
@@ -188,6 +192,45 @@ static void vr_geo_entry(CPUState* cpu, uint32_t address) {
     fflush(stdout);
 }
 
+/* Top-of-pipeline probe: enumerate every entity that reaches the per-model
+ * render entry, so we can see whether the world is in the same list as the
+ * weapon. Bounded distinct-pointer table, no writes. */
+#define VR_RENDER_SLOTS 512
+static uint32_t g_render_ent[VR_RENDER_SLOTS];
+static uint32_t g_render_hits[VR_RENDER_SLOTS];
+static uint32_t g_render_calls;
+static uint32_t g_render_distinct;
+
+static void vr_render_entry(CPUState* cpu, uint32_t address) {
+    if (!g_probe) return;
+    uint32_t a0 = cpu->gpr[4];
+    g_render_calls++;
+
+    int known = 0;
+    for (uint32_t i = 0; i < VR_RENDER_SLOTS; ++i) {
+        if (g_render_ent[i] == a0) { g_render_hits[i]++; known = 1; break; }
+    }
+    if (!known) {
+        for (uint32_t i = 0; i < VR_RENDER_SLOTS; ++i) {
+            if (g_render_ent[i] == 0) {
+                g_render_ent[i] = a0;
+                g_render_hits[i] = 1;
+                g_render_distinct++;
+                fprintf(stdout, "vr-render: NEW a0=%08X (distinct=%u) at call %u\n",
+                        a0, g_render_distinct, g_render_calls);
+                fflush(stdout);
+                break;
+            }
+        }
+    }
+    if ((g_render_calls % 200) == 0) {
+        fprintf(stdout, "vr-render: calls=%u distinct=%u\n", g_render_calls,
+                g_render_distinct);
+        fflush(stdout);
+    }
+    (void)address;
+}
+
 static void vr_entity_activate(void) {
     fprintf(stdout,
             "vr-probe: moh.vr.stereo ACTIVATED (probe=%d target=%08X axis=%d offset=%d)\n",
@@ -212,6 +255,9 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
                                                  vr_geo_entry);
     (void)psx_mod_register_function_entry_plugin("moh.vr.stereo", GEO_80080DD4,
                                                  vr_geo_entry);
+    (void)psx_mod_register_function_entry_plugin("moh.vr.stereo",
+                                                 RENDER_800824D0,
+                                                 vr_render_entry);
     (void)psx_mod_register_activation_plugin("moh.vr.stereo",
                                              vr_entity_activate);
 }
