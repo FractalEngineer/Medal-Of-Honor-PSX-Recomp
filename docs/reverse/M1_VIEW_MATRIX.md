@@ -471,3 +471,57 @@ next step.
    regions that change.
 2. Cross-reference those addresses against live-RAM xrefs in Ghidra.
 
+
+## Write trace names the writer of the camera-turn buffers
+
+`wtrace_range` + `wtrace_dump` (a RAM-write ring that records the return
+address) over both turn buffers `0x801422D4-0x8015C6B5`, then a pure left turn.
+
+1,042,048 writes recorded. Every sampled entry in the `0x801477xx` region:
+
+```text
+addr=0x00147774  old=0x09147724  new=0xCD323232   w=4
+addr=0x00147767  old=0x00000000  new=0x00000009   w=1
+ra  = 0x80080F2C
+pc  = 0x80081370 / 0x80081374 / 0x800813A8 / 0x800813B4 / 0x800813C0 ...
+s4  = 0x800EEF3C        <- the same entity pointer again
+s2  = 0x80147764        s3 = 0x80148F74      s5 = 0x1F8003FC (scratchpad)
+a2  = 0x801D64DC        a3 = 0x80147788
+```
+
+`pc` values `0x800813xx` and `ra=0x80080F2C` are both inside **`FUN_80080dd4`**
+(body `0x80080dd4..0x800814c3`). So:
+
+**`FUN_80080dd4` generates a ~26 KB per-frame geometry buffer, and that geometry
+changes when the camera turns.** It is not "just the viewmodel path" - it is
+the visible-geometry generator.
+
+### The contradiction this creates
+
+The same entity, `0x800EEF3C`, drives both:
+
+- `FUN_80084718` - whose `+0x98/9a/9c` we offset, and only the **weapon** moved
+- `FUN_80080dd4` - which writes the geometry that **does** change with the camera
+
+So `+0x98` on that entity is not the value the world geometry is generated from.
+The geometry buffer is the **output**; the camera input is something else that
+`FUN_80080dd4` reads. Register evidence in the trace points at `s5 = 0x1F8003FC`
+(scratchpad) and `s3 = 0x80148F74` as live bases, not at the entity position.
+
+### Next
+
+Trace what `FUN_80080dd4` **reads**. The write ring gives what it stores; the
+input side is best found by disassembling the function's prologue and the
+regions it loads from before the first `sw`. Candidate: scratchpad `0x1F8003FC`,
+which M1 already flagged as a staging area.
+
+### Method note
+
+The address-former scan (`lui`+`addiu`/`lw`) found **nothing** for these buffers
+- 0 hits for both buffer bases and one of the two pointer slots. They are reached
+as base-register + offset (`s2`/`s3` above), which a static byte scan cannot see.
+An earlier looser version of that scan produced 20+ plausible-looking hits that
+were false positives; it accepted any `lui` with a matching high half followed by
+any load using that register. Do not trust address-former scans without the
+offset check.
+
