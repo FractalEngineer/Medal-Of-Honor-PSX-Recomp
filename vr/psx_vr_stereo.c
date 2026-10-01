@@ -38,6 +38,12 @@
  * FUN_8006d460 and dispatches through FUN_80082948. Hooking here enumerates
  * every entity rendered in a frame, top-down. */
 #define RENDER_800824D0 0x800824d0u
+/* The LEVEL vertex transformer: prologue ADDIU $sp,$sp,-288 at 0x8008B3E8,
+ * ends 0x8008BEF8. Contains ~12 unrolled RTPS sites (0x8008B5B8 .. 0x8008BE04),
+ * each LWC2-loading a vertex from $t0 and SWC2-storing SXY to $t1, plus
+ * CTC2 H writes. This is the first RTPS path found on the level, as opposed to
+ * the dynamic-object branch. */
+#define LVTX_8008B3E8 0x8008b3e8u
 
 #define VR_ENTITY_SLOTS 256
 #define VR_PROBE_PERIOD 20u   /* calls between entity position samples */
@@ -231,6 +237,31 @@ static void vr_render_entry(CPUState* cpu, uint32_t address) {
     (void)address;
 }
 
+/* Level vertex transformer. RTPS computes RT*V + TR and only THEN perspective-
+ * divides, so adding a delta to TRX (GTE control reg 5) shifts every vertex in
+ * camera space before projection. That is a true per-eye offset, not a screen
+ * shift. Logged once so we can see what TR actually holds here. */
+static uint32_t g_lvtx_calls;
+static int g_lvtx_logged;
+
+static void vr_lvtx_entry(CPUState* cpu, uint32_t address) {
+    (void)address;
+    g_lvtx_calls++;
+    if (g_probe && !g_lvtx_logged) {
+        g_lvtx_logged = 1;
+        fprintf(stdout,
+                "vr-lvtx: TR=(%ld,%ld,%ld) H=%ld (offset=%d)\n",
+                (long)(int32_t)cpu->gte_ctrl[5], (long)(int32_t)cpu->gte_ctrl[6],
+                (long)(int32_t)cpu->gte_ctrl[7],
+                (long)(int32_t)cpu->gte_ctrl[26], g_offset);
+        fflush(stdout);
+    }
+    if (g_offset != 0 && g_axis == 0) {
+        int32_t tr = (int32_t)cpu->gte_ctrl[5];
+        cpu->gte_ctrl[5] = (uint32_t)(tr + g_offset);
+    }
+}
+
 static void vr_entity_activate(void) {
     fprintf(stdout,
             "vr-probe: moh.vr.stereo ACTIVATED (probe=%d target=%08X axis=%d offset=%d)\n",
@@ -258,6 +289,9 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     (void)psx_mod_register_function_entry_plugin("moh.vr.stereo",
                                                  RENDER_800824D0,
                                                  vr_render_entry);
+    (void)psx_mod_register_function_entry_plugin("moh.vr.stereo",
+                                                 LVTX_8008B3E8,
+                                                 vr_lvtx_entry);
     (void)psx_mod_register_activation_plugin("moh.vr.stereo",
                                              vr_entity_activate);
 }

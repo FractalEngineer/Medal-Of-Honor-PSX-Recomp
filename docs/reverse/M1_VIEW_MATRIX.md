@@ -735,3 +735,72 @@ per-eye transform has to go:
 2. At that hook, offset the `$t0` vertex data per eye and re-run the interior
    A/B test. If the walls move, this is the stereo injection point.
 
+
+## BREAKTHROUGH â€” the level transform is FUN_8008B3E8, and offsetting TRX moves the world
+
+Located the function: **`FUN_8008B3E8`** (prologue `ADDIU $sp, $sp, -288` at
+`0x8008B3E8`, ends `0x8008BEF8`). Every RTPS site found by the write trace lies
+inside it - twelve of them, at a regular stride:
+
+```text
+0x8008B5B8  0x8008B65C  0x8008B71C  0x8008B7B8  0x8008B84C  0x8008B8E8
+0x8008BAD4  0x8008BB78  0x8008BC38  0x8008BCD4  0x8008BD68  0x8008BE04
+```
+
+Each is preceded by `LWC2 $zero, 0($t0)` / `LWC2 $at, 4($t0)` and followed by
+`SWC2 $t6, 0($t1)`. It also writes `CTC2 $s0, $H`. That is the **level's unrolled
+triangle projector** - the world path, not the dynamic-object branch.
+
+### Injection
+
+`RTPS` computes `RT * V + TR` and only **then** perspective-divides. So adding a
+delta to `TRX` (GTE control register 5) shifts every level vertex in **camera
+space, before projection**. Hook `FUN_8008B3E8` and add the per-eye offset to
+`cpu->gte_ctrl[5]`.
+
+### Result - interior, slot 1
+
+| run | offset | changed pixels |
+|---|---|---|
+| L0 vs L1 | `TRX +200` | **92,875 / 122,880 = 75.58%**, every row band |
+| L0 vs L2 | `TRX +20`  | near/far gradient, see below |
+
+Compare the weapon-only results from earlier: 10.89% changed, rows 0-120 exactly
+zero. Here **rows 0-30 changed too** - the far wall and ceiling move. The room
+visually rearranges: window positions, wall layout and floor all shift.
+
+### Parallax confirmed (small offset)
+
+At `+20` the image is approximately a translation (band correlations 0.87-0.92),
+so per-band displacement is meaningful:
+
+```text
+y   0- 30  dx 0     corr 0.867      (far)
+y  30- 60  dx 5     corr 0.898
+y  60- 90  dx 4     corr 0.907
+y  90-120  dx 4     corr 0.912
+y 120-150  dx 4     corr 0.894
+y 150-180  dx 4     corr 0.906
+y 180-210  dx 6     corr 0.880
+y 210-240  dx 7     corr 0.918      (near)
+```
+
+Top rows mean 2.5 px, bottom rows mean 6.5 px. **Displacement grows toward the
+camera - that is parallax, not a flat shift.** A 2D screen translation would give
+one dx for every band.
+
+Corroborating: at `+200` the frame is *not* a translated copy of the baseline
+(band correlations collapse to ~0.5-0.7) because the perspective genuinely
+changes. A flat shift would have preserved the image content.
+
+### This is the stereo injection point
+
+- It is on the level path, and it moves the **world**, not an object.
+- It is camera-space and pre-projection, so near and far separate correctly -
+  which is exactly what the plan requires and what the rejected "3-D-TV" strategy
+  cannot do.
+- Per eye: write `TRX +/- IPD/2` at the top of `FUN_8008B3E8`.
+
+Three earlier candidates were falsified by measurement; this one passes the same
+test by a wide margin.
+
