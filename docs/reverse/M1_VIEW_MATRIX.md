@@ -139,3 +139,29 @@ camera-relative hypothesis is **not yet confirmed**.
 Supported by the decompilation (no view matrix exists anywhere; every entity
 matrix is translation-only; RT/TR are loaded only by the node transformer), but
 **unconfirmed empirically**.
+
+## Provenance warning: which findings came from an intro snapshot
+
+The full live-RAM image (`ram_all.json`) used for the `0x8008xxxx` analysis was
+captured while the game was on the **intro** (DreamWorks logo), not in gameplay.
+Save slot confusion and an active-low pad meant gameplay was never actually
+reached during that phase.
+
+- **Save-state independent (still valid):** everything read from static bytes -
+  the main EXE analysis (FUN_80013698, FUN_80013AE4, FUN_80013E58), the CTC2
+  enumeration, the 58-overlay decode, the display/projection setup FUN_8005f89c.
+- **Needs re-anchoring against a gameplay snapshot (verify):** FUN_800814c4,
+  FUN_80080dd4, FUN_80082948, FUN_800824d0, and the `fn_entry_dump` caller
+  results - these are resident-overlay code and may be intro-resident rather than
+  the gameplay render path.
+
+Gameplay RAM snapshots are now capturable (`docs/reverse/LIVE_TESTING.md`); re-import
+one at 0x80000000 and re-run the ref/decompile queries to re-anchor.
+
+## Camera-relative storage: still open
+
+The walk test now genuinely moves the player (136,080 bytes changed, nproj
+1187 -> 204), but the specific addresses probed for positions (entity+0x98 via
+0x800EEF3C, and the 0x8009Axxx table) showed no position-like deltas - 0x800EEF3C
+was byte-identical, and the 0x8009Axxx changes look like list/packet buffers.
+Identify the real entity table before repeating the test.
