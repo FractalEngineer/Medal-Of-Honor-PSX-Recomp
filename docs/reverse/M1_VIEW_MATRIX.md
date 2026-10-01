@@ -574,3 +574,58 @@ that camera-relative data.
   not camera-space vertices. Offsetting it would be the rejected flat-2D-shift
   strategy. The vertex source it reads from is the thing to find next.
 
+
+## The packet loop: geometry arrives ALREADY PROJECTED
+
+Disassembled the rest of `FUN_80080dd4` (it is 443 instructions; the debug
+server returns at most 256 per call, so it takes two dumps). The inner loop,
+`0x800811F8`-`0x80081380`:
+
+```asm
+0x8008120C  LW     $a0, 0($v0)        ; vertex table base
+0x80081214  ADDU   $t2, $a0, $v1      ; t2 = vertex[b]
+0x80081230  ADDU   $t1, $a0, $v1      ; t1 = vertex[c]
+0x80081250  ADDU   $t0, $v0, $v1      ; t0 = vertex[a]
+0x80081244  LH     $a0, 4($t2)        ; per-vertex flag
+0x8008124C  BLTZ   $a0, ...           ; skip clipped vertex
+0x80081274  LW     $t9, 0($t2)        ; <-- 32-bit value from the vertex record
+0x80081280  MTC2   $t9, $SXY0         ; <-- loaded straight into SXY0
+0x80081294  NCLIP                     ; back-face cull
+0x800812C8  AVSZ3                     ; depth -> OTZ
+0x80081350  LWC2   $s4, 0($s6)
+0x80081368  DPCT                      ; vertex colour
+0x8008136C  SWC2   $s4, 4($s2)        ; store SXY0 into the packet
+0x80081370  SWC2   $s5, 16($s2)
+0x80081374  SWC2   $s6, 28($s2)
+```
+
+The `LW`/`MTC2 $SXY0` pair is the important part: the 32-bit value pulled from
+each vertex record is a packed **screen XY pair**, moved directly into the GTE's
+SXY registers. The vertex records therefore already hold **projected screen
+coordinates** - the RTPS divide has happened before this function runs.
+
+So the ordering is:
+
+```text
+projection (RTPS, upstream - in the node walker path)
+    -> vertex table of packed SXY at 0x80148F74 + k*8   (s3 in the trace)
+    -> FUN_80080dd4: NCLIP cull, AVSZ3 depth, DPCT colour,
+                    SWC2 into the packet buffer at 0x80147764
+```
+
+This is why the ~26 KB buffer is post-projection data and why offsetting it
+would be a flat 2D shift.
+
+### Where the world projection is - still open
+
+The vertex table base is `s3 = 0x80148F74`, i.e. just past the end of the
+changed region `0x801422D4-0x801489C9`. Arming the write trace on
+`0x80148C00-0x80149400` and strafing recorded **0 writes**, so the table is not
+written during that window - it is either written at a different phase of the
+frame or the window was wrong. Within the earlier, wider window every write came
+from `FUN_80080dd4` itself (packet stores).
+
+Next: widen or re-time the trace to catch the vertex-table writer, or hook the
+walker's call sites. That writer is the world projection step, and offsetting it
+is the last remaining candidate for a correct per-eye transform.
+
