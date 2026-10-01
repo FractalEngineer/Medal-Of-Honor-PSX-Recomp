@@ -165,3 +165,30 @@ The walk test now genuinely moves the player (136,080 bytes changed, nproj
 0x800EEF3C, and the 0x8009Axxx table) showed no position-like deltas - 0x800EEF3C
 was byte-identical, and the 0x8009Axxx changes look like list/packet buffers.
 Identify the real entity table before repeating the test.
+
+## RE-ANCHORED against a real gameplay snapshot (result: identical)
+
+A second full live-RAM image was captured in genuine gameplay (slot 0, first-person
+level) and imported into a fresh Ghidra project, then the same queries re-run.
+Comparison against the intro snapshot:
+
+- FUN_80013AE4        body 80013ae4..80013e57, refs 3 (adds explicit CALLER
+                      FUN_80084718)                       -> same
+- FUN_80084718        refs 3; CALLERs FUN_800814c4, FUN_80080dd4, FUN_80046dd4 -> same
+- FUN_800814c4        refs 1 (from 80082948); CALLER FUN_80082948 -> same
+- FUN_80080dd4        refs 2 (80082aa8, 80082d38); CALLERs FUN_80082948,
+                      FUN_80082ca8                        -> same
+- FUN_80082948        refs 1 (from 80082548); CALLER FUN_800824d0 -> same
+- FUN_800824d0        refs 2 (8006d334, 8006d4c0); CALLERs FUN_8006d460,
+                      FUN_8006d2e4                        -> same
+- DAT_8009d320        60 refs   -> same
+- DAT_8009d324        30 refs   -> same
+- _DAT_80099428       1 ref     -> same
+
+**Conclusion: the render pipeline is the SAME code in the intro and in gameplay**
+(the intro's 3D scenes run through the same engine). Nothing analyzed in the
+0x8008xxxx set was intro-specific. The provenance concern is resolved - the map
+above stands as-is, and the save-state mixup cost no analysis.
+
+Also confirmed in this snapshot: the transformer's caller chain is intact
+(FUN_80013AE4 <- FUN_80084718 <- {FUN_800814c4, FUN_80080dd4, FUN_80046dd4}).
