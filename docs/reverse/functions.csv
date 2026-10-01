@@ -1,2 +1,11 @@
 pc,name,kind,status,note
-0x80053FF8,rtpt_submit,render,observed,"RTPT caller seen for all sampled GTE ring entries (frame ~830); candidate model-transform/render submission routine"
+0x80010D64,world_geom_submit,render,observed,"Dominant gameplay RTPT caller (294/512); large-TR view*model cluster, H=400, 512x240"
+0x80080F2C,geom_submit_secondary,render,observed,"Secondary RTPT caller; TR=[0,0,0], H=133"
+0x8007C758,geom_submit_rare,render,observed,"Rare gameplay RTPT caller"
+0x800110C0,geom_submit_rare,render,observed,"Rare gameplay RTPT caller"
+0x8008BF84,geom_submit_rare,render,observed,"Rare gameplay RTPT caller"
+0x80053FF8,title_scene_submit,render,observed,"RTPT caller at title/menu (~356 proj/frame)"
+0x80053F94,title_scene_submit,render,observed,"sibling title/menu RTPT caller"
+0x80053F0C,title_scene_submit,render,observed,"sibling title/menu RTPT caller"
+0x80053E84,title_scene_submit,render,observed,"sibling title/menu RTPT caller"
+0x80053E00,title_scene_submit,render,observed,"sibling title/menu RTPT caller"
