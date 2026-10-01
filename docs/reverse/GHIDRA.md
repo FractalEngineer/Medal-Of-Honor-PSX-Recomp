@@ -52,3 +52,25 @@ Decompilation saved as `ghidra_FUN_80013698.c`. Highlights:
 Ghidra analyzes the **static EXE only**. MOH's render path also runs **overlay**
 code loaded into RAM at runtime (e.g. `SetGeomScreen`'s caller at `0x8005FAF0`),
 so overlay dumps must be imported separately for full coverage.
+
+## Reference analysis (Ghidra `-process`)
+
+| target | references found |
+|---|---|
+| `0x80013698` (world projection) | **0** — no code and no data reference anywhere → entered by **fall-through or a computed/indirect jump** |
+| `_DAT_80099428` (object → camera chain) | **1** — `READ` from **`0x800136A0`**, *inside* `FUN_80013698`. Nothing in the static image writes it |
+| `0x80096974` (H RAM variable) | **1** — `READ` from **`0x80013A7C`**, *inside* `FUN_80013698` |
+
+So `FUN_80013698` is a **self-contained projection routine**, and the object it reads
+through `_DAT_80099428` is **not written by any static (EXE) code**.
+
+## Consequence — the camera data is overlay-managed
+
+Since nothing in the main EXE writes `_DAT_80099428`, that object (and the camera /
+view chain behind it) is populated by **overlay** code loaded at runtime. This is
+consistent with the earlier discovery (`SetGeomScreen`'s only caller is at
+`0x8005FAF0`, above the EXE text end).
+
+**Therefore mapping the camera requires importing the overlay dumps into Ghidra**,
+not only the main EXE. The runtime already produces overlay captures
+(`overlay_captures.json` next to the game), which is the source for those dumps.
