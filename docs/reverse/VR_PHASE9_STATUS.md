@@ -345,3 +345,26 @@ it is worth agreeing before making it.
 - Whatever blocks `psx_mod_render_pass` is downstream of the status gate and of
   all argument validation, and is independent of the rect origin.
 
+## 2026-10-02: source audit corrections and execution plan
+
+The next steps are tracked in [VR_EXECUTION_PLAN.md](VR_EXECUTION_PLAN.md).
+The following are source findings, not new live measurements:
+
+- The assertion that the refusal must be inside `gl_renderer_pass_begin` was
+  too strong. `checkpoint_save` can fail after GL begin succeeds but before the
+  callback executes; this also returns 0 with zero callback runs.
+- `status_after=READY` reports current availability, not a latched failure-site
+  status. It does not by itself prove which earlier gate accepted the call.
+- `render_pass_stats.refused` counts empty plans with wanted phases, not rejected
+  `psx_mod_render_pass` calls. Its zero value does not establish pass acceptance.
+- `pass_gen_reserve` checks the slot cap and texture names, but does not inspect
+  `glTexImage2D` errors. A texture-storage failure is not directly detected there.
+- Display dimensions/scales sampled by TCP do not establish capture-size equality
+  at the rejecting branch. Actual requested and history dimensions will be latched
+  there before ranking resource failures above size/history mismatch.
+- `render_pass_dump` arms dumping at generation promotion; it does not create a
+  pass. Existing `image_textures` can narrow the allocation stage, but does not
+  prove valid texture storage.
+
+No runtime was listening on TCP port 4370 during the initial source audit.
+
