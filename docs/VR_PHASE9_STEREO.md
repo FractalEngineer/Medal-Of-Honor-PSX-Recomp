@@ -184,3 +184,33 @@ Cross-reference the candidate set with the **75 `CTC2` matrix sites**: the camer
 update is the once-per-frame function on the path to an `RT`/`TR` `CTC2`. Or
 `fntrace_arm target=<candidate>` to get its caller/callee chain and walk up to the
 function that builds the view matrix.
+
+## Step 1 probe 4 — world projection function found; caller trace blocked
+
+**Found:** the world `CTC2 H` site (`0x80013764`) lives in the function at
+**`0x80013698`** — prologue `ADDIU $sp, $sp, -400` with `SW $ra, 372($sp)`.
+That function is the world projection setup.
+
+**Caller trace blocked by tooling coverage:**
+
+- `fntrace_arm 0x80013698` → registers (`armed: 1, targets:[0x80013698]`) but
+  `fntrace_dump` records **nothing**. `fntrace_*` needs per-function entry hooks,
+  which are not emitted for this address.
+- `fn_entry_dump addr_lo=0x80013698 …` → **0 entries**: the global fn ring
+  instruments only a subset of functions (≈62k of 31M `direct_seen` entries are
+  logged), and this one is not covered.
+
+**Tooling notes (learned the hard way):**
+- `fntrace_arm` / `fntrace_dump` take **positional** args (`fntrace_arm 0xADDR`),
+  not `key=value`.
+- `fn_filter` must be sent first to **activate** the global fn ring.
+- `disasm`, `read_ram`, `gte_ring_dump` take `key=value`.
+
+## Recommendation — switch to static analysis
+
+Dynamic tracing of the view-matrix caller is now blocked by instrumentation
+coverage. The efficient path is **Ghidra** (CLAUDE.md's primary RE tool): load the
+EXE at `0x80010000` and read `0x80013698` and its callers directly. The
+alternative in-framework route is to add `0x80013698` to
+`[recompiler] mod_function_entry_funcs`, regenerate, and re-run the trace — heavier
+but fully local.
