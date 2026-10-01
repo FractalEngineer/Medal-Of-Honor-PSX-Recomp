@@ -131,3 +131,34 @@ title — independent confirmation that this is the live projection setup.
 
 H is cached in `_DAT_8007bf78`; the mode index in `_DAT_8007bf50`. Caller:
 `FUN_8005fe04`. This was invisible to static analysis because it is **overlay code**.
+
+## GTE transform library is in the MAIN EXE (from `Refs.java` over all overlays)
+
+`Refs.java` run across all 58 overlays **and** the main EXE: every `CTC2` matrix
+load is in the **main EXE**; none in the overlays. Structure:
+
+| func | body | role |
+|---|---|---|
+| `FUN_80013698` | 80013698..80013ae3 | projection (RTPS loop); writes `CTC2 H` (hardcoded 400, then from `0x80096974`) |
+| `FUN_80013AE4` | 80013ae4..80013e57 | **recursive transform routine** |
+| `FUN_80013E58` | — | partial matrix load; called from `0x80013B3C` (inside the transform routine) |
+
+`FUN_80013AE4(ushort* vertex, undefined4* matrix, …)` loads `matrix[0..4]` (5 packed
+words = the 3×3 `RT`) plus translation into the GTE control registers and runs
+`MVMVA` (`0x41e012` / `0x49e012`). Its only references are **its own recursive
+calls** (`JAL` at `0x80013DD0` / `0x80013DE8`) → it is a **scene-graph traversal
+that accumulates transforms** down the node hierarchy.
+
+Neither it nor `FUN_80013698` has an external caller → both are entered
+**indirectly (computed/fall-through)**.
+
+## Conclusion
+
+- **Rendering pipeline (main EXE):** scene-graph transform walk (`FUN_80013AE4`) →
+  vertex projection (`FUN_80013698`) → GPU packet build.
+- **Overlay code** holds the display/projection *setup* (`FUN_8005f89c`, computes
+  `H = width·√3/2`) and game logic.
+- The camera/**view matrix enters as the `matrix` argument** to the recursive
+  transform routine; its top-level caller is indirect, so the next step is to
+  catch it at runtime (a `wtrace`/`fntrace` on `0x80013AE4`, or watch the matrix it
+  loads).
