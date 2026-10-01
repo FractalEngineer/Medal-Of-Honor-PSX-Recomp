@@ -681,3 +681,57 @@ The level renderer is the target. The largest per-frame RAM region is
 cheapest way to find the main geometry/packet producer, and it is where the
 level's packets are most likely built.
 
+
+## FOUND: the level's per-vertex projection is RTPS at 0x8008BCxx
+
+The 41 KB region `0x800A0100-0x800AA200` (largest per-frame producer in RAM)
+was write-traced: 26,217 writes, dominated by
+
+```text
+ra=0x8008BF84  pc=0x8008BE54   x84
+ra=0x8008BF34  pc=0x8008BF40   x39
+ra=0x8008BF34  pc=0x8008BF48
+ra=0x8008BF34  pc=0x8008BF54
+```
+
+Disassembling that code shows the real world projection - **three `RTPS` sites,
+each loading a vertex and storing a projected screen pair**:
+
+```asm
+0x8008BCC4  LWC2  $zero, 0($t0)     ; VXY0 <- vertex XY
+0x8008BCC8  LWC2  $at,  4($t0)      ; VZ0  <- vertex Z
+0x8008BCD4  RTPS                    ; project
+0x8008BCA8  SWC2  $t6,  0($t1)      ; store SXY
+                                (repeated at 0x8008BD58/0x8008BD68
+                                 and 0x8008BDF4/0x8008BE04)
+0x8008BED4  CTC2  $v0, $H           ; set projection distance
+0x8008BEF8  JR    $ra
+0x8008BF00  ADDIU $sp, $sp, -56     ; next function starts here
+```
+
+Three `RTPS` per pass with `LWC2` loads from `$t0` and `SWC2` stores to `$t1` is
+a **triangle projector** - the level equivalent of `RotTransPers`, and the
+missing piece: the world's vertices go through RTPS here.
+
+### Why this matters
+
+Every previous candidate was on the dynamic-object branch. This is the first
+RTPS site found that belongs to the **level** path, and it is where a true
+per-eye transform has to go:
+
+- The vertices are loaded from guest memory (`$t0`) immediately before `RTPS`.
+  Offsetting them along camera-right, per eye, is a real camera-space shift -
+  not a screen-space one.
+- `CTC2 $v0, $H` at `0x8008BED4` is the projection-distance write. `H` here is
+  `133` in the interior, which does **not** match the `width*sqrt(3)/2 = 443`
+  derived from the display mode - so this site overrides H per draw. Worth
+  resolving before trusting any FOV work.
+
+### Next
+
+1. Find the entry of the function containing `0x8008BE04` (it ends at
+   `0x8008BEF8`; the dump started mid-function at `0x8008BC40`, so the prologue is
+   earlier) and hook it.
+2. At that hook, offset the `$t0` vertex data per eye and re-run the interior
+   A/B test. If the walls move, this is the stereo injection point.
+
