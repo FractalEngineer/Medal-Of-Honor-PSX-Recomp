@@ -256,32 +256,40 @@ for free. For genuine **decompilation and data-flow** (structs, `jalr` targets,
 switch tables) Ghidra remains stronger — installing it (it needs a JDK) would pay
 off if this RE continues.
 
-## Step 1 probe 6 — longer capture produced NO new overlays (blocked)
+## Step 1 probe 6 — SUPERSEDED
 
-A 5-minute input-driven headless session (Start/Cross/d-pad cycling) produced **no
-new overlays**: `overlay_captures.json` still holds only `ov_80037000` (4100 B).
-Ghidra references inside that overlay:
+The "blocked / honest stall point" narrative that used to end this file is
+retired. Three things it did not know:
 
-- to `0x80099428` (camera/object global): **0**
-- to `0x80013698` (world projection): **0**
+1. **The pad is active-low** (`0xFFFF` idle, 0 bit = pressed), so the
+   button-mashing sessions had been pressing everything at once including Start.
+   See `reverse/LIVE_TESTING.md`.
+2. **The camera path is reachable without capturing overlays.** A full live-RAM
+   image imported into Ghidra at `0x80000000` analyzes main EXE *and* resident
+   overlays together, with complete xrefs - retiring the overlay-capture
+   bottleneck.
+3. **Step 1 is answered**: there is no standalone view matrix. The view is
+   composed upstream and stashed per entity; the pipeline is
+   `FUN_800824d0 -> FUN_80082948 -> {FUN_800814c4 | FUN_80080dd4} ->
+   FUN_80084718 -> FUN_80013AE4`. See `reverse/M1_VIEW_MATRIX.md`.
 
-So the one overlay we captured is **unrelated to the camera**.
+## Step 1 status — DONE
 
-## Where step 1 stands
+- No discrete view matrix exists to override; the premise this phase started
+  from is retired.
+- `FUN_80084718` is the per-entity transform builder and is the injection point.
+- A **working function-entry hook** at `FUN_80084718` is built and firing
+  (`vr/psx_vr_stereo.c`, package `moh.vr.stereo`), exposing the live entity
+  table: `800EEF3C`, `800BDAEC`, `800BB2D8`, `800B8AC4`, with positions.
+- It fires via the dirty-RAM interpreter, so overlay-resident addresses need no
+  main-EXE regeneration.
 
-- Ghidra is set up and working for **both** the main EXE and overlay captures.
-- Proven: the camera/transform data is **overlay-managed** (nothing static writes
-  `_DAT_80099428`).
-- Blocked: the **render/camera overlay hasn't been captured** — headless
-  button-mashing did not advance the game into new areas that stream new overlays.
+## What step 2 needs
 
-## What unblocks it
-
-Capture overlay code from deeper gameplay. Options:
-1. A **human plays** (or a better input sequence) far enough to load the
-   render/camera overlays; `overlay_captures.json` then grows and we import them.
-2. Load a **save state** in the right area and let it run.
-3. Alternatively, if the camera overlay proves hard to capture, revisit the stereo
-   strategy — the per-eye offset plan assumes we can reach the view transform.
-
-This is the honest stall point for the purely automated path.
+1. Identify which entity is the camera (the hook makes this a short experiment:
+   watch the table across a pure turn).
+2. **Render twice per frame** with the per-eye offset between the passes. This
+   is the remaining framework change - the hook is the injection point, not the
+   whole mechanism. `psx_mod_render_pass` runs guest drawing with state restored
+   and is the closest existing primitive, but it is built for frame
+   interpolation, not a second full eye pass.

@@ -125,46 +125,25 @@ Conclusion: the emulator is live, but the **scene is completely static** - the
 inputs are not moving the player. So the movement test was vacuous and the
 camera-relative hypothesis is **not yet confirmed**.
 
-### What is needed to close it
+### RESOLVED — that was a methodology failure, not a save-state problem
 
-- The correct pad mapping for in-game movement (or a save state that is in
-  actual, controllable gameplay), then repeat the walk-forward test above: if the
-  node data at 0x801D3xxx changes while the world should be stationary, storage
-  is camera-relative.
-- Alternatively: observe the values passed to FUN_80084718 for `entity+0x98/0x9a/0x9c`
-  across frames while the camera turns.
+Both vacuous runs above (zero delta at 0x80099428; ~80 static bytes at the
+intro) had one root cause: **the pad is active-low**. `input 0x0010` presses
+every button *except* Up, which includes Start, so the game paused and the world
+froze. `input 0000` — written as "release" — pressed the entire pad. The save
+state was a separate, smaller mistake (slot 1 does not exist; slot 0 is
+gameplay). Corrected convention: `docs/reverse/LIVE_TESTING.md`.
 
-### Status of the hypothesis
-
-Supported by the decompilation (no view matrix exists anywhere; every entity
-matrix is translation-only; RT/TR are loaded only by the node transformer), but
-**unconfirmed empirically**.
-
-## Provenance warning: which findings came from an intro snapshot
-
-The full live-RAM image (`ram_all.json`) used for the `0x8008xxxx` analysis was
-captured while the game was on the **intro** (DreamWorks logo), not in gameplay.
-Save slot confusion and an active-low pad meant gameplay was never actually
-reached during that phase.
-
-- **Save-state independent (still valid):** everything read from static bytes -
-  the main EXE analysis (FUN_80013698, FUN_80013AE4, FUN_80013E58), the CTC2
-  enumeration, the 58-overlay decode, the display/projection setup FUN_8005f89c.
-- **Needs re-anchoring against a gameplay snapshot (verify):** FUN_800814c4,
-  FUN_80080dd4, FUN_80082948, FUN_800824d0, and the `fn_entry_dump` caller
-  results - these are resident-overlay code and may be intro-resident rather than
-  the gameplay render path.
-
-Gameplay RAM snapshots are now capturable (`docs/reverse/LIVE_TESTING.md`); re-import
-one at 0x80000000 and re-run the ref/decompile queries to re-anchor.
+With slot 0 plus active-low input, movement is real and reproducible (136,080
+bytes changed, nproj 1187 -> 204). Everything below is the corrected record.
 
 ## Camera-relative storage: still open
 
-The walk test now genuinely moves the player (136,080 bytes changed, nproj
-1187 -> 204), but the specific addresses probed for positions (entity+0x98 via
-0x800EEF3C, and the 0x8009Axxx table) showed no position-like deltas - 0x800EEF3C
-was byte-identical, and the 0x8009Axxx changes look like list/packet buffers.
-Identify the real entity table before repeating the test.
+The RAM-diff approach could not settle this: the addresses probed (entity+0x98
+via 0x800EEF3C, and the 0x8009Axxx table) showed no position-like deltas -
+0x800EEF3C was byte-identical and the 0x8009Axxx changes look like list/packet
+buffers. **The entity table had to come from the live hook instead** (see the
+hook section at the end of this file), which is why the diff route was retired.
 
 ## RE-ANCHORED against a real gameplay snapshot (result: identical)
 
