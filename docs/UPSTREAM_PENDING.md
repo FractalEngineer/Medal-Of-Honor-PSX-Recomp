@@ -12,22 +12,24 @@ Submodule pin in this repo: `psxrecomp` @ `vr-dev`.
 - **File:** `runtime/src/psx_lobby_client.c`
 - **Symptom:** any `PSX_NETPLAY=OFF` (the default) build fails to link:
   undefined `psx_lobby_online_count`, `psx_lobby_online_get`, referenced
-  unconditionally by `runtime/src/main.cpp:11681` / `:11686`
-  (`ae_np_online_count` / `ae_np_online_get`).
+  unconditionally by `runtime/src/main.cpp:11681` / `:11686`.
 - **Cause:** the netplay-off stub block (`#if !defined(PSX_HAS_LOBBY_CLIENT)`,
   lines 12-169) mirrors the lobby API but omitted those two functions.
 - **Fix:** two one-line stubs added in the block's existing style.
 - **Impact:** every single-player build. High value, low risk.
-- **Upstream target:** `RetroPortingToolKit/psxrecomp` (fork base; `mstan/psxrecomp`
-  is the same lineage).
 - **Status:** pending — upstream after VR is working.
 
-## 2. GTE vertex capture seam — `2c919f08` (VR feature, not a bug)
+## 2. `disasm` TCP debug command — `d58db909` (tooling, generally useful)
 
-- **Files:** `runtime/include/gte_capture.h`, `runtime/src/gte_capture.c`,
-  `runtime/src/gte.cpp` (one hook in `gte_rtps_internal`), `runtime/runtime.cmake`.
-- **Purpose:** capture camera-space vertices at the GTE RTPS/RTPT seam — the only
-  place world/camera-space geometry is visible (renderers are 2-D VRAM
-  rasterizers). Additive, default-off.
-- **Status:** fork-only. Upstreaming is a separate decision once the VR design
-  settles.
+- **Files:** `runtime/include/psx_disasm.h`, `runtime/src/disasm_shim.cpp`,
+  `runtime/src/debug_server.c` (handler + command table),
+  `runtime/runtime.cmake` (links `recompiler/src/mips_decoder.cpp`).
+- **What:** `disasm addr=0x… count=N` — disassemble guest instructions from live
+  RAM via the recompiler's existing MIPS decoder. The stock server had no
+  disassembly.
+- **Status:** fork-only; not VR-specific. Strong upstream candidate.
+
+## 3. (none yet)
+
+VR-specific work (renderer/OpenXR) stays on the fork by design — not a
+bug-fix candidate.
