@@ -131,3 +131,31 @@ Results (2048 entries spanning 2 frames, ~165k entries over ~2 s):
 
 `disasm addr=0x800154EC` → follow to the camera update and the view matrix it
 builds. That matrix is where the per-eye offset is injected for stereo.
+
+### CORRECTION — `0x800154EC` is `memcpy` (probe 2 false positive)
+
+Disassembly of `0x800154EC`:
+
+```text
+0x800154EC  BEQ   $a0, $zero, 0x80015518
+0x800154F0  ADDU  $v0, $zero, $zero
+0x800154F4  BLEZ  $a2, $zero, 0x80015514
+0x800154FC  LBU   $v0, 0($a1)
+0x80015504  ADDIU $a2, $a2, -1
+0x80015508  SB    $v0, 0($a0)
+0x8001550C  BGTZ  $a2, $zero, 0x800154FC
+```
+
+That is a byte-copy loop = **`memcpy`**; the neighbours (`0x8001552C` PRNG,
+`0x8001556C` GTE transform helper, `0x8001559C` packet builder) are library
+routines. The "exactly once per frame" reading (n=2 over 2 frames) was
+**coincidence**.
+
+**Method limit:** at gameplay the fn ring produces ~165k entries / 2 s, so a
+2048-entry dump spans only ~2 frames — per-frame statistics are meaningless.
+`depth` is 0 for many functions here, so it is not a usable call-depth signal.
+
+**Fix:** sample a quieter scene (title: `nproj≈356`/frame ⇒ far fewer calls per
+frame ⇒ 2048 entries span many frames), or narrow the trace with
+`fn_filter lo=… hi=…` to the world-render subtree, then re-run the once-per-frame
+analysis.
