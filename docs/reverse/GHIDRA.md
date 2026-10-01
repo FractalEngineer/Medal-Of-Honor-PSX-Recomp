@@ -185,3 +185,22 @@ overlay capture needed. This removes the earlier capture bottleneck entirely.
 Walk up from `FUN_80084718` (its caller) toward the scene root — the view matrix is
 the transform accumulated at the root of the walk. Use `fn_entry_dump` filtered to
 `0x80084718`, or read live RAM around that function's callers.
+
+## Full live-RAM image in Ghidra — the decisive technique
+
+`read_ram addr=0x80000000 len=0x200000` -> `hex2bin.py` -> import the WHOLE 2 MB
+running image at 0x80000000 (MIPS:LE:32:default, BinaryLoader). Ghidra then
+analyzes ALL code - main EXE AND every loaded overlay - in one pass, with full
+xrefs and decompilation. No per-overlay captures needed.
+
+## FUN_80084718 decompiled - per-entity transform setup
+
+Saved as ghidra_FUN_80084718.c. It builds a translation-only matrix (identity
+rotation, Q12) from the entity's world position at entity+0x98/0x9a/0x9c
+(each <<19) and calls the scene-graph walker FUN_80013AE4. So FUN_80084718 is
+per-entity world placement.
+
+Callers (live-RAM xref + Ghidra): FUN_800814c4, FUN_80046dd4, FUN_80080dd4.
+
+The view matrix is at the ROOT of the walk - one step further up this chain, and
+the full-RAM Ghidra project makes each hop a decompile away.
