@@ -275,3 +275,73 @@ The body is deliberately a no-op for now (`vr_pass_fn` returns 1 and logs). A
 no-op pass still exercises freeze, capture and restore, and it is what proves the
 mechanism end to end. The per-eye redraw goes in that function once a pass runs.
 
+
+## Phase 9 step 2b: pass refusal narrowed to one function; needs framework visibility
+
+### The rect is not the cause
+
+Made the rect configurable (`PSX_VR_RECT="x,y,w,h"`, `PSX_VR_RECT_ALT=1` to add
+240 to `y` on alternate frames) and tried both candidates:
+
+```text
+rect=512x240+0+0     ret=0  status_after=0  runs=0
+rect=512x240+0+240   ret=0  status_after=0  runs=0
+```
+
+Both refused. So the double-buffer origin alternation is **not** the blocker, and
+the earlier hypothesis is retired.
+
+### Where it must be
+
+`gl_renderer_pass_ready()` is `gl_renderer_pass_unavailable() == READY`, and the
+status is 0, so it is true. The argument validation in `render_pass.c:494-497`
+passes. The rect is in VRAM range. That leaves, inside
+`gl_renderer_pass_begin` (`gpu_gl_renderer.c:6173`):
+
+```c
+if (!gl_renderer_pass_ready() || s_pass_active) return 0;            /* 6177 - ready is true */
+if (x < 0 || y < 0 || w <= 0 || h <= 0 || x + w > VRAM_W || ...)     /* 6178 - in range */
+if (open_gen) { if (tw != s_interp_w || th != s_interp_h) return 0; } /* 6192 - see below */
+...
+if (!pass_gen_reserve(gi, 1u, tw, th)) return 0;                     /* 6193 */
+if (!pass_make_color_fbo(...)) ...
+```
+
+**The size check looks like it should pass.** `tw = w * s_hr_scale`, and both
+`video_info` (`hr_scale: 1`) and the source (`s_hr_scale` defaults to 1, set from
+`s_out_scale`, which is also 1 here) give `S = 1`, so `tw = 512`. The presenter's
+captured width is `pw` from `hiw_capture_size(w * s_out_scale, ...)` with the
+display width 512 and no windowed hi-res - also 512. `aspect_ratio = "4:3"`, so
+`wide` should be false. On paper it matches.
+
+So the refusal is probably **past** line 6206, in the resource path
+(`pass_gen_reserve` / FBO creation), not in the validation. That is not
+observable from a plugin.
+
+### Next step: get visibility the sanctioned way
+
+The framework is explicit that instrumentation belongs in the TCP server, not in
+printf - "If an inspection need isn't covered by the existing commands, do not
+fall back to printf or log files. Instead: add a handler in
+`runtime/src/debug_server.c`".
+
+So the next move is a small framework change: a diagnostic that reports, at the
+`psx_mod_render_pass` refusal, which internal check failed -
+`s_interp_w`/`s_interp_h` vs the requested `tw`/`th`, `s_pass_active`, and the
+resource-allocation result. `render_pass_stats` already has the counters
+(`refused`, `discarded`) to hang it off; what is missing is the *reason*.
+
+This is a change to the shared `psxrecomp` framework rather than to the game, so
+it is worth agreeing before making it.
+
+### What is solidly established
+
+- Windowed runs need `--no-launcher`; the presenter then works and the debug
+  server is up.
+- `PSX_VR_INTERP=1` enables interpolation (FLIP + HOLD); `gl_interp` confirms
+  `enabled=1, source=flip, flip_period=2`.
+- Passes go from `NO_PRESENTER` to READY, and **planning succeeds** at the
+  frame-loop `VSync(0)`: `plans=2 planned=2 wanted=2 refused=0`.
+- Whatever blocks `psx_mod_render_pass` is downstream of the status gate and of
+  all argument validation, and is independent of the rect origin.
+

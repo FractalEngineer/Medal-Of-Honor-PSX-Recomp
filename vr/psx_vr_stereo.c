@@ -280,6 +280,14 @@ static uint32_t g_vsync_other;
 static uint32_t g_vsync_last_status = 0xFFFFFFFFu;
 static int g_interp;          /* PSX_VR_INTERP: enable interpolation + FLIP src */
 static uint32_t g_interp_hz;  /* PSX_VR_INTERP_HZ: 0 = follow display refresh */
+/* The pass rect. RENDER_PASSES.md wants "the display rect the next flip shows
+ * (its DISPENV)". MoH double buffers - the GP1 0x05 origin alternates y=0 and
+ * y=240 - so a constant y is suspect. Default 512x240 at (0,0);
+ * PSX_VR_RECT="x,y,w,h" overrides, PSX_VR_RECT_ALT=1 adds 240 to y on
+ * alternate frames to follow the flip. */
+static int g_rect_x, g_rect_y = 0;
+static int g_rect_w = 512, g_rect_h = 240;
+static int g_rect_alt;
 
 /* The pass body. For now it draws nothing: a no-op pass still exercises the
  * whole mechanism (freeze, capture, restore) and proves an image is produced,
@@ -329,10 +337,10 @@ static void vr_vsync_entry(CPUState* cpu, uint32_t address) {
             pass.alpha_q16 = alpha[i];
             /* MoH is double buffered: the DISPENV origin alternates y=0 / y=240,
              * so the rect the next flip shows is one of these two 512x240 bands. */
-            pass.x = 0;
-            pass.y = 0;
-            pass.w = 512;
-            pass.h = 240;
+            pass.x = (uint16_t)g_rect_x;
+            pass.y = (uint16_t)(g_rect_y + (g_rect_alt && (g_vsync_hits & 1u) ? 240 : 0));
+            pass.w = (uint16_t)g_rect_w;
+            pass.h = (uint16_t)g_rect_h;
             {
                 int r = psx_mod_render_pass(cpu, &pass, vr_pass_fn, NULL);
                 if (g_probe) {
@@ -375,6 +383,13 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_OFFSET"))) g_offset = (int32_t)strtol(e, NULL, 0);
     if ((e = getenv("PSX_VR_INTERP"))) g_interp = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_INTERP_HZ"))) g_interp_hz = (uint32_t)strtoul(e, NULL, 0);
+    if ((e = getenv("PSX_VR_RECT"))) {
+        int rx, ry, rw, rh;
+        if (sscanf(e, "%d,%d,%d,%d", &rx, &ry, &rw, &rh) == 4) {
+            g_rect_x = rx; g_rect_y = ry; g_rect_w = rw; g_rect_h = rh;
+        }
+    }
+    if ((e = getenv("PSX_VR_RECT_ALT"))) g_rect_alt = (e[0] && e[0] != '0');
     if (g_axis < 0 || g_axis > 2) g_axis = 0;
 
     fprintf(stdout, "vr-probe: registering moh.vr.stereo for %08X\n",
