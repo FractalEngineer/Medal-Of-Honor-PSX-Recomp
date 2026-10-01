@@ -1,0 +1,31 @@
+{
+  "cue_path": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\Input\\medal-of-honor\\medal-of-honor.cue",
+  "cue_name": "medal-of-honor.cue",
+  "bin_name": "medal-of-honor (Track 01).bin",
+  "track_count": 1,
+  "data_track_size": 742258272,
+  "data_track_md5": "05a275299a0c60a8d1ec48b324c91c44",
+  "data_track_sha1": "faebe91db711f804e1a6a38613c804b2c370f340",
+  "data_track_crc32": "c25ddc45",
+  "boot_exe": "SLUS_009.74",
+  "serial": "SLUS-00974",
+  "serial_exe": "SLUS_009.74",
+  "volume_id": "MOH_NTSC",
+  "display_name": "Medal of Honor",
+  "load_address": "0x80010000",
+  "entry_pc": "0x8001DFD4",
+  "text_size": "0x0002A000",
+  "stack_base": "0x801FFFF0",
+  "require_cue": true,
+  "required_disc_fp": "f2042f9b03c7fa2b71c9a5abfebdbada8eae73e68bbcc33f951a131356fd6f70",
+  "boot_exe_sha256": "19215344b0031358a6f628cbee0bd124f23275d4621aa16ada8f959cfa0792e3",
+  "seed_count": 297,
+  "warnings": [
+    "cue has only 1 TRACK \u2014 Track-01-only dumps fail multi-track netplay/catalog gates; prefer a full Redump cue."
+  ],
+  "notes": [
+    "entry_pc/load_address/text_size/stack_base taken from PS-X EXE header.",
+    "seeds are first-pass boot-EXE JAL targets (+ entry); expect to grow as overlays / runtime paths are discovered.",
+    "required_disc_fp is psxrecomp-toc-v1 (matches runtime DiscIdentity)."
+  ]
+}
