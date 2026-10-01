@@ -11,14 +11,15 @@
  * param_1 ($a0 at entry) is the entity. This hook runs at the top of the
  * generated function, so $a0 still holds it.
  *
- * Two jobs, in order:
- *   1. Probe — enumerate the entity table and its positions. This is the
- *      observability the M1 camera-relative question was blocked on: the fn
- *      ring does not instrument 0x80084718, so it has to come from here.
- *   2. Inject — a per-eye offset on the camera entity, for stereo. Disabled
- *      until the entity table tells us which entity is the camera.
+ * Environment (all optional; the plugin is inert without them):
+ *   PSX_VR_PROBE=1        log the entity table and struct dumps
+ *   PSX_VR_TARGET=0xADDR  entity to offset (0 or unset = every entity)
+ *   PSX_VR_AXIS=0|1|2     axis to offset, 0=X (default), 1=Y, 2=Z
+ *   PSX_VR_OFFSET=N       signed delta added to that axis (0 = disabled)
  *
- * Set PSX_VR_PROBE=1 to log the table. Nothing else runs without it.
+ * The offset is applied as patch-then-restore: the entity's original value is
+ * written back at the start of its NEXT call before re-patching, so the stored
+ * position never drifts between frames. The body still reads the patched value.
  */
 #include "mod_plugins.h"
 #include "cpu_state.h"
@@ -26,6 +27,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #define FUN_80084718 0x80084718u
 
@@ -38,9 +40,38 @@ typedef struct {
     uint32_t hits;
 } VrEntitySlot;
 
+/* Restore record: one per entity we have patched. */
+typedef struct {
+    uint32_t entity;
+    int16_t orig[3];
+    int patched;
+} VrPatchSlot;
+
 static VrEntitySlot g_slots[VR_ENTITY_SLOTS];
+static VrPatchSlot g_patch[VR_ENTITY_SLOTS];
 static uint32_t g_calls;
-static int g_probe; /* PSX_VR_PROBE */
+static int g_probe;      /* PSX_VR_PROBE */
+static uint32_t g_target;/* PSX_VR_TARGET, 0 = all */
+static int g_axis;       /* PSX_VR_AXIS */
+static int32_t g_offset; /* PSX_VR_OFFSET */
+
+static int16_t vr_rd(uint32_t ent, int axis) {
+    return (int16_t)psx_mod_read_half(ent + 0x98 + (uint32_t)axis * 2);
+}
+
+static void vr_wr(uint32_t ent, int axis, int16_t v) {
+    psx_mod_write_half(ent + 0x98 + (uint32_t)axis * 2, (uint16_t)v);
+}
+
+static VrPatchSlot* vr_patch_slot(uint32_t ent) {
+    uint32_t s = (ent >> 4) & (VR_ENTITY_SLOTS - 1);
+    for (uint32_t i = 0; i < VR_ENTITY_SLOTS; ++i) {
+        uint32_t k = (s + i) & (VR_ENTITY_SLOTS - 1);
+        if (g_patch[k].entity == ent) return &g_patch[k];
+        if (g_patch[k].entity == 0) { g_patch[k].entity = ent; return &g_patch[k]; }
+    }
+    return NULL;
+}
 
 static void vr_dump(const char* tag, uint32_t base, uint32_t off, uint32_t len) {
     fprintf(stdout, "vr-probe:   %s +%03X:", tag, off);
@@ -55,20 +86,38 @@ static void vr_entity_entry(CPUState* cpu, uint32_t address) {
     uint32_t entity = cpu->gpr[4]; /* $a0 = param_1 */
     (void)address;
 
-    if (!g_calls) {
-        fprintf(stdout, "vr-probe: hook FIRED at %08X a0=%08X\n", address, entity);
-        fflush(stdout);
-    }
-
     if (!entity) return;
 
     /* Only guest RAM. $a0 is a pointer, so a stale/nonsense value must not be
      * dereferenced blindly. */
     if (entity < 0x80000000u || entity >= 0x80200000u) return;
 
-    int16_t x = (int16_t)psx_mod_read_half(entity + 0x98);
-    int16_t y = (int16_t)psx_mod_read_half(entity + 0x9a);
-    int16_t z = (int16_t)psx_mod_read_half(entity + 0x9c);
+    VrPatchSlot* ps = vr_patch_slot(entity);
+
+    /* Undo the previous frame's patch before reading, so the value we read is
+     * the game's own and repeated frames do not accumulate. */
+    if (ps && ps->patched) {
+        for (int a = 0; a < 3; ++a) vr_wr(entity, a, ps->orig[a]);
+        ps->patched = 0;
+    }
+
+    int16_t x = vr_rd(entity, 0);
+    int16_t y = vr_rd(entity, 1);
+    int16_t z = vr_rd(entity, 2);
+
+    if (ps) {
+        ps->orig[0] = x; ps->orig[1] = y; ps->orig[2] = z;
+        if (g_offset != 0 && (g_target == 0 || g_target == entity)) {
+            int16_t v = vr_rd(entity, g_axis);
+            vr_wr(entity, g_axis, (int16_t)(v + g_offset));
+            ps->patched = 1;
+            if (g_calls < 4) {
+                fprintf(stdout, "vr-probe: PATCH ent=%08X axis=%d %d -> %d\n",
+                        entity, g_axis, v, (int)(int16_t)(v + g_offset));
+                fflush(stdout);
+            }
+        }
+    }
 
     uint32_t slot = (entity >> 4) & (VR_ENTITY_SLOTS - 1);
     for (uint32_t i = 0; i < VR_ENTITY_SLOTS; ++i) {
@@ -106,13 +155,20 @@ static void vr_entity_entry(CPUState* cpu, uint32_t address) {
 }
 
 static void vr_entity_activate(void) {
-    fprintf(stdout, "vr-probe: moh.vr.stereo ACTIVATED (probe=%d)\n", g_probe);
+    fprintf(stdout,
+            "vr-probe: moh.vr.stereo ACTIVATED (probe=%d target=%08X axis=%d offset=%d)\n",
+            g_probe, g_target, g_axis, g_offset);
     fflush(stdout);
 }
 
 PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
-    const char* env = getenv("PSX_VR_PROBE");
-    g_probe = env && env[0] && env[0] != '0';
+    const char* e;
+    if ((e = getenv("PSX_VR_PROBE"))) g_probe = (e[0] && e[0] != '0');
+    if ((e = getenv("PSX_VR_TARGET"))) g_target = (uint32_t)strtoul(e, NULL, 0);
+    if ((e = getenv("PSX_VR_AXIS"))) g_axis = atoi(e);
+    if ((e = getenv("PSX_VR_OFFSET"))) g_offset = (int32_t)strtol(e, NULL, 0);
+    if (g_axis < 0 || g_axis > 2) g_axis = 0;
+
     fprintf(stdout, "vr-probe: registering moh.vr.stereo for %08X\n",
             FUN_80084718);
     fflush(stdout);

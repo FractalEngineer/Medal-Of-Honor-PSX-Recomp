@@ -299,3 +299,52 @@ transformed during long stretches; `800BDAEC` / `800BB2D8` move with the player.
 The decisive experiment is the injection itself - offset one candidate and see
 whether the rendered view shifts.
 
+
+## Injection works â€” offset produces a HUD-independent view shift
+
+The hook can now patch an entity's position at the moment `FUN_80084718` reads
+it. Applied as **patch-then-restore**: the original value is written back at the
+start of that entity's next call before re-patching, so the stored position never
+drifts across frames (the function body still reads the patched value).
+
+Interface (environment, all optional; inert without them):
+
+```text
+PSX_VR_TARGET=0xADDR   entity to offset (0/unset = every entity)
+PSX_VR_AXIS=0|1|2      0=X (default), 1=Y, 2=Z
+PSX_VR_OFFSET=N        signed delta on that axis (0 = disabled)
+```
+
+### Result (slot 0 gameplay, static scene, no input)
+
+| run | target | offset | screenshot |
+|---|---|---|---|
+| A | none | 0 | C1EE8F70... baseline |
+| B | `800EEF3C` | X +200 | F231E08A... |
+| C | all | X +200 | 8605F69A... |
+
+Log confirms the patch fires: `PATCH ent=800EEF3C axis=0 -1 -> 199`.
+
+**Visually:** baseline shows the rifle centred at the bottom with the tree line
+and water behind it. With the offset, **the rifle moves to the bottom-right and
+the terrain shifts with it, while the compass and the ammo readout (8 / 24) do
+not move at all.** The 3D scene and the 2D HUD separate cleanly.
+
+That is precisely the behaviour stereo needs: a view-space displacement that
+leaves the HUD alone. It is the first end-to-end proof that the injection point
+is real and reaches the rendered image.
+
+### Open questions
+
+- **Parallax vs flat shift.** A screenshot alone cannot distinguish a true
+  viewpoint change (near objects move more than far ones) from a uniform 2D
+  translation. Measuring that is the next step, and it is what separates real
+  stereo from the "weak 3-D-TV" strategy this plan rejects.
+- **B and C look the same.** Offsetting *every* entity by the same delta should
+  be a no-op relative to a camera that is itself an entity - so either not every
+  entity is actually patched, or the camera is not among the patched set. Worth
+  resolving before choosing the per-eye target.
+- Screenshot hashes are not proof on their own: this scene animates (water), so
+  two baselines would also differ. The comparison above is visual, and the
+  A/B/C difference is far larger than the animation.
+
