@@ -1,1 +1,2 @@
 pc,name,kind,status,note
+0x80053FF8,rtpt_submit,render,observed,"RTPT caller seen for all sampled GTE ring entries (frame ~830); candidate model-transform/render submission routine"
