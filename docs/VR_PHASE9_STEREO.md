@@ -214,3 +214,44 @@ EXE at `0x80010000` and read `0x80013698` and its callers directly. The
 alternative in-framework route is to add `0x80013698` to
 `[recompiler] mod_function_entry_funcs`, regenerate, and re-run the trace — heavier
 but fully local.
+
+## Step 1 probe 5 — built xref tooling + OVERLAY discovery
+
+**Ghidra is not installed here** (no JDK either), so it can't be used directly.
+Instead we built the equivalent for call/pointer questions and **validated it**:
+
+| tool (session scratchpad) | purpose |
+|---|---|
+| `jal_xref.py` / `xref2.py` | scan a dump for `J`/`JAL` to a target |
+| `ptr_scan.py` | scan for literal pointer words == target |
+
+Validation: `0x80011214` → exactly one caller `0x80010D5C` (matches the GTE ring's
+`caller_ra` ✓); `memcpy` `0x800154EC` → 6 callers ✓.
+
+### Discovery: the render path is largely OVERLAYS
+
+`SetGeomScreen` (`0x8001BA68`) has a `JAL` caller at **`0x8005FAF0`** — an address
+**above the declared text end** (`0x8003A000`, `text_size=0x2A000`). That is
+**overlay code streamed from disc into RAM and executed at runtime**.
+
+Consequences:
+- A static scan of the EXE text **misses overlay callers**. Callers must be
+  searched in **live RAM** (which holds the loaded overlays) — which is how the
+  `0x8005FAF0` hit was found.
+- Any VR render interception must account for overlay code. The framework already
+  captures/sd shards overlays, so this is compatible — but it explains why several
+  static probes came back empty.
+
+### Still open
+
+`0x80013698` (world projection) has **no** `J`/`JAL` caller and no pointer
+reference in text or full data/BSS → most likely entered by **fall-through** from
+an earlier entry, or via `jalr`. The guessed entry `0x80013698` may be
+**mid-function**; the real entry is earlier.
+
+## Recommendation
+
+Our xref tooling now answers the call/pointer questions Ghidra would, locally and
+for free. For genuine **decompilation and data-flow** (structs, `jalr` targets,
+switch tables) Ghidra remains stronger — installing it (it needs a JDK) would pay
+off if this RE continues.
