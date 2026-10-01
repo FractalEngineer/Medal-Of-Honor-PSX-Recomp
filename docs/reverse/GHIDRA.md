@@ -234,3 +234,30 @@ entity whose transform is pushed first and accumulated downward.
 rotation. Stereo can be injected either by perturbing the camera entity transform,
 or by running the geometry pass (FUN_800814c4 / FUN_80080dd4) twice with a per-eye
 transform at the root of the walk.
+
+## Render dispatcher and the matrix pointer (full live image)
+
+- FUN_80082948 = RENDER DISPATCHER. Looks up a vtable at
+  `(&PTR_DAT_8009d678)[entity+0x54]`, then:
+  `if (*(entity+0x6c) == 0x80) FUN_80080dd4(entity, list, idx, flag);
+   else FUN_800814c4(entity, list, idx, flag);`
+  So `entity+0x6c == 0x80` selects the render path.
+- Call chain: FUN_800824d0 -> FUN_80082948 -> {FUN_800814c4 | FUN_80080dd4}.
+- FUN_80082ca8 = texture/CLUT row blit (calls FUN_80013f98).
+- `entity+0x84` holds a **pointer to the matrix** that is passed straight into the
+  walker via FUN_80084718. That matrix is the world->screen candidate
+  (view x model, or model in a pre-set view frame).
+
+## Key consequence
+
+The ONLY COP2 control-register (RT/TR) loaders in the whole image are
+FUN_80013AE4 and FUN_80013E58. So nothing "sets a view matrix" directly: the
+transform fed to the walker is COMPOSED upstream and stashed per-entity at
+`entity+0x84`.
+
+## Next step
+
+Find the matrix multiply that builds the `entity+0x84` matrix each frame - that is
+where the view (camera) transform enters. Then the stereo hook is: add
++/-IPD/2 to the camera-right component of that matrix (or render the geometry pass
+twice with a per-eye matrix).
