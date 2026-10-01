@@ -204,3 +204,33 @@ Callers (live-RAM xref + Ghidra): FUN_800814c4, FUN_80046dd4, FUN_80080dd4.
 
 The view matrix is at the ROOT of the walk - one step further up this chain, and
 the full-RAM Ghidra project makes each hop a decompile away.
+
+## The camera is an entity in the same scene-graph walk (full live image)
+
+Refs across the WHOLE live image (main EXE + all overlays):
+
+- `_DAT_80099428` still has exactly ONE reference: the READ at 0x800136a0 in the
+  projection fn FUN_80013698. So the camera pointer is stored through a COMPUTED
+  address. The camera object is `*_DAT_80099428`, keyed by `+0x388` and
+  `+0x9c` bit 0x800; it has a child entity at `+0x100`.
+- `DAT_8009d320` = the GTE TRANSFORM STACK POINTER (60 refs: matched read/write
+  pairs). The stack storage is DAT_8009d324. Push/pop sites in fns at
+  0x8007e1xx, 0x80047cxx, 0x800481xx, 0x8008dbxx, 0x8008e0xx, 0x80042axx.
+- FUN_800814c4 and FUN_80080dd4 are the GEOMETRY / PRIMITIVE RENDERERS: they
+  `getCopControlWord(2,0..0x3800)` (RT+TR, 0x20 bytes) to push the current matrix
+  onto DAT_8009d320, call FUN_80084718 (entity transform), pop, then RTPT the
+  vertices straight into packets. FUN_800814c4 references
+  `data_msn1_lvl1_tsp0_1_1_c` (mission 1 level 1).
+- FUN_80046dd4 operates on the CAMERA object (`param_1+0x388`) and transforms its
+  child entity (`param_1+0x100`).
+
+## Conclusion for VR
+
+There is NO separate static view matrix: the "view" is simply the transform at the
+ROOT of the same scene-graph walk every object goes through. The camera is an
+entity whose transform is pushed first and accumulated downward.
+
+=> The VR lever is the camera ENTITY: its position (entity+0x98/0x9a/0x9c) and
+rotation. Stereo can be injected either by perturbing the camera entity transform,
+or by running the geometry pass (FUN_800814c4 / FUN_80080dd4) twice with a per-eye
+transform at the root of the walk.
