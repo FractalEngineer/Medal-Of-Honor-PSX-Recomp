@@ -181,3 +181,97 @@ unblock verification; it is also the only way to answer the rate question.
 
 Until then the burden of proof is on the pessimistic claim, and it failed.
 
+
+## Phase 9 step 2: the presenter is up and passes are AVAILABLE
+
+Two blockers cleared this round.
+
+### 1. The windowed binary opens a GUI launcher, not the game
+
+Running without `--headless` sat forever with no debug server. It was showing the
+shared **recomp-ui Dear ImGui launcher** (`PSX_RECOMP_UI:BOOL=ON` in the build).
+`main.cpp:14335` documents the escape:
+
+```text
+Skip the GUI (boot straight in) when ANY of: PSX_NO_LAUNCHER=1 env,
+--no-launcher, or the persisted [launcher] skip_launcher setting
+```
+
+With `--no-launcher` the game boots windowed with the OpenGL presenter and the
+debug server comes up. **Every windowed run must pass `--no-launcher`.**
+
+### 2. Passes go from unavailable to READY and planning
+
+The plugin now calls, from its activation callback (opt-in via `PSX_VR_INTERP`):
+
+```c
+psx_mod_set_frame_interpolation_source(PSX_MOD_FRAME_SOURCE_FLIP);
+psx_mod_set_frame_interpolation_blend(PSX_MOD_FRAME_INTERPOLATION_HOLD);
+psx_mod_set_frame_interpolation(g_interp_hz);   /* 0 = display refresh */
+```
+
+All three return 1. `gl_interp` then reports:
+
+```text
+enabled: 1  source: "flip"  flip_period: 2  host_hz: 60.0  captures: 510  duplicates: 443
+```
+
+`flip_period: 2` independently confirms the 30 Hz double-buffered structure found
+from the GP1 ring, this time from the presenter's own flip tracker.
+
+And at the frame-loop `VSync(0)`, planning works:
+
+```text
+vr-pass: mode0 VSync hits=1 status=6 plan=0     <- BUSY, first frame
+vr-pass: mode0 VSync hits=2 status=0 plan=1     <- READY, plan succeeded
+render_pass_stats: plans=2 planned=2 wanted=2 refused=0
+```
+
+`status` 6 is BUSY (no frame captured yet), then 0 = READY. **This is the first
+time a plan has succeeded**, and it is the empirical confirmation that the
+hook point chosen in `VR_HOOK_POINT.md` is the right one.
+
+It also retires the earlier `$ra` puzzle: gating on `a0 == 0` alone produces a
+valid plan at the frame loop, so the hook is in the right place and the
+`$ra == 0x8008B258` question is moot for planning purposes.
+
+### 3. Running a pass: still refused, and where
+
+Calling `psx_mod_render_pass()` with a 512x240 rect at (0,0):
+
+```text
+vr-pass-call: alpha=32768 rect=512x240+0+0 ret=0 status_after=0 runs=0
+```
+
+`ret=0` is "refused or rolled back", `status_after=0` is READY, and `runs=0`
+means the pass body never executed. So the refusal is not the status gate and not
+the argument validation in `render_pass.c:494-497` (w/h nonzero, `0 < alpha_q16 <
+65536` - ours is 32768). It is `gl_renderer_pass_begin` returning 0
+(`render_pass.c:516`), and inside it there are only two candidates:
+
+```c
+if (!gl_renderer_pass_ready() || s_pass_active) return 0;            /* :6177 */
+if (x < 0 || y < 0 || w <= 0 || h <= 0 || x + w > VRAM_W || ...)     /* :6178 */
+if (open_gen) { if (tw != s_interp_w || th != s_interp_h) return 0; } /* :6192 */
+```
+
+The rect is in range and the size looks right: `video_info` reports
+`display_x/y = 0/0`, `display_w/h = 512/240`, `hr_scale = 1`,
+`effective_scale = 1`, `fbo 1024x512`. With `S = 1`, `tw = 512 = display_w`,
+which is what `s_interp_w` should be. So the size check is probably passing and
+the refusal is more likely `gl_renderer_pass_ready()` - or the rect's `y` is
+wrong: MoH double buffers, so the *next* flip's DISPENV origin is 0 or 240
+depending on the buffer, and `pass.x/y/w/h` is documented as "the display rect
+the **next flip** shows". Passing a constant `y = 0` ignores that alternation.
+
+**Next step, precisely:** instrument which of those two returns fires - easiest is
+to try `y = 240` on alternate frames (or read the game's own DISPENV buffer) and
+see whether `ret` becomes 1. That is a small, bounded change, and it is the last
+thing between here and the first real pass image.
+
+### Note on the pass body
+
+The body is deliberately a no-op for now (`vr_pass_fn` returns 1 and logs). A
+no-op pass still exercises freeze, capture and restore, and it is what proves the
+mechanism end to end. The per-eye redraw goes in that function once a pass runs.
+

@@ -278,6 +278,24 @@ static void vr_lvtx_entry(CPUState* cpu, uint32_t address) {
 static uint32_t g_vsync_hits;
 static uint32_t g_vsync_other;
 static uint32_t g_vsync_last_status = 0xFFFFFFFFu;
+static int g_interp;          /* PSX_VR_INTERP: enable interpolation + FLIP src */
+static uint32_t g_interp_hz;  /* PSX_VR_INTERP_HZ: 0 = follow display refresh */
+
+/* The pass body. For now it draws nothing: a no-op pass still exercises the
+ * whole mechanism (freeze, capture, restore) and proves an image is produced,
+ * which is what the harness test needs. The per-eye redraw goes here next. */
+static uint32_t g_pass_runs;
+
+static int vr_pass_fn(CPUState* cpu, void* user, uint32_t alpha_q16) {
+    (void)cpu;
+    (void)user;
+    g_pass_runs++;
+    if (g_probe && g_pass_runs <= 4u) {
+        fprintf(stdout, "vr-pass-run: run=%u alpha=%u\n", g_pass_runs, alpha_q16);
+        fflush(stdout);
+    }
+    return 1;   /* keep the image */
+}
 
 static void vr_vsync_entry(CPUState* cpu, uint32_t address) {
     (void)address;
@@ -304,6 +322,29 @@ static void vr_vsync_entry(CPUState* cpu, uint32_t address) {
                 "vr-pass: mode0 VSync hits=%u status=%u plan=%u\n",
                 g_vsync_hits, st, n);
         fflush(stdout);
+        for (uint32_t i = 0; i < n; i++) {
+            PSXModRenderPass pass;
+            memset(&pass, 0, sizeof pass);
+            pass.struct_size = (uint32_t)sizeof(PSXModRenderPass);
+            pass.alpha_q16 = alpha[i];
+            /* MoH is double buffered: the DISPENV origin alternates y=0 / y=240,
+             * so the rect the next flip shows is one of these two 512x240 bands. */
+            pass.x = 0;
+            pass.y = 0;
+            pass.w = 512;
+            pass.h = 240;
+            {
+                int r = psx_mod_render_pass(cpu, &pass, vr_pass_fn, NULL);
+                if (g_probe) {
+                    fprintf(stdout,
+                            "vr-pass-call: alpha=%u rect=%ux%u+%u+%u ret=%d status_after=%u runs=%u\n",
+                            alpha[i], (unsigned)pass.w, (unsigned)pass.h,
+                            (unsigned)pass.x, (unsigned)pass.y, r,
+                            psx_mod_render_pass_status(), g_pass_runs);
+                    fflush(stdout);
+                }
+            }
+        }
     }
 }
 
@@ -311,7 +352,19 @@ static void vr_entity_activate(void) {
     fprintf(stdout,
             "vr-probe: moh.vr.stereo ACTIVATED (probe=%d target=%08X axis=%d offset=%d)\n",
             g_probe, g_target, g_axis, g_offset);
-    fflush(stdout);
+    /* Render passes need the OpenGL presenter, frame interpolation ON, and the
+     * FLIP source (RENDER_PASSES.md "Gates"). HOLD means "repeat the newest game
+     * frame" instead of crossfading, which is what a plugin supplying its own
+     * pass images wants. Opt-in so the faithful path is untouched. */
+    if (g_interp) {
+        int a = psx_mod_set_frame_interpolation_source(PSX_MOD_FRAME_SOURCE_FLIP);
+        int b = psx_mod_set_frame_interpolation_blend(PSX_MOD_FRAME_INTERPOLATION_HOLD);
+        int c = psx_mod_set_frame_interpolation(g_interp_hz);
+        fprintf(stdout,
+                "vr-interp: source(FLIP)=%d blend(HOLD)=%d rate(%u)=%d\n",
+                a, b, g_interp_hz, c);
+        fflush(stdout);
+    }
 }
 
 PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
@@ -320,6 +373,8 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_TARGET"))) g_target = (uint32_t)strtoul(e, NULL, 0);
     if ((e = getenv("PSX_VR_AXIS"))) g_axis = atoi(e);
     if ((e = getenv("PSX_VR_OFFSET"))) g_offset = (int32_t)strtol(e, NULL, 0);
+    if ((e = getenv("PSX_VR_INTERP"))) g_interp = (e[0] && e[0] != '0');
+    if ((e = getenv("PSX_VR_INTERP_HZ"))) g_interp_hz = (uint32_t)strtoul(e, NULL, 0);
     if (g_axis < 0 || g_axis > 2) g_axis = 0;
 
     fprintf(stdout, "vr-probe: registering moh.vr.stereo for %08X\n",
