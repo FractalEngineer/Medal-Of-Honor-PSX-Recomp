@@ -56,3 +56,36 @@ Requirements:
 
 Not started. Step 1 (view-matrix identification) is the immediate next task and
 is pure RE — no framework change.
+
+## Step 1 progress — matrix sourcing (disasm of CTC2 sites)
+
+Around `0x80013BE4` the matrix is loaded from the **scratchpad base**
+(`$s3 = 0x1F800000`):
+
+```text
+0x80013BD0  LW   $t4, 4($s3)
+0x80013BE0  LW   $t5, 8($s3)
+0x80013BE4  CTC2 $t3, $RT11RT12      # t3 loaded earlier from 0($s3)
+0x80013BE8  CTC2 $t4, $RT13RT21
+0x80013BEC  LW   $t6, 12($s3)
+0x80013BF0  CTC2 $t5, $RT22RT23
+0x80013BF4  LW   $t7, 16($s3)
+0x80013BF8  CTC2 $t6, $RT31RT32
+0x80013BFC  CTC2 $t7, $RT33
+```
+
+- So a **rotation matrix is staged at scratchpad `0x1F800000+0..16`** before
+  being loaded into the GTE.
+- `TRX/TRY/TRZ` are **computed**, not loaded: `MVMVA` → `MFC2 MAC1/2/3` →
+  add `20/24/28($s3)` → shift → `CTC2 $TRX/TRY/TRZ` (`0x80013C98…0x80013CF0`).
+- A second source is a **structure pointer** (`$a1`): `LW $t9,0($a1)`,
+  `LW $v0,4($a1)`, `LW $t4,16($a1)` → another `CTC2 $RT11RT12…`.
+- The `MVMVA` + MAC math here suggests this path is the **lighting** matrix, not
+  the view.
+
+### Next probe (decisive)
+
+`watch 0x1F800000` (+4/+8/+12/+16) while **rotating the camera only**, then while
+**animating an object only**. The view rotation staging should change for the
+former and stay put for the latter. If it does, that scratchpad matrix is the
+view (or the view×model staging) and is where the per-eye offset goes.
