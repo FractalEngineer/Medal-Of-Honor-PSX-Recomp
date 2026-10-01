@@ -45,6 +45,13 @@ exist and match; `verify_checks > 0`, `verify_mismatch = 0`. State-fingerprint
 comparison and watchdog rollback must be checked before declaring redraw safe.
 This milestone proves capture/restore, not stereo or redraw.
 
+Measured update: the legacy VSync probe only attempted during startup in the
+reproduction. Slot 1 uses `FUN_80090B80`'s DrawSync(-1) wait and an IRQ-driven
+flip. The current no-op probe uses that main-thread function's entry, before
+it enables the flip. It derives the upcoming DISPENV from the same buffer-index
+calculation as the game. Enable `PSX_VR_PASS_PROBE=1`, `PSX_VR_INTERP=1` and
+`PSX_RENDER_PASS_VERIFY=1`; leave `PSX_VR_PROBE=0` for TCP-only observation.
+
 ## 3. Identify the replayable draw slice
 
 Trace the level scene driver through vertex transformation, primitive/ordering
@@ -93,9 +100,13 @@ projection/convergence and world scale after the paired-image proof.
 ## Progress
 
 - [x] Execution plan recorded.
-- [ ] Failure-site TCP diagnostics implemented and tested.
-- [ ] Live refusing branch measured.
-- [ ] No-op capture/restore proved.
+- [x] Failure-site TCP diagnostics implemented and tested (framework `257a88b0`).
+- [x] Live refusing branch measured: startup requested 512x240, history 256x240.
+- [x] No-op capture/restore proved: two matching PNG pairs; 727 checks, zero mismatches.
+- [ ] Live fingerprint comparison and watchdog rollback before redraw safety claims.
 - [ ] Replayable complete draw slice established.
 - [ ] Same-state eye pair captured and measured.
 - [ ] Paired-eye API and side-by-side presentation implemented.
+
+Evidence: [pass-diagnostics README](../../vr/proof/pass-diagnostics/README.md).
+The no-op cost includes verification; it is not a redraw or stereo cost estimate.

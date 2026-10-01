@@ -368,3 +368,74 @@ The following are source findings, not new live measurements:
 
 No runtime was listening on TCP port 4370 during the initial source audit.
 
+## 2026-10-02: live refusal identified; gameplay no-op passes captured
+
+Framework `257a88b0` adds failure-site diagnostics to `render_pass_stats`,
+including separate pass-call counters and latched rejection inputs. Sandbox,
+watchdog rollback and source guards pass. The game Debug build passes.
+
+### Refusal: actual history was 256 pixels wide
+
+The original probe reproduced two refused calls. Both are classified as
+`capture_size`: requested 512x240, capture/history 256x240, scales both 1,
+wide=0, open_gen=1, active=0, status=READY. `image_textures=0` and no resource
+stage was reached. The last failure record is attempt 2, plan 2, guest cycle
+231387035, alpha 32768. Raw responses are in
+`vr/proof/pass-diagnostics/refusal_initial.json` and `refusal_after_load.json`.
+
+**Correction:** the previous conclusion that the size comparison should pass
+and resource creation was the likely culprit is retired for this reproduction.
+The size check correctly rejected the request. A later `video_info` reading of
+512x240 describes the current display, not the history at that earlier branch.
+The diagnosis does not claim that all other runs have the same refusal.
+
+### Slot 1 has a different wait/flip path
+
+After loading the interior room, the old failure record and pass-attempt count
+remained unchanged while gameplay continued. Live disassembly and flow tracing
+show slot 1 executing `FUN_80090B80`, which polls DrawSync(-1). The alternate
+loop at `0x8008B254` remains real, but its VSync(0) probe did not establish a
+gameplay pass boundary for this save.
+
+GP1 traces show the gameplay flip at `0x80018748`, ra=0x8001748C, with
+sr=0x40000404 and exception EPCs in the wait loop. A PutDispEnv probe produced
+no planned passes there: the transaction's exception gate is appropriate.
+
+**Correction:** "planning succeeded, therefore the gameplay hook is right" was
+too broad. The recorded initial successes belonged to the 256-wide startup
+history. VSync(0) availability cannot establish the gameplay timing path.
+
+### No-op proof at the main-thread render-wait entry
+
+The plugin now has opt-in `PSX_VR_PASS_PROBE=1` at `FUN_80090B80` entry,
+before its stores enable the IRQ flip. The upcoming DISPENV is read using the
+game's own calculation at 0x80090CCC..0x80090CE8:
+`0x8009A7A0 + (!read_word(0x8009C824))*20`. The RECT supplies x/y/w/h; hook
+count parity is not used. The legacy VSync probe is bypassed in this mode.
+The host recursion guard is cleared after the pass API returns, including
+watchdog rollback. The hook is an overlay entry and needs no added static hook.
+
+With `--no-launcher`, `PSX_VR_PROBE=0`, `PSX_VR_PASS_PROBE=1`,
+`PSX_VR_INTERP=1`, `PSX_RENDER_PASS_VERIFY=1`, and loaded slot 1:
+
+- First saved sample: 90 passes, 89 promotions, 90 verification checks,
+  zero verification mismatches, zero pass-call refusals.
+- Final saved sample: 727 passes and 727 verification checks, zero mismatches,
+  no aborted passes, watchdog overruns, VRAM leaks or pass-call refusals.
+- Two dumped generations contain baseline phase 0 and no-op phase 32768 images,
+  each 512x240. Direct decoded RGB comparison reports **zero changed pixels**
+  for both pairs. The images show the interior-room scene.
+- The final `cost_us=3837` is measured no-op capture/restore with verification
+  enabled. Guest draw cycles are zero. It is not a scene-redraw or stereo cost.
+- The nonzero `refused=572` is temporal plan shedding, not pass-call refusal.
+  `status=BUSY` in the final asynchronous TCP sample is current availability;
+  all 727 actual attempts succeeded.
+
+The verification runs were stopped after recording evidence. Details and
+reproduction commands: [pass-diagnostics README](../../vr/proof/pass-diagnostics/README.md).
+
+**Still open:** live timeline fingerprint comparison, live watchdog rollback,
+complete replayable draw slice, paired per-eye capture, dynamic/weapon/HUD
+coverage, eye calibration and stereo presentation. No redraw-safety or stereo
+performance conclusion follows from the no-op proof.
+

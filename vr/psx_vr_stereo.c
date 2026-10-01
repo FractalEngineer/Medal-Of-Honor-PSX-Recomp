@@ -16,6 +16,8 @@
  *   PSX_VR_TARGET=0xADDR  entity to offset (0 or unset = every entity)
  *   PSX_VR_AXIS=0|1|2     axis to offset, 0=X (default), 1=Y, 2=Z
  *   PSX_VR_OFFSET=N       signed delta added to that axis (0 = disabled)
+ *   PSX_VR_PASS_PROBE=1   no-op capture at gameplay's render-wait entry
+ *                        (also set PSX_VR_INTERP=1; inspect render_pass_stats)
  *
  * The offset is applied as patch-then-restore: the entity's original value is
  * written back at the start of its NEXT call before re-patching, so the stored
@@ -44,15 +46,14 @@
  * CTC2 H writes. This is the first RTPS path found on the level, as opposed to
  * the dynamic-object branch. */
 #define LVTX_8008B3E8 0x8008b3e8u
-/* MoH's frame loop. VSync is the PsyQ mode wrapper at 0x80016E38; the main loop
+/* Legacy VSync probe. VSync is the PsyQ mode wrapper at 0x80016E38; a loop
  * calls VSync(0) at 0x8008B254, right before DrawSync(0) and PutDispEnv
  * (0x80017408). That is exactly the point RENDER_PASSES.md wants passes planned
- * from. 28 call sites reach VSync, so the function alone is too broad - but a
- * function-entry hook sees $ra, which names the call site, so the return address
- * above selects the frame loop's own VSync(0). See docs/reverse/VR_HOOK_POINT.md
- * and docs/RENDER_PASSES.md. */
+ * from. This is not slot 1's gameplay wait path, which is FUN_80090B80 below.
+ * The legacy probe gates on a0 == 0; it does not isolate a single caller.
+ * See docs/reverse/VR_HOOK_POINT.md and VR_PHASE9_STATUS.md for corrections. */
 #define VSYNC_80016E38 0x80016e38u
-#define FRAME_LOOP_VSYNC_RA 0x8008b258u
+#define RENDER_WAIT_80090B80 0x80090b80u
 #define MOH_FLIP_PERIOD_VBLANKS 2u   /* 30 Hz game: flips every 2 VBlanks */
 
 #define VR_ENTITY_SLOTS 256
@@ -279,6 +280,8 @@ static uint32_t g_vsync_hits;
 static uint32_t g_vsync_other;
 static uint32_t g_vsync_last_status = 0xFFFFFFFFu;
 static int g_interp;          /* PSX_VR_INTERP: enable interpolation + FLIP src */
+static int g_pass_probe;      /* PSX_VR_PASS_PROBE: no-op before render wait */
+static int g_in_pass;         /* cleared after API return, including watchdog abort */
 static uint32_t g_interp_hz;  /* PSX_VR_INTERP_HZ: 0 = follow display refresh */
 /* The pass rect. RENDER_PASSES.md wants "the display rect the next flip shows
  * (its DISPENV)". MoH double buffers - the GP1 0x05 origin alternates y=0 and
@@ -307,6 +310,7 @@ static int vr_pass_fn(CPUState* cpu, void* user, uint32_t alpha_q16) {
 
 static void vr_vsync_entry(CPUState* cpu, uint32_t address) {
     (void)address;
+    if (g_in_pass || g_pass_probe) return;
     /* Diagnostic: $ra is NOT reliable here. Static recompilation turns a guest
      * JAL into a native C call, so the callee's $ra is only meaningful when the
      * caller was interpreted (overlay code). Print what actually arrives so the
@@ -356,6 +360,35 @@ static void vr_vsync_entry(CPUState* cpu, uint32_t address) {
     }
 }
 
+/* Slot 1 gameplay uses FUN_80090B80's DrawSync(-1) loop. Its first stores
+ * permit the IRQ-driven flip (PutDispEnv itself runs in the exception and
+ * cannot start a pass). Before those stores, read the upcoming DISPENV using
+ * the exact !buffer_index calculation at 0x80090CCC..0x80090CE8. */
+static void vr_wait_entry(CPUState* cpu, uint32_t address) {
+    (void)address;
+    if (!g_pass_probe || g_in_pass) return;
+    uint32_t index = psx_mod_read_word(0x8009c824u);
+    if (index > 1u) return;
+    uint32_t env = 0x8009a7a0u + (index == 0u ? 20u : 0u);
+    PSXModRenderPass pass;
+    memset(&pass, 0, sizeof pass);
+    pass.struct_size = sizeof pass;
+    pass.x = psx_mod_read_half(env);
+    pass.y = psx_mod_read_half(env + 2u);
+    pass.w = psx_mod_read_half(env + 4u);
+    pass.h = psx_mod_read_half(env + 6u);
+    /* Scope the first proof to the measured gameplay mode; startup is 256 wide. */
+    if (pass.w != 512u || pass.h != 240u || pass.x + pass.w > 1024u ||
+        pass.y + pass.h > 512u) return;
+    uint32_t alpha[1];
+    uint32_t n = psx_mod_render_pass_plan(MOH_FLIP_PERIOD_VBLANKS, 1u, alpha, 1u);
+    if (!n) return;
+    pass.alpha_q16 = alpha[0];
+    g_in_pass = 1;
+    (void)psx_mod_render_pass(cpu, &pass, vr_pass_fn, NULL);
+    g_in_pass = 0;
+}
+
 static void vr_entity_activate(void) {
     fprintf(stdout,
             "vr-probe: moh.vr.stereo ACTIVATED (probe=%d target=%08X axis=%d offset=%d)\n",
@@ -382,6 +415,7 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_AXIS"))) g_axis = atoi(e);
     if ((e = getenv("PSX_VR_OFFSET"))) g_offset = (int32_t)strtol(e, NULL, 0);
     if ((e = getenv("PSX_VR_INTERP"))) g_interp = (e[0] && e[0] != '0');
+    if ((e = getenv("PSX_VR_PASS_PROBE"))) g_pass_probe = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_INTERP_HZ"))) g_interp_hz = (uint32_t)strtoul(e, NULL, 0);
     if ((e = getenv("PSX_VR_RECT"))) {
         int rx, ry, rw, rh;
@@ -410,6 +444,9 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     (void)psx_mod_register_function_entry_plugin("moh.vr.stereo",
                                                  VSYNC_80016E38,
                                                  vr_vsync_entry);
+    (void)psx_mod_register_function_entry_plugin("moh.vr.stereo",
+                                                 RENDER_WAIT_80090B80,
+                                                 vr_wait_entry);
     (void)psx_mod_register_activation_plugin("moh.vr.stereo",
                                              vr_entity_activate);
 }

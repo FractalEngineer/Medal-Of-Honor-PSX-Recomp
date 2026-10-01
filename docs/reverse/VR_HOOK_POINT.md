@@ -1,6 +1,14 @@
 
 ## Phase 9 prerequisite: MoH's render-pass hook point is found
 
+**2026-10-02 correction:** the VSync loop below is real but does not describe
+the loaded slot 1 gameplay path. Successful legacy planning occurred with a
+256-wide startup history. Slot 1 uses `FUN_80090B80`'s DrawSync(-1) wait and an
+IRQ-driven PutDispEnv flip. The measured no-op probe now runs at that wait
+function's main-thread entry and reads the upcoming DISPENV from the game's
+buffer index. See [VR_PHASE9_STATUS.md](VR_PHASE9_STATUS.md) for evidence and
+the corrections to the planning and `$ra` claims below.
+
 `RENDER_PASSES.md` says to plan passes from "the entry of the `VSync(0)` that
 precedes `PutDispEnv`". For MoH that is now pinned down exactly.
 

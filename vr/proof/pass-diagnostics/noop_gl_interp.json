@@ -1,0 +1,14 @@
+﻿{
+  "id": 0,
+  "ok": true,
+  "enabled": 1,
+  "suspended": 0,
+  "history": 2,
+  "host_hz": 60.0,
+  "target_hz": 60.0,
+  "swaps": 1026,
+  "source": "flip",
+  "flip_period": 2,
+  "captures": 1957,
+  "duplicates": 697
+}
