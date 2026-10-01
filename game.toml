@@ -42,6 +42,7 @@ overlay_cache = true
 [video]
 renderer = "opengl"
 aspect_ratio = "4:3"
+fov_scale = 1.0     # VR: GTE perspective multiplier (>1 widens FOV); see docs/reverse/gte-api.md
 
 [controller]
 default_mode = "digital"

@@ -37,6 +37,7 @@ exactly like the existing widescreen squash. (The game-side plugin was reverted.
 - Applied as `H * num / den` at the perspective divide in `gte_rtps_internal`
   (`gte_divide(gte_h_scaled(gte), SZ3, FLAG)`).
 - `PSX_GTE_FOV_SCALE` = **FOV multiplier** (v>1 widens; maps to `(1000, v*1000)`).
+- [video] fov_scale in game.toml sets the same value (default 1.0); env overrides.
 - The GTE ring now records the **effective** (scaled) H, so the change is
   observable: `gte_ring_dump`.
 
