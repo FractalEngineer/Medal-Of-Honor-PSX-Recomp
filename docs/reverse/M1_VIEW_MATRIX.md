@@ -234,3 +234,50 @@ The walker's arguments did not expose this: its 4th register is a constant globa
 (`0x800EEF3C`) and its node pointers are stack addresses (`0x801D3xxx`), so the
 per-entity positions are not at a simple static address.
 
+## Entity table via the live hook (breakthrough)
+
+The function-entry hook at `FUN_80084718` is built and working (see
+`vr/psx_vr_stereo.c`, package `moh.vr.stereo`). It fires through the dirty-RAM
+interpreter, so **no regeneration was needed** - `0x80084718` is overlay code
+above the main-EXE text end (`0x8003A000`), and `[recompiler]
+mod_function_entry_funcs` never emitted it. This matches the documented
+contract: `dirty_ram_interp.c` calls `psx_mod_function_entry` on every
+interpreted entry whenever hooks are active, and the hook table is built from
+plugin registration, not the generated config list.
+
+### What it revealed
+
+`FUN_80084718` IS a general per-entity transform builder. The entity pointer
+arrives in `$a0` and varies. Observed over one session (idle -> walk -> turn),
+sampled every 20 calls:
+
+| entity | position samples |
+|---|---|
+| `800EEF3C` | `(-1,481,-126)` stable, high up (y=481) |
+| `800BDAEC` | `(-5,-155,-3)` -> `(-6,-155,-12)` -> `(21,-152,-8)` -> `(32,-125,-5)` -> `(12,-141,6)` - **moves** |
+| `800BB2D8` | `(-1,-148,-6)` -> `(0,-147,-9)` -> `(-2,-150,-3)` |
+| `800B8AC4` | `(-17,-60,5)` -> `(-17,-59,6)` |
+
+These are exactly the pointers the RAM-diff approach could not surface.
+
+### Correction to the earlier "constant a0" reading
+
+An earlier probe concluded `FUN_80084718` was always called with a fixed global
+`0x800EEF3C`. That was an artifact: `0x80084718` is not instrumented by the fn
+ring, and the first 200 calls in a fresh boot all belong to the idle/intro
+object. Over a longer window four distinct entities appear.
+
+### Why this matters for camera-relative
+
+The positions are **small integers** (tens), not large world coordinates. The
+moving object (`800BDAEC`) shifts by single digits per sample. That is at least
+consistent with camera-relative storage, and the hook now gives a direct
+instrument to settle it: watch a known static world entity across a pure turn.
+
+### Status
+
+- Hook: **working**, activation confirmed, entity table observable.
+- Open: identify which entity is the camera; then apply the per-eye offset there.
+- Framework gap (unchanged): rendering twice per frame is still needed for real
+  stereo. The hook is the injection point, not the whole mechanism.
+

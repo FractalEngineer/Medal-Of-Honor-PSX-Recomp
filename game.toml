@@ -33,6 +33,10 @@ known_crc32 = [
 seeds = "seeds/ghidra_funcs.txt"
 out_dir = "generated"
 strict = true
+# VR: emit a trusted-plugin entry hook at the per-entity transform builder so
+# moh.vr.stereo can read the entity table and inject a per-eye offset.
+# See vr/psx_vr_stereo.c and docs/reverse/M1_VIEW_MATRIX.md.
+mod_function_entry_funcs = ["0x80084718"]
 
 [runtime]
 window_title = "Medal of Honor Recompiled"
