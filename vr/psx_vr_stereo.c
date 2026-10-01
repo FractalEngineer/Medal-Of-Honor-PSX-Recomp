@@ -44,6 +44,16 @@
  * CTC2 H writes. This is the first RTPS path found on the level, as opposed to
  * the dynamic-object branch. */
 #define LVTX_8008B3E8 0x8008b3e8u
+/* MoH's frame loop. VSync is the PsyQ mode wrapper at 0x80016E38; the main loop
+ * calls VSync(0) at 0x8008B254, right before DrawSync(0) and PutDispEnv
+ * (0x80017408). That is exactly the point RENDER_PASSES.md wants passes planned
+ * from. 28 call sites reach VSync, so the function alone is too broad - but a
+ * function-entry hook sees $ra, which names the call site, so the return address
+ * above selects the frame loop's own VSync(0). See docs/reverse/VR_HOOK_POINT.md
+ * and docs/RENDER_PASSES.md. */
+#define VSYNC_80016E38 0x80016e38u
+#define FRAME_LOOP_VSYNC_RA 0x8008b258u
+#define MOH_FLIP_PERIOD_VBLANKS 2u   /* 30 Hz game: flips every 2 VBlanks */
 
 #define VR_ENTITY_SLOTS 256
 #define VR_PROBE_PERIOD 20u   /* calls between entity position samples */
@@ -262,6 +272,41 @@ static void vr_lvtx_entry(CPUState* cpu, uint32_t address) {
     }
 }
 
+/* Frame-loop VSync(0). Planning here (rather than running a pass) is provable
+ * with no presenter: psx_mod_render_pass_plan reports 0 and the status says why,
+ * and the two counters show the gate accepting only the frame loop's call. */
+static uint32_t g_vsync_hits;
+static uint32_t g_vsync_other;
+static uint32_t g_vsync_last_status = 0xFFFFFFFFu;
+
+static void vr_vsync_entry(CPUState* cpu, uint32_t address) {
+    (void)address;
+    /* Diagnostic: $ra is NOT reliable here. Static recompilation turns a guest
+     * JAL into a native C call, so the callee's $ra is only meaningful when the
+     * caller was interpreted (overlay code). Print what actually arrives so the
+     * gate can be built on evidence instead of assumption. */
+    if (g_probe && g_vsync_other < 24u) {
+        g_vsync_other++;
+        fprintf(stdout, "vr-vsync: a0=%08X ra=%08X sp=%08X\n",
+                cpu->gpr[4], cpu->gpr[31], cpu->gpr[29]);
+        fflush(stdout);
+    }
+    if (cpu->gpr[4] != 0u) {
+        return;
+    }
+    g_vsync_hits++;
+    if (g_probe && (g_vsync_hits <= 3u || (g_vsync_hits % 60u) == 0u)) {
+        uint32_t alpha[8];
+        uint32_t n = psx_mod_render_pass_plan(MOH_FLIP_PERIOD_VBLANKS, 1u, alpha, 8u);
+        uint32_t st = psx_mod_render_pass_status();
+        g_vsync_last_status = st;
+        fprintf(stdout,
+                "vr-pass: mode0 VSync hits=%u status=%u plan=%u\n",
+                g_vsync_hits, st, n);
+        fflush(stdout);
+    }
+}
+
 static void vr_entity_activate(void) {
     fprintf(stdout,
             "vr-probe: moh.vr.stereo ACTIVATED (probe=%d target=%08X axis=%d offset=%d)\n",
@@ -292,6 +337,9 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     (void)psx_mod_register_function_entry_plugin("moh.vr.stereo",
                                                  LVTX_8008B3E8,
                                                  vr_lvtx_entry);
+    (void)psx_mod_register_function_entry_plugin("moh.vr.stereo",
+                                                 VSYNC_80016E38,
+                                                 vr_vsync_entry);
     (void)psx_mod_register_activation_plugin("moh.vr.stereo",
                                              vr_entity_activate);
 }

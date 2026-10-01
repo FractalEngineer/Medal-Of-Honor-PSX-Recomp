@@ -37800,6 +37800,7 @@ void func_80016E38(CPUState* cpu)
         }
     }
     debug_server_log_call_entry(0x80016E38u);
+    if (psx_mod_function_entry(cpu, 0x80016E38u)) return;  /* trusted opt-in game-mod hook */
     /* Address: 0x80016E38, Size: 104 bytes, Blocks: 4 */
 
 block_80016E38:

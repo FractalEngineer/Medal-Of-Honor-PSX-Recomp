@@ -35,8 +35,13 @@ out_dir = "generated"
 strict = true
 # VR: emit a trusted-plugin entry hook at the per-entity transform builder so
 # moh.vr.stereo can read the entity table and inject a per-eye offset.
+# Also the frame loop's VSync (0x80016E38): unlike 0x80084718 this is main-EXE
+# code, so it is statically recompiled and the interpreted-entry hook never
+# sees it - a recompile-time hook is the only way to reach it. Passes are
+# planned from its entry, per docs/RENDER_PASSES.md; see
+# docs/reverse/VR_HOOK_POINT.md.
 # See vr/psx_vr_stereo.c and docs/reverse/M1_VIEW_MATRIX.md.
-mod_function_entry_funcs = ["0x80084718"]
+mod_function_entry_funcs = ["0x80084718", "0x80016E38"]
 
 [runtime]
 window_title = "Medal of Honor Recompiled"
