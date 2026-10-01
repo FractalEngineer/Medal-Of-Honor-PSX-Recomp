@@ -348,3 +348,55 @@ is real and reaches the rendered image.
   two baselines would also differ. The comparison above is visual, and the
   A/B/C difference is far larger than the animation.
 
+
+## CORRECTION â€” the offset moves the weapon, NOT the world
+
+The previous section claimed the offset "moves the 3D scene and weapon while the
+HUD stays fixed - the view/HUD separation stereo needs". **That was wrong**, and
+a per-region measurement shows why.
+
+`A` (baseline) vs `B` (target `800EEF3C`, X +200), absolute per-pixel difference:
+
+```text
+rows 0-150   (sky + distant tree line)   mean=0.00  max=0     changed_px=0
+rows 150-240 cols   0-256 (near water)   mean=0.00  max=0     changed_px=0
+rows 150-240 cols 256-512 (the rifle)    mean=21-49 max=192   changed_px=1822-3717
+```
+
+The lower-left quadrant - near water, the most obvious "world" surface in frame -
+is **byte-identical**. Only the columns the rifle occupies changed. So the offset
+moves the **weapon/viewmodel** and leaves the entire world alone.
+
+`800EEF3C` is therefore the **player weapon entity**, not the camera.
+
+Other entities at this hook, same method:
+
+| target | axis | visual effect |
+|---|---|---|
+| `800EEF3C` | X | weapon only |
+| `800BDAEC` | X | none (pixel-identical to baseline) |
+| `800BDAEC` | Y | none (pixel-identical to baseline) |
+| all entities | X | same as `800EEF3C` alone |
+
+**No entity reachable at `FUN_80084718` moves the world.**
+
+### Consequence
+
+`FUN_80084718` is the **dynamic-entity / viewmodel** transform path. It is not
+the path that positions the world relative to the camera, so it is the wrong
+injection point for stereo - applying a per-eye offset there would move the gun
+and nothing else.
+
+This also revises M1's framing: "every entity's transform is built here" is true
+of the dynamic entities the hook sees, but the world/camera transform is
+somewhere else. Locating it is the new blocker, and it is the same question M1
+started from, now narrowed: not "where is the view matrix" but "which code places
+static level geometry in camera space".
+
+### Method note
+
+Screenshot hashes are worthless here - this scene animates (water), so two
+baselines differ too. Per-region absolute difference with a `changed_px` count
+per column band is what makes the negative result trustworthy: a real world
+shift cannot leave a 256x90 block at exactly `max=0`.
+
