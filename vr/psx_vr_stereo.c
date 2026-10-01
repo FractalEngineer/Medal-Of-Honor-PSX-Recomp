@@ -42,6 +42,15 @@ static VrEntitySlot g_slots[VR_ENTITY_SLOTS];
 static uint32_t g_calls;
 static int g_probe; /* PSX_VR_PROBE */
 
+static void vr_dump(const char* tag, uint32_t base, uint32_t off, uint32_t len) {
+    fprintf(stdout, "vr-probe:   %s +%03X:", tag, off);
+    for (uint32_t i = 0; i < len; i += 4) {
+        fprintf(stdout, " %08X", psx_mod_read_word(base + off + i));
+    }
+    fprintf(stdout, "\n");
+    fflush(stdout);
+}
+
 static void vr_entity_entry(CPUState* cpu, uint32_t address) {
     uint32_t entity = cpu->gpr[4]; /* $a0 = param_1 */
     (void)address;
@@ -77,6 +86,13 @@ static void vr_entity_entry(CPUState* cpu, uint32_t address) {
             g_slots[s].y = y;
             g_slots[s].z = z;
             g_slots[s].hits = 1;
+            if (g_probe) {
+                fprintf(stdout, "vr-probe: NEW ENTITY %08X\n", entity);
+                vr_dump("ent", entity, 0x000, 32);
+                vr_dump("ent", entity, 0x080, 64);
+                vr_dump("ent", entity, 0x380, 64);
+                fflush(stdout);
+            }
             break;
         }
     }

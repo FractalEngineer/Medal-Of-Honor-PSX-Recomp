@@ -260,3 +260,42 @@ instrument to settle it: watch a known static world entity across a pure turn.
 - Framework gap (unchanged): rendering twice per frame is still needed for real
   stereo. The hook is the injection point, not the whole mechanism.
 
+
+## Entity struct layout (from the live hook)
+
+Dumped on first sighting of each entity. Confirmed against `FUN_80084718`'s
+reads, so the position fields are the ones M1 named:
+
+```text
+entity + 0x00   pointer to model/asset data   (800C6988 / 800C5680 per entity)
+entity + 0x04   id-like                       (000002A5)
+entity + 0x80   pointer                        (801E0EE0)
+entity + 0x84   pointer to transform/matrix    (801D3A44 - SHARED by entities)
+entity + 0x88   pointer to asset pair          (800C6988 / 800C5680)
+entity + 0x8C   pointer                        (800C6A38 / 800C5730)
+entity + 0x98   int16 world X   <- read by FUN_80084718 (<<0x13)
+entity + 0x9a   int16 world Y
+entity + 0x9c   int16 world Z
+entity + 0x388  scalar pair                    (000A0000 000A0000)
+entity + 0x390  32-bit scalar                  (FFFFEC0E / FFFFECCB - Q16.16-like)
+entity + 0x394  32-bit                         (00000164 / 00000092)
+entity + 0x398  pointer to related entity      (800BDAEC - self-link observed)
+entity + 0x39C  32-bit                         (00003D2A / 00003141)
+```
+
+Verification: for `800BDAEC`, `+0x98/9a/9c` decode to `(-5,-155,-3)`, exactly the
+position the hook independently read - so the offsets are right and the position
+is genuinely `int16 x, y, z`.
+
+`entity + 0x84` is **shared** (`0x801D3A44`) across entities, consistent with
+M1's finding that the composed matrix lands in a common staging buffer rather
+than living per entity.
+
+### Still to determine
+
+Which of the four entities is the camera. The candidate evidence so far:
+`800EEF3C` is the only one with a large Y (`481`) and is the only entity
+transformed during long stretches; `800BDAEC` / `800BB2D8` move with the player.
+The decisive experiment is the injection itself - offset one candidate and see
+whether the rendered view shifts.
+
