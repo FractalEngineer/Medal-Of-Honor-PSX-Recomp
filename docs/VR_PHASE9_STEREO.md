@@ -89,3 +89,26 @@ Around `0x80013BE4` the matrix is loaded from the **scratchpad base**
 **animating an object only**. The view rotation staging should change for the
 former and stay put for the latter. If it does, that scratchpad matrix is the
 view (or the view×model staging) and is where the per-eye offset goes.
+
+## Step 1 probe result — NEGATIVE (scratchpad is a general work area)
+
+Read `0x1F800000..0x1F800014` at four points (idle, idle, camera-left, release):
+
+```text
+idle t0 : 5000801f c8b70980 dcd9a001 03000000 fa000000
+idle t1 : 5000801f c8a70980 dcd9a001 03000000 fa000000
+rotL t2 : 5000801f c8b70980 dcd9a001 03000000 fa000000
+rel  t3 : a2d01f01 c242f8ff dcd9a001 1a4106fc ead56801
+```
+
+`idle t0` decodes to `{0x1F800050, 0x8009B7C8, 0x01A0D9DC, 3, 250}` — a
+**pointer/work record**, not a rotation matrix. The contents swing arbitrarily
+(identical while the camera rotates, then entirely different a moment later), so
+`0x1F800000` is a **general transient staging area** each routine uses for its
+own matrix/scratch — not a stable view matrix.
+
+**Consequence:** the "watch the scratchpad matrix" probe does not identify the
+view. The staged matrix belongs to whichever routine is running (often the
+lighting/object matrix). Step 1 needs a different probe — e.g. `fntrace` to find
+the once-per-frame camera updater and disassemble *its* call path — or accept the
+view is baked into per-object matrices.
