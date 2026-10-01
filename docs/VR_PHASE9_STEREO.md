@@ -112,3 +112,22 @@ view. The staged matrix belongs to whichever routine is running (often the
 lighting/object matrix). Step 1 needs a different probe — e.g. `fntrace` to find
 the once-per-frame camera updater and disassemble *its* call path — or accept the
 view is baked into per-object matrices.
+
+## Step 1 probe 2 — fn trace finds the once-per-frame function
+
+Method: send `fn_filter` (this **activates** the global fn-entry ring —
+`fn_stats.active` goes 0→1; without it the ring stays empty), wait, then
+`fn_entry_dump count=2048`.
+
+Results (2048 entries spanning 2 frames, ~165k entries over ~2 s):
+
+| func | calls | note |
+|---|---|---|
+| **`0x800154EC`** | **exactly 1 per frame** (n=2, frames=2) | caller `ra=0x800178E4` / `0x8008D874` → prime candidate for the per-frame game/camera update |
+| `0x80015DB8` | ~672/frame | likely the frame render/loop body |
+| `0x80011214` | 355/frame | the per-primitive vertex routine (matches nproj≈356) ✓ |
+
+## Next
+
+`disasm addr=0x800154EC` → follow to the camera update and the view matrix it
+builds. That matrix is where the per-eye offset is injected for stereo.
