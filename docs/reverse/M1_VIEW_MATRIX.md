@@ -101,3 +101,41 @@ Not a matrix override. The injection points, in order of preference:
 - When extracting from Ghidra's `application.log`, slice only the lines written
   by the current run; the log retains previous runs and will otherwise
   re-print stale targets.
+
+## Attempt to confirm camera-relative storage (inconclusive - blocked)
+
+Direct tests run against the running game:
+
+1. `_DAT_80099428` read back as **0** at "gameplay", and the entire region
+   0x80099400..0x8009947F is **zero** in the saved live-RAM dump. So that global
+   is not part of the active path - the projection function FUN_80013698 that
+   dereferences it is not the code doing the on-screen projection (the node
+   transformer FUN_80013AE4 does its own RTPS). Treat FUN_80013698 as off the
+   active path.
+
+2. Movement test: sampled 0x801D3400, 0x801FFC00, 0x80147400 (0x400 bytes each)
+   before and after driving inputs - **all byte-identical**.
+
+3. Liveness check (two full 2 MB samples 3 s apart):
+   - frames advancing: 12897 -> 12899 -> 12901
+   - only **160 differing nibbles (~80 bytes) in the whole 2 MB**
+   - `nproj` CONSTANT at 1301, `nsat`/`nflat` constant
+
+Conclusion: the emulator is live, but the **scene is completely static** - the
+inputs are not moving the player. So the movement test was vacuous and the
+camera-relative hypothesis is **not yet confirmed**.
+
+### What is needed to close it
+
+- The correct pad mapping for in-game movement (or a save state that is in
+  actual, controllable gameplay), then repeat the walk-forward test above: if the
+  node data at 0x801D3xxx changes while the world should be stationary, storage
+  is camera-relative.
+- Alternatively: observe the values passed to FUN_80084718 for `entity+0x98/0x9a/0x9c`
+  across frames while the camera turns.
+
+### Status of the hypothesis
+
+Supported by the decompilation (no view matrix exists anywhere; every entity
+matrix is translation-only; RT/TR are loaded only by the node transformer), but
+**unconfirmed empirically**.
