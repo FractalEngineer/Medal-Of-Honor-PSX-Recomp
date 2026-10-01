@@ -1,35 +1,28 @@
 # Upstream-pending changes
 
-Fixes / features that live on our `vr-dev` fork and should be offered upstream
-**once VR reaches a working point**. Do not open upstream PRs yet.
+Fixes / features on our `vr-dev` fork to offer upstream **once VR reaches a
+working point**. Do not open upstream PRs yet.
 
-Fork: `github.com/FractalEngineer/psxrecomp` (branched from
+Fork: `github.com/FractalEngineer/psxrecomp` (from
 `RetroPortingToolKit/psxrecomp` @ `3505f2a0`).
-Submodule pin in this repo: `psxrecomp` @ `vr-dev`.
+Submodule pin here: `psxrecomp` @ `vr-dev`.
 
 ## 1. Lobby stub link fix — `ce63101f`
 
-- **File:** `runtime/src/psx_lobby_client.c`
-- **Symptom:** any `PSX_NETPLAY=OFF` (the default) build fails to link:
-  undefined `psx_lobby_online_count`, `psx_lobby_online_get`, referenced
-  unconditionally by `runtime/src/main.cpp:11681` / `:11686`.
-- **Cause:** the netplay-off stub block (`#if !defined(PSX_HAS_LOBBY_CLIENT)`,
-  lines 12-169) mirrors the lobby API but omitted those two functions.
-- **Fix:** two one-line stubs added in the block's existing style.
-- **Impact:** every single-player build. High value, low risk.
-- **Status:** pending — upstream after VR is working.
+`runtime/src/psx_lobby_client.c`: the `PSX_NETPLAY=OFF` stub block omits
+`psx_lobby_online_count` / `psx_lobby_online_get` (called unconditionally by
+`main.cpp`), so every single-player build fails to link. Two-line fix.
+**High value, low risk.** Pending.
 
-## 2. `disasm` TCP debug command — `d58db909` (tooling, generally useful)
+## 2. `disasm` TCP debug command — `d58db909` (+ `c2ed6e55`)
 
-- **Files:** `runtime/include/psx_disasm.h`, `runtime/src/disasm_shim.cpp`,
-  `runtime/src/debug_server.c` (handler + command table),
-  `runtime/runtime.cmake` (links `recompiler/src/mips_decoder.cpp`).
-- **What:** `disasm addr=0x… count=N` — disassemble guest instructions from live
-  RAM via the recompiler's existing MIPS decoder. The stock server had no
-  disassembly.
-- **Status:** fork-only; not VR-specific. Strong upstream candidate.
+`disasm addr=0x… count=N` — guest MIPS disassembly from live RAM, via the
+recompiler's `mips_decoder.cpp` (`runtime/include/psx_disasm.h`,
+`runtime/src/disasm_shim.cpp`, `debug_server.c`, `runtime.cmake`). Stock server
+had none. Generally useful, not VR-specific. Strong upstream candidate.
 
-## 3. (none yet)
+## 3. GTE FOV scale — `82695b75` / `5633e868` / `bbd01ccf` (VR feature)
 
-VR-specific work (renderer/OpenXR) stays on the fork by design — not a
-bug-fix candidate.
+`runtime/src/gte.cpp`: `gte_set_fov_scale(num,den)` applied to `H` at the
+perspective divide; `PSX_GTE_FOV_SCALE` env; the GTE ring records effective H.
+VR-facing; upstream only as part of a settled VR design.

@@ -1,6 +1,4 @@
-# GTE API + projection control (M1)
-
-Identified by scanning the EXE text for `CTC2` and confirmed by `disasm`.
+# GTE API + projection control (M1 / Phase 6)
 
 ## PsyQ libgte entry points (confirmed)
 
@@ -10,49 +8,59 @@ Identified by scanning the EXE text for `CTC2` and confirmed by `disasm`.
 | `0x8001BA68` | **`SetGeomScreen(h)`** | `CTC2 $a0, $H ; JR $ra` |
 | `0x8001BA78` | **`SetGeomOffset(ofx, ofy)`** | `SLL <<16` → `CTC2 $OFX/$OFY ; JR $ra` |
 
-## Where MOH's `H` actually comes from (disasm)
+## Where MOH's `H` comes from
 
 | addr | code | role |
 |---|---|---|
-| `0x80013764` | `ADDIU $t8, $zero, 400 ; CTC2 $t8, $H` | **world path — H is a hardcoded constant 400** (matches the ring's dominant cluster) |
-| `0x80013A84` | `LW $t8, 8($v0)` (`v0 = 0x8009696C`) → `CTC2 $t8,$H` | H read from **RAM `0x80096974`** |
+| `0x80013764` | `ADDIU $t8, $zero, 400 ; CTC2 $t8, $H` | **world path — H hardcoded 400** |
+| `0x80013A84` | `LW $t8, 8($v0)` → `CTC2 $t8,$H` | H from RAM `0x80096974` (not the world path) |
 
-## Live test — RAM poke does NOT control world FOV
+## Dead end (important): guest-code patches do NOT work here
 
-- Ring `H` before: `{133, 400}`. `0x80096974` read as `0x00000000`.
-- Wrote `0x80096974 = 0x00000320` (800) byte-by-byte via `write_ram`; the write
-  **persisted** (read back `20030000`).
-- Ring `H` after: `{400}` — 800 never appeared, and the 133 cluster stopped.
-- **Conclusion:** the world projection uses the hardcoded immediate at
-  `0x80013764`; the RAM site is not the world path. Live RAM poking cannot change
-  world FOV.
+Two attempts to change world FOV at the guest all failed:
 
-## So Phase 6 needs a code patch + a mod plugin
+1. **`write_ram` poke** of `0x80096974` persisted but never affected the ring's
+   `H` — that site isn't the world projection.
+2. **A trusted plugin** calling `psx_mod_write_code_word(0x80013764, …)` had **no
+   effect**: `0x80013764` is inside **statically recompiled** code, where `400`
+   is baked into the generated native C. A guest-RAM code write only changes what
+   the *interpreter* would execute.
 
-Widening world FOV means changing the `ADDIU` immediate at `0x80013764`. The
-supported mechanism is a **trusted plugin** using
-`psx_mod_write_code_word(0x80013764, ADDIU $t8, newH)` at activation (it is
-save-safe and goes through the executable-RAM path). That plugin must be:
+**Consequence:** projection changes must be made at the **GTE seam** (framework),
+exactly like the existing widescreen squash. (The game-side plugin was reverted.)
 
-1. compiled into the game target (`target_sources(psx-runtime PRIVATE …)` —
-   `psxrecomp_add_game_runtime` does not parse `EXTRAS_SOURCES`);
-2. declared in a `mods/preloaded/packages/<id>/<version>/manifest.toml`
-   `[[plugin]]` so the plan activates it;
-3. (for entry hooks) listed in `[recompiler] mod_function_entry_funcs`.
+## Phase 6 implemented — GTE FOV scale (framework), VERIFIED
 
-This is an **enhancement-phase shim on a proven LLE foundation** — the
-CLAUDE.md carve-out — not a faithfulness hack.
+`runtime/src/gte.cpp`:
 
-`fov ≈ 2·atan(screen_w / (2·H))`; scaling that constant scales FOV.
+- `extern "C" void gte_set_fov_scale(int num, int den)` — identity by default.
+- Applied as `H * num / den` at the perspective divide in `gte_rtps_internal`
+  (`gte_divide(gte_h_scaled(gte), SZ3, FLAG)`).
+- `PSX_GTE_FOV_SCALE` = **FOV multiplier** (v>1 widens; maps to `(1000, v*1000)`).
+- The GTE ring now records the **effective** (scaled) H, so the change is
+  observable: `gte_ring_dump`.
 
-## Matrix (RT/TR) sites — view-matrix hunt
+**Verified live (headless):**
 
-75 `CTC2` matrix-load sites. The *view* matrix is one of them; find it by
-`watch`-ing which site's source changes with camera rotation but not object
-animation. Clusters: `0x80013BE4–0x80014348`.
+| `PSX_GTE_FOV_SCALE` | ring `H` values |
+|---|---|
+| unset (default) | `133, 400` |
+| `2` (FOV ×2) | `200` (i.e. `400/2`) |
+
+Fork commits: `82695b75` (scale), `5633e868` (ring effective H), `bbd01ccf`
+(multiplier semantics — >1 widens).
+
+This is the first real VR-facing behavior and it matches plan Phase 6
+(`fov = 2·atan(w/(2H))`). It is a framework change on the `vr-dev` fork.
+
+## Matrix (RT/TR) sites — view-matrix hunt (open)
+
+75 `CTC2` matrix-load sites; identify the *view* by `watch`-ing which source
+changes with camera rotation but not object animation. Clusters
+`0x80013BE4–0x80014348`.
 
 ## Scan method (reusable)
 
-`read_ram` the EXE text (`0x80010000`, `len=0x2A000`) then match
+`read_ram` the EXE text (`0x80010000`, `len=0x2A000`), match
 `(w & 0xFE000000)==0x48000000 && ((w>>21)&0x1F)==6`; cop2 ctrl = `(w>>11)&0x1F`
-(0-4 RT, 5-7 TR, 24 OFX, 25 OFY, 26 H, 27 DQA, 28 DQB). Script: `scan_ctc2.py`.
+(0-4 RT, 5-7 TR, 24 OFX, 25 OFY, 26 H). Script: `scan_ctc2.py`.
