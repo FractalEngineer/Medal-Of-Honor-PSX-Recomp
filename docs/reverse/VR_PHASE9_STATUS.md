@@ -118,3 +118,66 @@ in `VR_DOUBLE_RENDER_SCOPE.md` (step 4) before building presentation.
 **Also worth noting:** `psx_mod_set_native_vblank_rate` would raise the rate but
 speeds up the entire machine, and `FRAME_RATE.md` explicitly warns against using
 it for this.
+
+## RETRACTION: the 90 Hz cost claim above is not supported
+
+The "Budget" section above concludes that two passes per frame at 90 Hz "almost
+certainly will not fit". **That conclusion is withdrawn.** It rests on a
+measurement that does not say what I claimed it said, and the user was right to
+push back.
+
+### What was wrong
+
+**1. The run was never uncapped.** The 32.24 ms figure came from a run where I
+sent `turbo enabled=1` and then measured. Querying `turbo_state` later reports:
+
+```json
+{ "id": 0, "ok": true, "enabled": 0 }
+```
+
+Turbo never engaged from the TCP command. So the number is a **paced** frame
+time, not a capacity limit - and I presented it as "turbo, uncapped". That was
+the error.
+
+**2. The host was not saturated.** In the same debug build, process CPU was
+13.2 s over 19.1 s of wall time - about **69% of one core**, and the earlier run
+was ~14.8 s over ~30 s (about half a core). A workload that is compute-bound
+pins a core. This one was idle half the time, waiting on the pacing clock.
+
+**3. It is a debug build.** Debug C with no optimisation is several times slower
+than release.
+
+**4. The frame counter runs at 48.9 Hz against a 59.94 Hz nominal** - the debug
+build is at roughly 0.8x realtime, and paced.
+
+### Why the underlying intuition was wrong
+
+Modern games at 144 Hz spend almost nothing on the second view per frame: the
+extra work is GPU rasterisation, which is cheap and massively parallel.
+
+Here the second eye is **not** extra pixels. It is a re-execution of the
+PlayStation's own CPU code for the whole scene - GTE transforms and packet
+building, instruction by instruction, through the emulator. That is why the
+question is not "can the hardware draw 512x240 twice" (of course it can) but
+"can we afford to emulate the PS1's scene draw twice".
+
+The PS1 CPU is 33.87 MHz; a frame is ~565k cycles. Code recompiled to C on a
+modern host typically runs that 10-50x realtime. A second full scene draw should
+therefore cost single-digit milliseconds, not tens. **90 Hz stereo is plausibly
+achievable, and nothing measured so far contradicts that.**
+
+### Still unmeasured
+
+To be honest about the remaining gap: I do **not** have a clean uncapped number.
+Turbo does not engage from the TCP command, and the release build never reached
+gameplay - it sat at boot (`PC=0xBFC00000`) and its log shows overlay gaps
+falling back to the interpreter ("tcc tier active but no bundled toolchain"),
+so it is not a fair performance sample either.
+
+The number that actually decides this is `cost_us` in `render_pass_stats` - the
+**measured per-pass cost**, taken from real passes. It does not exist headless
+and only exists once a presenter runs a pass. So the presenter does not merely
+unblock verification; it is also the only way to answer the rate question.
+
+Until then the burden of proof is on the pessimistic claim, and it failed.
+
