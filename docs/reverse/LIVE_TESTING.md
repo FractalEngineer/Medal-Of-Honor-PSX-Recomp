@@ -56,3 +56,8 @@ image (an early attempt used `128*128*3` and rendered red/blue stripes). The
 `0x80`/`0x60` pair in the header is what pins width and height - and 128*96*4
 is the only arrangement that equals the 49152-byte payload exactly.
 
+
+## Strafe
+
+Strafe left / right are **L1 / R1**. Active-low: L1 = `0x0400`, R1 = `0x0800`, so`nstrafe left = `0xFBFF` and strafe right = `0xF7FF`.
+

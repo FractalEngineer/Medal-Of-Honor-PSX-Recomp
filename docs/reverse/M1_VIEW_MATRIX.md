@@ -525,3 +525,52 @@ were false positives; it accepted any `lui` with a matching high half followed b
 any load using that register. Do not trust address-former scans without the
 offset check.
 
+
+## GTE at the geometry pass: TR is ZERO, rotation only
+
+With strafe working (L1 / R1, active-low `0xFBFF` / `0xF7FF`), logged the GTE
+control registers at every 40th entry to `FUN_80080dd4`, across
+idle -> strafe left 6 s -> strafe right 6 s. Samples n=40..760, every one
+identical:
+
+```text
+T  = (TRX, TRY, TRZ) = (0, 0, 0)
+OF = (OFX, OFY)      = (16777216, 7864320)   = (256.0, 120.0) in 16.16
+H  = 133
+```
+
+The register mapping is validated by OF: `(256, 120)` is exactly the centre of a
+512x240 display, which is this title's mode. So `gte_ctrl[5..7]` really are
+TRX/TRY/TRZ and `[24..26]` are OFX/OFY/H.
+
+Strafe was confirmed to have moved - the screenshot after strafing shows a
+different position (different window layout, a wall and beam where the open room
+was), not the loaded pose.
+
+**TR stays exactly zero while the camera translates laterally.**
+
+### What this means
+
+The camera's translation is **not** carried in the GTE at the geometry pass. The
+GTE holds only the rotation `RT`; the position part of the world->camera relation
+must already be folded into the geometry the function reads. That is
+**camera-relative storage, confirmed by a second independent method** - the first
+was the idle/turn/walk RAM diff, which could only show it indirectly.
+
+It also explains the standing M1 result: there is no view matrix to find because
+there is no separate view translation - the world is authored relative to the
+camera, and `FUN_80080dd4` regenerates a ~26 KB geometry buffer per frame from
+that camera-relative data.
+
+### Consequence for stereo
+
+- A per-eye offset cannot be a "set the view matrix" operation - there is no
+  such matrix, and TR is zero.
+- The offset has to be applied to the **camera-relative geometry before
+  projection**, inside the geometry pass, along the camera-right axis (which is
+  the X axis of the already-rotated space the walker works in).
+- The ~26 KB buffer `FUN_80080dd4` writes contains `0xCD323232`-style values
+  (GPU packet colour words), so it looks like **post-projection packet/OT data**,
+  not camera-space vertices. Offsetting it would be the rejected flat-2D-shift
+  strategy. The vertex source it reads from is the thing to find next.
+

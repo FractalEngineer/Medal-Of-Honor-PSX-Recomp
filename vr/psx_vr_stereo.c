@@ -36,7 +36,8 @@
 #define GEO_80080DD4 0x80080dd4u
 
 #define VR_ENTITY_SLOTS 256
-#define VR_PROBE_PERIOD 20u /* calls between position samples */
+#define VR_PROBE_PERIOD 20u   /* calls between entity position samples */
+#define VR_GEO_PERIOD 40u     /* calls between GTE register samples */
 
 typedef struct {
     uint32_t entity;
@@ -164,16 +165,26 @@ static uint32_t g_geo_calls;
 
 static void vr_geo_entry(CPUState* cpu, uint32_t address) {
     g_geo_calls++;
-    if (!g_probe || g_geo_calls > 40) return;
+    if (!g_probe) return;
+    /* The accumulated world->camera transform lives in the GTE on entry:
+     * control regs 5/6/7 are TRX/TRY/TRZ, 24/25/26 are OFX/OFY/H. Logging
+     * these across a strafe is what identifies the translation. */
+    if (g_geo_calls % VR_GEO_PERIOD == 0) {
+        fprintf(stdout,
+                "vr-gte: n=%u T=(%ld,%ld,%ld) OF=(%ld,%ld) H=%ld\n",
+                g_geo_calls,
+                (long)(int32_t)cpu->gte_ctrl[5], (long)(int32_t)cpu->gte_ctrl[6],
+                (long)(int32_t)cpu->gte_ctrl[7],
+                (long)(int32_t)cpu->gte_ctrl[24], (long)(int32_t)cpu->gte_ctrl[25],
+                (long)(int32_t)cpu->gte_ctrl[26]);
+        fflush(stdout);
+    }
+    if (g_geo_calls > 40) return;
     uint32_t a0 = cpu->gpr[4], a1 = cpu->gpr[5], a2 = cpu->gpr[6], a3 = cpu->gpr[7];
     uint32_t ra = cpu->gpr[31];
     fprintf(stdout,
             "vr-geo: call=%u at=%08X a0=%08X a1=%08X a2=%08X a3=%08X ra=%08X\n",
             g_geo_calls, address, a0, a1, a2, a3, ra);
-    if (a0 >= 0x80000000u && a0 < 0x80200000u) {
-        vr_dump("geo-a0", a0, 0x000, 32);
-        vr_dump("geo-a0", a0, 0x080, 64);
-    }
     fflush(stdout);
 }
 
