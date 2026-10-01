@@ -74,3 +74,28 @@ consistent with the earlier discovery (`SetGeomScreen`'s only caller is at
 **Therefore mapping the camera requires importing the overlay dumps into Ghidra**,
 not only the main EXE. The runtime already produces overlay captures
 (`overlay_captures.json` next to the game), which is the source for those dumps.
+
+## Overlay import (works)
+
+`decode_overlays.py` turns `overlay_captures.json` entries into raw binaries
+(`bytes_b64` decoded, written at `load_addr`). Importing one:
+
+```text
+ov_80037000_0.bin  4100 bytes @ 0x80037000
+Ghidra functions:
+  FUN_80037060 (616)  FUN_80037318 (84)   FUN_80037370 (156)  FUN_8003740c (224)
+  FUN_800374ec (1312) FUN_80037a0c (424)  FUN_80037bb4 (188)  FUN_80037c70 (284)
+  references to 0x80013698: none
+```
+
+So Ghidra can analyze the **overlay code** too — the missing half of the picture.
+
+**Only one overlay was captured** (4 KB) because our headless runs were short
+(mostly title). `overlay_captures.json` grows as more of the game is played.
+
+## Next
+
+Play **deeper into gameplay** (to capture the render/camera overlays), decode them,
+import into Ghidra, and decompile their functions to find the view matrix.
+Mapping the camera needs those overlays — the static EXE alone does not contain
+the code that writes `_DAT_80099428`.
