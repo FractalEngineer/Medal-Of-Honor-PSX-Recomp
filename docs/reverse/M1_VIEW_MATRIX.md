@@ -192,3 +192,45 @@ above stands as-is, and the save-state mixup cost no analysis.
 
 Also confirmed in this snapshot: the transformer's caller chain is intact
 (FUN_80013AE4 <- FUN_80084718 <- {FUN_800814c4, FUN_80080dd4, FUN_80046dd4}).
+
+## Camera-relative test: idle vs turn vs walk (best evidence so far)
+
+Full-RAM diffs, three conditions, same session (slot 0 gameplay):
+
+| condition      | changed bytes | clusters | notable regions |
+|----------------|---------------|----------|-----------------|
+| idle (2.5 s)   | 38,338        | 119      | 0x800A0149 (40,979) |
+| turn in place  | 75,639        | 183      | + 0x80155B58 (18,778), 0x801422D8 (18,634) |
+| walk forward   | 80,563        | 360      | + 0x80142588 (20,518), 0x80155E08 (20,518), 0x800C4378 (4,623) |
+
+### What this does and does not show
+
+- The engine rebuilds a large (~41 KB) buffer at `0x800A0149` **every frame even
+  when idle** - so a large diff is NOT by itself evidence of anything.
+- **Turning in place** (pure rotation, zero translation) changes ~37 KB *more*
+  than idle, in ~19 KB contiguous blocks at `0x80155B58` / `0x801422D8`.
+- **Walking** changes ~42 KB more than idle, in ~20 KB blocks at `0x80142588` /
+  `0x80155E08`, plus `0x800C4378` (4.6 KB) which responds to translation only.
+
+Camera rotation alone rewriting ~19 KB contiguous regions is what a
+camera-relative engine looks like (coordinates re-derived over large tables).
+It is **consistent with** camera-relative storage and hard to explain with a
+32-byte view matrix - but it is not proof, because per-frame output buffers also
+churn.
+
+### Why this does not block VR
+
+The verdict changes only *how* a per-eye offset is computed (a world-space delta
+vs a view-space delta), not *where* it goes. Both cases inject at the same place:
+`FUN_80084718` (per-entity transform) or the geometry pass. Determine it
+empirically when building the hook - set a per-eye offset and see which sign and
+axis produces correct stereo separation.
+
+### What would settle it
+
+Find one static world object whose coordinates are read (not written) per frame,
+and watch them across a pure turn. If they change, storage is camera-relative.
+The walker's arguments did not expose this: its 4th register is a constant global
+(`0x800EEF3C`) and its node pointers are stack addresses (`0x801D3xxx`), so the
+per-entity positions are not at a simple static address.
+
