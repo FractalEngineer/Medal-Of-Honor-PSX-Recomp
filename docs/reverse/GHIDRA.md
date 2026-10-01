@@ -162,3 +162,26 @@ Neither it nor `FUN_80013698` has an external caller → both are entered
   transform routine; its top-level caller is indirect, so the next step is to
   catch it at runtime (a `wtrace`/`fntrace` on `0x80013AE4`, or watch the matrix it
   loads).
+
+## Found the transform walker's top-level caller (live RAM)
+
+`fn_entry_dump addr_lo=0x80013AE4` returns 64 entries; **exactly one has a
+non-recursive `ra`**: `ra = 0x800847BC` (all others are `0x80013DF0` /
+`0x80013DD8`, i.e. the walker's own recursive calls). So the caller is
+**`FUN_80084718`** (`ADDIU $sp,$sp,-56`), entry `0x80084718`, JAL at `0x800847B4`,
+and it passes `a1 = $sp+16` (the matrix) and `a3 = $t2` (the object).
+
+`FUN_80084718` **builds a matrix on the stack** from the object's fields
+(`+152`, `+2`, `+4`, each `<<19`) and calls the walker. Per-object transform setup.
+
+### Capability: code above the captured overlay range is readable from live RAM
+
+`0x800847B4` is above our captured overlays (which top out at `0x80079000`), yet
+`disasm addr=0x80084718` and `read_ram` render it fine **while the game runs** — no
+overlay capture needed. This removes the earlier capture bottleneck entirely.
+
+## Next
+
+Walk up from `FUN_80084718` (its caller) toward the scene root — the view matrix is
+the transform accumulated at the root of the walk. Use `fn_entry_dump` filtered to
+`0x80084718`, or read live RAM around that function's callers.
