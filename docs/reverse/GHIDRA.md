@@ -99,3 +99,35 @@ Play **deeper into gameplay** (to capture the render/camera overlays), decode th
 import into Ghidra, and decompile their functions to find the view matrix.
 Mapping the camera needs those overlays — the static EXE alone does not contain
 the code that writes `_DAT_80099428`.
+
+## Overlay corpus — the missing half, found
+
+`overlay_captures.json.d/` holds **103 per-overlay captures**; decoding yields
+**58 unique overlays spanning `0x80030000`–`0x80079000`** (4–8 KB each). The main
+`overlay_captures.json` is only the *latest* snapshot — the `.d` directory is the
+additive history.
+
+Decode: `decode_all_overlays.py <overlay_captures.json.d> <outdir>` → `ov_<addr>.bin`,
+then import each at its `load_addr` (same Ghidra command as before).
+
+## Finding — `FUN_8005f89c` = display / projection setup (overlay `0x8005F000`)
+
+Saved as `ghidra_FUN_8005f89c.c`. By mode `param_1` (0..3) it picks a display size
+(width `0x200`/`0x140`/`0x100`, height `0xF0`/`0x100`) and calls:
+
+- `func_0x8001baa0()` → **`InitGeom`**
+- `func_0x8001ba78(w>>1, h>>1)` → **`SetGeomOffset`**
+- `func_0x8001ba68(H)` → **`SetGeomScreen`**
+
+and **H is computed**, not a constant:
+
+```text
+H = (int)( width * 1.7320508f * 0.5f )      // 0x3fddb3d7 = sqrt(3), 0x3f000000 = 0.5
+   via func_0x8001d590 / 0x8001d450 / 0x8001e11c
+```
+
+For `width = 512` → **H = 443**, exactly the value the GTE ring reported at the
+title — independent confirmation that this is the live projection setup.
+
+H is cached in `_DAT_8007bf78`; the mode index in `_DAT_8007bf50`. Caller:
+`FUN_8005fe04`. This was invisible to static analysis because it is **overlay code**.
