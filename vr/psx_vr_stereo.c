@@ -30,6 +30,10 @@
 #include <string.h>
 
 #define FUN_80084718 0x80084718u
+/* Geometry pass: entity -> screen geometry. FUN_80082948 dispatches here on
+ * entity+0x6c == 0x80 (FUN_80080dd4) else FUN_800814c4. */
+#define GEO_800814C4 0x800814c4u
+#define GEO_80080DD4 0x80080dd4u
 
 #define VR_ENTITY_SLOTS 256
 #define VR_PROBE_PERIOD 20u /* calls between position samples */
@@ -154,6 +158,25 @@ static void vr_entity_entry(CPUState* cpu, uint32_t address) {
     }
 }
 
+/* Geometry-pass probe: log what these functions actually receive before we
+ * try to patch anything. Registers only, bounded, no writes. */
+static uint32_t g_geo_calls;
+
+static void vr_geo_entry(CPUState* cpu, uint32_t address) {
+    g_geo_calls++;
+    if (!g_probe || g_geo_calls > 40) return;
+    uint32_t a0 = cpu->gpr[4], a1 = cpu->gpr[5], a2 = cpu->gpr[6], a3 = cpu->gpr[7];
+    uint32_t ra = cpu->gpr[31];
+    fprintf(stdout,
+            "vr-geo: call=%u at=%08X a0=%08X a1=%08X a2=%08X a3=%08X ra=%08X\n",
+            g_geo_calls, address, a0, a1, a2, a3, ra);
+    if (a0 >= 0x80000000u && a0 < 0x80200000u) {
+        vr_dump("geo-a0", a0, 0x000, 32);
+        vr_dump("geo-a0", a0, 0x080, 64);
+    }
+    fflush(stdout);
+}
+
 static void vr_entity_activate(void) {
     fprintf(stdout,
             "vr-probe: moh.vr.stereo ACTIVATED (probe=%d target=%08X axis=%d offset=%d)\n",
@@ -174,6 +197,10 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     fflush(stdout);
     (void)psx_mod_register_function_entry_plugin("moh.vr.stereo", FUN_80084718,
                                                  vr_entity_entry);
+    (void)psx_mod_register_function_entry_plugin("moh.vr.stereo", GEO_800814C4,
+                                                 vr_geo_entry);
+    (void)psx_mod_register_function_entry_plugin("moh.vr.stereo", GEO_80080DD4,
+                                                 vr_geo_entry);
     (void)psx_mod_register_activation_plugin("moh.vr.stereo",
                                              vr_entity_activate);
 }

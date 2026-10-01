@@ -425,3 +425,49 @@ Corroborating detail from the same run: the ammo counter reads 8 / **38** in thi
 scene (vs 8 / 24 in slot 0), so these are different missions/states - the
 weapon-only behaviour is not an artifact of one particular game state.
 
+
+## Geometry pass probe: also weapon-only
+
+Hooked `FUN_800814c4` and `FUN_80080dd4` (the two targets the `FUN_80082948`
+dispatcher selects between) and logged registers at entry, interior scene
+(slot 1).
+
+```text
+FUN_800814c4  NEVER FIRES in this scene (0 of 40 sampled calls)
+FUN_80080dd4  40/40 calls, every one:
+              a0 = 800EEF3C        <- the WEAPON entity, same pointer as before
+              a1 = 800EE048 / 800ED848   (alternating)
+              a2 = 00000001 / 00000000   (alternating)
+              ra = 80082AB0
+```
+
+`a0` is the same entity the `FUN_80084718` hook sees, and its `+0x98/9a/9c`
+decode to `(-1, 481, -126)` - the weapon's position. So both geometry targets are
+being driven for **the viewmodel only**.
+
+`a1` alternating between two pointers is consistent with two sub-parts of the
+weapon (e.g. gun and hands), not with level geometry.
+
+### Consequence: the world path is somewhere else entirely
+
+Combined with the offset result, this rules out the whole
+`FUN_80082948 -> {FUN_800814c4 | FUN_80080dd4}` branch as the world/camera path.
+Neither 3D path that is reachable from the entity walk touches the level.
+
+Note the tension with M1's xref result: `FUN_80013AE4` (the recursive RTPS node
+transformer) has only two callers - itself and `FUN_80084718`. If the weapon is
+all that reaches it, the level is **not** transformed per frame through the node
+walker either.
+
+That points at the earlier observation from the turn test: a pure camera rotation
+rewrote ~19 KB contiguous blocks at `0x80155B58` / `0x801422D8`. If the level is
+re-derived only when the camera changes - rather than per frame through the
+entity walk - those buffers are where it lives, and finding their writer is the
+next step.
+
+### Next
+
+1. Capture RAM across a pure turn and identify the writer of the large contiguous
+   regions that change.
+2. Cross-reference those addresses against live-RAM xrefs in Ghidra.
+
