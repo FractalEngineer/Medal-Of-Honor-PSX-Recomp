@@ -90,3 +90,6 @@ starvation_dump.jsonl
 
 # User-staged source dump (Redump cue/bins + optional BIOS) - never commit
 /Input/
+
+# Local toolchain work area (psxrecomp_cli ensure-toolchain cache link)
+/toolchain/
