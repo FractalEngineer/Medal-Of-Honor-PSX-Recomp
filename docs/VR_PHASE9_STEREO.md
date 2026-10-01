@@ -159,3 +159,28 @@ routines. The "exactly once per frame" reading (n=2 over 2 frames) was
 frame ⇒ 2048 entries span many frames), or narrow the trace with
 `fn_filter lo=… hi=…` to the world-render subtree, then re-run the once-per-frame
 analysis.
+
+## Step 1 probe 3 — title screen, 8-frame window (method works)
+
+Same probe at the **title** (no input; `nproj≈356`): 2048 fn entries now span
+**8 frames** (vs ~2 at gameplay), so per-frame statistics are meaningful.
+
+Result: **47 once-per-frame candidates** — a per-frame *task system*, not a single
+camera function. Highlights:
+
+| func | calls | caller `ra` |
+|---|---|---|
+| `0x8001E3FC` | 1/frame | `0x80025DA0` |
+| `0x80024274` → `0x800253B8` / `0x80025464` / `0x80025528` / `0x80025570` | each 1/frame | `0x80024274` (a once-per-frame task group) |
+| `0x800223E8`, `0x80022E20`, `0x8002307C`, `0x80023D0C`, `0x80023D74` | 1/frame | various |
+| `0x00002818`, `0x0000296C`, `0x00002970` (low RAM) | 1/frame | kernel/scheduler (BIOS RAM, not the game) |
+
+**Still not identified:** which candidate is the camera/view update. The camera
+must be separated from the task set.
+
+### Next targeted probe
+
+Cross-reference the candidate set with the **75 `CTC2` matrix sites**: the camera
+update is the once-per-frame function on the path to an `RT`/`TR` `CTC2`. Or
+`fntrace_arm target=<candidate>` to get its caller/callee chain and walk up to the
+function that builds the view matrix.
