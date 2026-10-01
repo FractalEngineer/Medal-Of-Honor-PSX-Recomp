@@ -1,0 +1,54 @@
+# Autofilled by tools/new_project_layout/probe_disc.py from your legal dump.
+# Review before shipping. Runtime quirks / overlay seeds still need hand work.
+
+[game]
+name = "Medal of Honor"
+id = "SLUS-00974"
+players = 2
+exe = "disc/SLUS_009.74"
+disc = "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\Input\\medal-of-honor\\medal-of-honor.cue"
+load_address = "0x80010000"
+entry_pc = "0x8001DFD4"
+text_size = "0x0002A000"
+stack_base = "0x801FFFF0"
+
+# Digests are for data Track 01 (first BINARY FILE / TRACK 01).
+[prepare_disc]
+out_dir = "disc"
+bin_name = "medal-of-honor (Track 01).bin"
+cue_name = "medal-of-honor.cue"
+boot_exe = "SLUS_009.74"
+known_sizes = [742258272]
+known_md5 = [
+  "05a275299a0c60a8d1ec48b324c91c44",
+]
+known_sha1 = [
+  "faebe91db711f804e1a6a38613c804b2c370f340",
+]
+known_crc32 = [
+  "c25ddc45",
+]
+
+[recompiler]
+seeds = "seeds/ghidra_funcs.txt"
+out_dir = "generated"
+strict = true
+
+[runtime]
+window_title = "Medal of Honor Recompiled"
+memcard_dir = "saves"
+overlay_cache = true
+
+[video]
+renderer = "opengl"
+aspect_ratio = "4:3"
+
+[controller]
+default_mode = "digital"
+
+# Online mount gate: digests + track count + optional TOC fingerprint
+# (see docs/NETPLAY.md).
+[netplay]
+require_cue = true
+required_tracks = 1
+required_disc_fp = "f2042f9b03c7fa2b71c9a5abfebdbada8eae73e68bbcc33f951a131356fd6f70"
