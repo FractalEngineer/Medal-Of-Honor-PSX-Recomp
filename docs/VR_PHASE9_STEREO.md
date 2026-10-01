@@ -255,3 +255,33 @@ Our xref tooling now answers the call/pointer questions Ghidra would, locally an
 for free. For genuine **decompilation and data-flow** (structs, `jalr` targets,
 switch tables) Ghidra remains stronger — installing it (it needs a JDK) would pay
 off if this RE continues.
+
+## Step 1 probe 6 — longer capture produced NO new overlays (blocked)
+
+A 5-minute input-driven headless session (Start/Cross/d-pad cycling) produced **no
+new overlays**: `overlay_captures.json` still holds only `ov_80037000` (4100 B).
+Ghidra references inside that overlay:
+
+- to `0x80099428` (camera/object global): **0**
+- to `0x80013698` (world projection): **0**
+
+So the one overlay we captured is **unrelated to the camera**.
+
+## Where step 1 stands
+
+- Ghidra is set up and working for **both** the main EXE and overlay captures.
+- Proven: the camera/transform data is **overlay-managed** (nothing static writes
+  `_DAT_80099428`).
+- Blocked: the **render/camera overlay hasn't been captured** — headless
+  button-mashing did not advance the game into new areas that stream new overlays.
+
+## What unblocks it
+
+Capture overlay code from deeper gameplay. Options:
+1. A **human plays** (or a better input sequence) far enough to load the
+   render/camera overlays; `overlay_captures.json` then grows and we import them.
+2. Load a **save state** in the right area and let it run.
+3. Alternatively, if the camera overlay proves hard to capture, revisit the stereo
+   strategy — the per-eye offset plan assumes we can reach the view transform.
+
+This is the honest stall point for the purely automated path.
