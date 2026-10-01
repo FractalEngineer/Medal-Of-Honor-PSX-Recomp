@@ -804,3 +804,46 @@ changes. A flat shift would have preserved the image content.
 Three earlier candidates were falsified by measurement; this one passes the same
 test by a wide margin.
 
+
+## M8 stereo monitor test â€” WORKING
+
+Left/right eye frames captured from the same pose, differing only by the sign of
+the TRX offset at `FUN_8008B3E8`:
+
+```text
+LEFT  eye: TRX -24   ->  eye_L.png
+RIGHT eye: TRX +24   ->  eye_R.png
+```
+
+62.03% of pixels differ between the eyes, across every row band (rows 0-30
+included), so the far wall separates too - not just the near geometry.
+
+Artifacts (committed):
+
+```text
+vr/proof/stereo_SBS.png        side-by-side pair
+vr/proof/stereo_anaglyph.png   red = left, cyan = right
+```
+
+Viewing the anaglyph shows depth: the near wall corner, the window frames and the
+floor edge separate more than the far wall, which is the correct direction and
+distribution for a real stereo pair. The side-by-side pair shows the two
+viewpoints plainly - near window jamb against far wall, different offsets.
+
+### Tuning notes
+
+- `+/-24` is a first guess, not a calibrated IPD. The anaglyph ghosts visibly,
+  so the separation is too large for comfortable viewing at this world scale.
+  World scale (plan Phase 12) has to be established before the number means
+  anything.
+- The offset is applied **once per level-transform call**, i.e. per eye. Running
+  both eyes in one frame still requires the framework to run the draw twice,
+  which is the remaining structural piece (plan Phase 9 / `psx_mod_render_pass`).
+
+### Milestone status
+
+Plan M8 ("correct left/right parallax on a normal display") is met:
+left and right views exist, differ, and contain depth-ordered parallax rather
+than a uniform screen shift. What remains is M9+ (running both eyes per frame
+and OpenXR), plus the unresolved `H=133` vs `443` projection question.
+
