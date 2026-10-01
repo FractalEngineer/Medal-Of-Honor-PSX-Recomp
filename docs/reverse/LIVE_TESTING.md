@@ -1,4 +1,4 @@
-﻿# Live testing â€” reliably reaching gameplay
+# Live testing -- reliably reaching gameplay
 
 The single biggest time sink in M1 was testing against the wrong screen. This is
 the workflow that actually works.
