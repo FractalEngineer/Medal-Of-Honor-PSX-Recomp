@@ -1213,3 +1213,29 @@ headset claim; accepted earlier visuals and pacing retained.
 Clean-pin checkpoint checks passed: Release build, strict menu input tests and
 diff check. Earlier Debug/XR/GL checks remain applicable to identical runtime
 source bytes. Framework submodule is clean; raw proof remains ignored.
+
+## 2026-10-03: alpha follow-up backlog
+
+User considers game 28b0c55 / framework 5bafeebf the alpha checkpoint. Added
+VR_ALPHA_TODO.md combining current unresolved implementation/validation gaps
+with new user reports: stationary world corruption/shake, missing nearby floor,
+pop-in, headset color/contrast difference, Mission 1 ruins missing/transparent
+tiles, wrist HUD placement, legacy aim removal, optional right-button remapping
+and all-weapon testing. These reports do not establish root causes. Accepted
+rifle/menu/locomotion/pacing behavior remains the baseline; no runtime changes
+or new measurements were made for this documentation-only task.
+
+Alpha backlog follow-up: added other-headset/OpenXR-runtime compatibility
+coverage and a user-facing VR options menu. Native in-game integration versus
+a long-grip overlay remains a design choice; no bindings or runtime behavior
+changed. Settings persistence, input isolation and per-device checks included.
+
+Alpha handoff: added VR_HANDOFF.md as the entry point for a new chat/agent,
+with current revisions, doc reading order, accepted baseline, remaining work,
+launch/debug gotchas and measurement/checkpoint rules. Reverse README links it.
+Documentation only; no game run, runtime changes, commit or push.
+
+User authorized committing and pushing the alpha backlog/handoff documentation.
+This checkpoint includes those files and reverse-doc index/status updates only;
+runtime and framework pin remain at the accepted alpha. Local handoff links and
+Git whitespace checks pass.
