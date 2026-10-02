@@ -1,0 +1,496 @@
+{
+  "date": "2026-10-03",
+  "user_feedback_before_change": {
+    "grip_size_alignment": "accepted",
+    "rifle_visual": "garbled",
+    "pause_menu": "too close"
+  },
+  "calibration_retained": {
+    "world_scale": 3,
+    "weapon_model_units_per_meter": 850,
+    "weapon_pivot": [
+      80,
+      150,
+      100
+    ]
+  },
+  "tested_build": {
+    "executable": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\build-release\\Medal_of_Honor__Recompiled.exe",
+    "sha256": "6a643d4a2f9a4c6998e11d6cf95d7fb3cf4c12b82043487320fa7ed5c8465af5",
+    "framework_root": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\psxrecomp",
+    "framework_revision": "35b209d406c168e14f51bb8bbd549742473c7388",
+    "framework_tracked_changes": [
+      " M runtime/include/mod_plugins.h",
+      " M runtime/include/psx_openxr.h",
+      " M runtime/src/debug_server.c",
+      " M runtime/src/gpu_gl_renderer.c",
+      " M runtime/src/psx_openxr.c",
+      " M runtime/tests/test_openxr_input.c"
+    ]
+  },
+  "pushed_framework_with_matching_six_runtime_files": "04714837",
+  "post_pin_binary_sha256": "fc57ca9693675e1de18e3f173148c1b32d61f6e2ebb0b23efc5aa81c56779dee",
+  "source_sha256": {
+    "vr/psx_vr_stereo.c": "806071b105b34d7d64b1f5500f470529c3a638d296f3229e5a96e53873f4095a",
+    "vr/run_vr.ps1": "2e1f0f88c6cb0eb9746ebadae400027e527f2b2784be42b33ac1ad79695a0d83"
+  },
+  "native_rifle_producer": {
+    "node": 22,
+    "vertices": 136,
+    "vertex_xyz_bounds": [
+      [
+        61,
+        92
+      ],
+      [
+        76,
+        153
+      ],
+      [
+        107,
+        744
+      ]
+    ],
+    "native_faces": 280,
+    "rifle_faces": 174,
+    "face_stride": 28,
+    "vertex_index_bytes": [
+      22,
+      24,
+      26
+    ],
+    "node_index_bytes": [
+      23,
+      25,
+      27
+    ],
+    "vertex_store_pc_range": [
+      "0x80013DB0",
+      "0x80013DC0"
+    ],
+    "complete_vertex_stores": 609,
+    "asset_mutation": "Guarded face compaction inside each eye transaction only; native asset restored."
+  },
+  "precision_scale": {
+    "default": 16,
+    "purpose": "Uniform camera-coordinate and eye-translation scaling, preserving physical ratios while improving packed-coordinate precision.",
+    "isolated_result": "Folding persisted. Not established as the cause or complete fix."
+  },
+  "desktop_pairs": {
+    "rifle": {
+      "pair_id": 1419,
+      "size": [
+        2560,
+        1200
+      ],
+      "decoded_eye_difference_bbox": [
+        0,
+        0,
+        2560,
+        1183
+      ]
+    },
+    "pause": {
+      "pair_id": 1479,
+      "size": [
+        2560,
+        1200
+      ],
+      "decoded_eye_difference_bbox": null
+    },
+    "resume": {
+      "pair_id": 1539,
+      "size": [
+        2560,
+        1200
+      ],
+      "decoded_eye_difference_bbox": [
+        0,
+        0,
+        2560,
+        1183
+      ]
+    }
+  },
+  "desktop_restore": {
+    "id": 0,
+    "ok": true,
+    "plans": 0,
+    "planned": 0,
+    "wanted": 0,
+    "refused": 0,
+    "passes": 408,
+    "aborted": 0,
+    "discarded": 0,
+    "watchdog": 0,
+    "vram_leaks": 0,
+    "nesting_repairs": 0,
+    "verify_checks": 408,
+    "verify_mismatch": 0,
+    "dropped": {
+      "spu": 0,
+      "cd": 0,
+      "timer": 0,
+      "dma": 0,
+      "gpu": 0,
+      "other": 0
+    },
+    "last_pass_ms": 8.987,
+    "avg_pass_ms": 15.345,
+    "avg_begin_ms": 7.309,
+    "avg_guest_ms": 2.391,
+    "avg_end_ms": 5.318,
+    "avg_restore_ms": 0.11,
+    "guest_cycles_last": 268497,
+    "disabled": 0,
+    "promotions": 0,
+    "pass_presents": 0,
+    "blended_presents": 0,
+    "expired": 0,
+    "late_presents": 0,
+    "unmatched_flips": 0,
+    "early_presents": 0,
+    "cost_us": 0,
+    "cost_rewarms": 0,
+    "frame_images": 0,
+    "journaled": 250,
+    "image_textures": 0,
+    "image_bytes": 0,
+    "status": 1,
+    "backups_reused": 204,
+    "pass_attempts": 408,
+    "argument_refused": 0,
+    "status_refused": 0,
+    "begin_refused": 0,
+    "checkpoint_refused": 0,
+    "last_failure": null,
+    "last_abort_detail": ""
+  },
+  "fault_restore": {
+    "id": 0,
+    "ok": true,
+    "plans": 0,
+    "planned": 0,
+    "wanted": 0,
+    "refused": 0,
+    "passes": 929,
+    "aborted": 1,
+    "discarded": 0,
+    "watchdog": 1,
+    "vram_leaks": 0,
+    "nesting_repairs": 1,
+    "verify_checks": 930,
+    "verify_mismatch": 0,
+    "dropped": {
+      "spu": 0,
+      "cd": 0,
+      "timer": 0,
+      "dma": 0,
+      "gpu": 0,
+      "other": 0
+    },
+    "last_pass_ms": 7.812,
+    "avg_pass_ms": 13.559,
+    "avg_begin_ms": 6.691,
+    "avg_guest_ms": 2.378,
+    "avg_end_ms": 4.162,
+    "avg_restore_ms": 0.113,
+    "guest_cycles_last": 268479,
+    "disabled": 0,
+    "promotions": 0,
+    "pass_presents": 0,
+    "blended_presents": 0,
+    "expired": 0,
+    "late_presents": 0,
+    "unmatched_flips": 0,
+    "early_presents": 0,
+    "cost_us": 0,
+    "cost_rewarms": 0,
+    "frame_images": 0,
+    "journaled": 471,
+    "image_textures": 0,
+    "image_bytes": 0,
+    "status": 1,
+    "backups_reused": 465,
+    "pass_attempts": 930,
+    "argument_refused": 0,
+    "status_refused": 0,
+    "begin_refused": 0,
+    "checkpoint_refused": 0,
+    "last_failure": null,
+    "last_abort_detail": "mod entries +2"
+  },
+  "native_face_count_after_fault": 280,
+  "reload_after_fault": {
+    "id": 0,
+    "ok": true,
+    "generation": 2,
+    "pending": 0,
+    "last_ok": 1,
+    "last_op": "load",
+    "last_slot": 0
+  },
+  "recovered_stereo": {
+    "id": 0,
+    "ok": true,
+    "attempts": 728,
+    "pairs": 465,
+    "refused": 1,
+    "failed": 1,
+    "shed": 261,
+    "status": 0,
+    "last_pair_id": 699,
+    "last_guest_cycle": 1293671950,
+    "eye_cycles": [
+      1293671950,
+      1293671950
+    ],
+    "eye_hashes": [
+      "0452a3c8afd3d0ef",
+      "0452a3c8afd3d0ef"
+    ],
+    "eye_view": [
+      [
+        8,
+        0,
+        0
+      ],
+      [
+        -8,
+        0,
+        0
+      ]
+    ],
+    "last_eye": -1,
+    "last_failure": "",
+    "last_failed_attempt": 639,
+    "last_failed_eye": 1,
+    "last_failed_reason": "eye_abort",
+    "retained_pair_id": 609,
+    "last_pair_ms": 32.035,
+    "avg_pair_ms": 28.027,
+    "published": {
+      "valid": 1,
+      "pair_id": 699,
+      "guest_cycle": 1293671950,
+      "width": 2560,
+      "height": 1200,
+      "staged_mask": 0,
+      "mode": 1,
+      "presents": 1441
+    }
+  },
+  "pause_flag": {
+    "address": "0x8009A61C",
+    "running": 0,
+    "paused": 1,
+    "pause_recorded_write_pc": "0x80062760",
+    "resume_recorded_write_pc": "0x8006407C",
+    "note": "Recorded write-PC field, not a new exact-store-PC assertion."
+  },
+  "quest_quad_snapshot": {
+    "id": 0,
+    "ok": true,
+    "compiled": 1,
+    "enabled": 1,
+    "initialized": 1,
+    "running": 1,
+    "state": 5,
+    "tracking": 1,
+    "frame_open": 0,
+    "result": 0,
+    "stage": "submitted",
+    "runtime": "VirtualDesktopXR",
+    "last_failure": "",
+    "last_failure_result": 0,
+    "view_flags": 15,
+    "waits": 4859,
+    "submitted": 4858,
+    "empty": 1,
+    "failures": 0,
+    "predicted_time": 210846594386499,
+    "ipd_m": 0.0668,
+    "units_per_meter": 238.80597,
+    "gl_version": 1125925676646400,
+    "min_gl_version": 1125899906842624,
+    "max_gl_version": 1407374883553280,
+    "submitted_layer": 1,
+    "quad_submitted": 89,
+    "quad_distance_m": 2.0,
+    "quad_width_m": 2.0,
+    "quad_height_m": 1.5
+  },
+  "quest_late_snapshot": {
+    "id": 0,
+    "ok": true,
+    "compiled": 1,
+    "enabled": 1,
+    "initialized": 1,
+    "running": 1,
+    "state": 5,
+    "tracking": 1,
+    "frame_open": 0,
+    "result": 0,
+    "stage": "submitted",
+    "runtime": "VirtualDesktopXR",
+    "last_failure": "",
+    "last_failure_result": 0,
+    "view_flags": 15,
+    "waits": 6219,
+    "submitted": 6218,
+    "empty": 1,
+    "failures": 0,
+    "predicted_time": 210892262062099,
+    "ipd_m": 0.0668,
+    "units_per_meter": 238.80597,
+    "gl_version": 1125925676646400,
+    "min_gl_version": 1125899906842624,
+    "max_gl_version": 1407374883553280,
+    "submitted_layer": 1,
+    "quad_submitted": 89,
+    "quad_distance_m": 2.0,
+    "quad_width_m": 2.0,
+    "quad_height_m": 1.5
+  },
+  "quest_stereo_after_quad": {
+    "id": 0,
+    "ok": true,
+    "attempts": 4860,
+    "pairs": 4859,
+    "refused": 1,
+    "failed": 0,
+    "shed": 0,
+    "status": 0,
+    "last_pair_id": 4860,
+    "last_guest_cycle": 6775067288,
+    "eye_cycles": [
+      6775067288,
+      6775067288
+    ],
+    "eye_hashes": [
+      "0000000000000000",
+      "0000000000000000"
+    ],
+    "eye_view": [
+      [
+        4,
+        -6,
+        -16
+      ],
+      [
+        -12,
+        -6,
+        -16
+      ]
+    ],
+    "last_eye": 1,
+    "last_failure": "",
+    "last_failed_attempt": 0,
+    "last_failed_eye": 0,
+    "last_failed_reason": "",
+    "retained_pair_id": 0,
+    "last_pair_ms": 12.892,
+    "avg_pair_ms": 13.657,
+    "published": {
+      "valid": 1,
+      "pair_id": 4860,
+      "guest_cycle": 6775067288,
+      "width": 2560,
+      "height": 1200,
+      "staged_mask": 3,
+      "mode": 1,
+      "presents": 9721
+    }
+  },
+  "quest_restore": {
+    "id": 0,
+    "ok": true,
+    "plans": 0,
+    "planned": 0,
+    "wanted": 0,
+    "refused": 0,
+    "passes": 3480,
+    "aborted": 0,
+    "discarded": 0,
+    "watchdog": 0,
+    "vram_leaks": 0,
+    "nesting_repairs": 0,
+    "verify_checks": 0,
+    "verify_mismatch": 0,
+    "dropped": {
+      "spu": 0,
+      "cd": 0,
+      "timer": 0,
+      "dma": 0,
+      "gpu": 0,
+      "other": 0
+    },
+    "last_pass_ms": 2.402,
+    "avg_pass_ms": 2.416,
+    "avg_begin_ms": 0.147,
+    "avg_guest_ms": 1.828,
+    "avg_end_ms": 0.329,
+    "avg_restore_ms": 0.113,
+    "guest_cycles_last": 206939,
+    "disabled": 0,
+    "promotions": 0,
+    "pass_presents": 0,
+    "blended_presents": 0,
+    "expired": 0,
+    "late_presents": 0,
+    "unmatched_flips": 0,
+    "early_presents": 0,
+    "cost_us": 0,
+    "cost_rewarms": 0,
+    "frame_images": 0,
+    "journaled": 1740,
+    "image_textures": 0,
+    "image_bytes": 0,
+    "status": 1,
+    "backups_reused": 1740,
+    "pass_attempts": 3481,
+    "argument_refused": 0,
+    "status_refused": 0,
+    "begin_refused": 0,
+    "checkpoint_refused": 0,
+    "last_failure": null,
+    "last_abort_detail": ""
+  },
+  "quest_samples": {
+    "count": 60,
+    "duration_seconds_approx": 30,
+    "synthetic": 0,
+    "focused": 1,
+    "origin_valid": 1,
+    "age_ms_range": [
+      1,
+      27
+    ],
+    "note": "Adjacent read-only queries; not atomic pose-to-image proof."
+  },
+  "quest_launch": "External tool-sandbox launch: -WeaponPoseDiagnostic -Slot 0 -Seconds 240; no synthetic controls/faults.",
+  "startup_correction": "Three sandboxed launches failed at VDXR system -35 with zero submissions; same launch outside sandbox succeeded. User readiness was not the demonstrated cause.",
+  "unfinished": [
+    "Large black lower world polygon persists; producer/root cause not isolated.",
+    "Actual shot-to-barrel alignment and damage controls not performed in this no-enemy slot.",
+    "Latched successful layer counters do not test failed-quad submission."
+  ],
+  "game_closed": true,
+  "user_feedback_after_change": {
+    "quote": "both the rifle and menu are fixed now perfect",
+    "rifle_visual": "accepted",
+    "menu_comfort": "accepted",
+    "grip_scale_pivot": "retained"
+  },
+  "post_pin_debug_binary_sha256": "3aa1030b1df54ff5505b3e652f5292e3d80fe268e7407ade784c77c9a7f95cf4",
+  "post_pin_note": "Both SDK configurations rebuilt with clean submodule 04714837. Final pin 6134f8b8 adds documentation only; runtime files identical. Hashes record provenance, not visual differences.",
+  "fault_final_console_snapshot": {
+    "verify_checks": 932,
+    "verify_mismatch": 0,
+    "watchdog": 1,
+    "nesting_repairs": 1,
+    "last_abort_detail": "mod entries +2",
+    "note": "Final console query after recovered slot reload; saved fault-stats snapshot is earlier."
+  },
+  "final_framework_pin": "6134f8b863a349254050d6f19e60bc723d8fb774"
+}

@@ -1040,3 +1040,76 @@ muzzle calibration still await user feedback. Compact receipt:
 VR_WEAPON_QUEST_RECEIPT.json; full samples and paired PNGs remain ignored.
 Framework runtime unchanged at 35b209d4; upstream inventory records actual
 pose delivery separately from outstanding weapon alignment.
+
+
+## 2026-10-03: rifle visual isolation and pause menu surface
+
+User accepts the previous Quest grip size and alignment, while reporting a
+super-garbled rifle and a pause menu too near the eyes. Keep WorldScale 3,
+model scale 850 and pivot (80,150,100). Acceptance of grip alignment does not
+establish native shot/barrel alignment or visual mesh correctness.
+
+Native 80013DB0..80013DC0 output tracing identifies node 22 as the gun: 136
+vertices, XYZ bounds [61..92,76..153,107..744]. Complete output slice contains
+609 XYZ stores for 203 total vertices. The 28-byte GT3 bank has 280 faces;
+174 reference node 22 in all three node bytes (23/25/27). Index bytes are
+22/24/26. Other faces skin the original first-person arms/fingers. The
+prototype now validates this exact asset and compacts the 174 gun faces inside
+each eye sandbox, falling back to native drawing on any guard failure. Native
+faces and asset RAM restore afterward. Original arms no longer move with the
+controller. This is rifle-only policy, not a generalized weapon mesh decoder.
+
+Uniform camera-coordinate/eye-translation scale 16 improves packed coordinate
+precision without retuning physical scale/pivot. Isolated scale-1/16 controls
+retain translation/rotation/focus fallback, but folding remains: this is not
+a proven explanation or complete repair. A temporary two-sided branch bypass
+at 800812A0 exposed more arm faces without fixing the rifle; removed. An
+experimental authored-axis correction also failed and was removed. No edited
+generated C or permanent guest instruction patch is included.
+
+Raster experiment correction: the starting renderer already had geometry,
+PGXP and texture correction disabled. Disabling them again is not a comparison
+against an enabled baseline; the final so-called restore case enabled them.
+That process is closed. Do not claim a controlled on/off PGXP exclusion from
+those labels. A native image under the initial disabled settings is coherent;
+tracked captures still show sharp stock/receiver shapes. A large lower black
+polygon also persists after arm filtering; its producer/cause is not isolated.
+
+Native pause flag 8009A61C changes 0->1 and 1->0 with recorded write-PC fields
+80062760 and 8006407C. Pause eyes are exactly identical decoded images, unlike
+the normal/resumed stereo pairs. Framework 04714837 adds a frame-local VIEW
+quad API using the fresh pair's left image for both eyes. Native paused frame,
+including its background, is a flat menu surface; gameplay resumes real stereo.
+Only pause is measured; other menus and wrist HUD remain separate work.
+Launcher defaults to distance 2m and width 2m (height 1.5m), with bounded knobs.
+
+Desktop candidate passed 408 restore checks. A separate right-eye nested
+weapon fault, after face compaction, yielded one watchdog/nesting repair and
+zero mismatches across 932 final checks. Original header count is again 280;
+slot-0 reload reached generation 2, pending=0, last_ok=1, and pairs recovered.
+The saved fault snapshot has its own earlier check count; distinguish it from
+the final console snapshot. Both pinned SDK Release/Debug builds pass, as do
+strict off-XR tests, debug-less syntax, render guards and the 332-command index.
+
+Quest startup correction: three tool-sandbox launches returned system -35 and
+zero submissions despite the user's active stream. The otherwise identical
+external launch succeeded. Do not attribute those failures to user readiness.
+The bounded actual Quest test submitted 89 quads at 2m distance, 2 x 1.5m size,
+then projection on resume; the late snapshot has 6,218 submissions and zero
+XR failures. Sixty adjacent actual hand samples are focused/origin-valid,
+non-synthetic, age 1..27ms. Verify was off in Quest: no new rollback proof.
+Late trailing queries failed after the automatic bound closed the game; the
+late snapshot is not a final whole-run total. The owned game is closed.
+Headset assessment of remaining rifle garbling and menu comfort is pending;
+actual barrel/shot alignment remains open. Compact evidence:
+VR_WEAPON_VISUAL_RECEIPT.json. Raw captures/OBJ/plots remain ignored.
+
+
+Headset acceptance follow-up: user reports "both the rifle and menu are fixed
+now perfect" for this candidate. Keep rifle-only faces, precision scale 16,
+menu distance/width 2m and the accepted physical calibration. This supersedes
+the pending visual/comfort assessment above. Shot/barrel alignment and the
+lower world polygon remain separate, unvalidated items. Owned game is closed.
+
+Framework final pin 6134f8b8 adds the user acceptance documentation to the
+04714837 API build; no subsequent runtime source changes. Both commits pushed.

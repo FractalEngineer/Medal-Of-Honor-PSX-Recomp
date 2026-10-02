@@ -287,6 +287,7 @@ static int g_in_pass; /* Native camera snapshots never update during replay. */
 static int g_weapon_aim; /* Experimental shot override, explicitly opt-in. */
 static int g_weapon_pose, g_weapon_outer, g_weapon_inner;
 static double g_weapon_model_units_per_meter=850;
+static double g_weapon_projection_scale=16; /* Precision units, never physical size. */
 static double g_weapon_pivot[3]={80,150,100}; /* Provisional native grip pivot. */
 static double g_weapon_draw_rotation[9],g_weapon_draw_translation[3];
 static uint32_t g_weapon_render_entity;
@@ -352,6 +353,8 @@ static double g_head_yaw, g_head_position[3];
 static PSXModRenderView g_eye_view[2];
 static uint32_t g_stereo_eye;
 static uint32_t g_stereo_success;
+static int g_menu_surface=1,g_menu_flat;
+static double g_menu_distance=2,g_menu_width=2;
 static int g_stereo_fault, g_stereo_fault_done, g_stereo_fault_hold;
 static uint32_t g_interp_hz;  /* PSX_VR_INTERP_HZ: 0 = follow display refresh */
 /* The pass rect. RENDER_PASSES.md wants "the display rect the next flip shows
@@ -559,6 +562,8 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
         pass.y + pass.h > 512u) return;
     if (g_stereo) {
         PSXModStereoFrame frame;
+        /* Native pause flag: measured 0->1 writer 80062760 after Start. */
+        g_menu_flat=g_menu_surface && psx_mod_read_word(0x8009a61cu)==1u;
         memset(&frame, 0, sizeof frame);
         frame.struct_size = sizeof frame;
         frame.period_vblanks = MOH_FLIP_PERIOD_VBLANKS;
@@ -585,6 +590,13 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
                 g_eye_view[eye].projection = g_desktop_fov;
                 if (g_authored_focal) g_eye_view[eye].projection_h_ref = 400;
             }
+        }
+        if(g_menu_flat && g_openxr &&
+           !psx_mod_openxr_quad(g_menu_distance,g_menu_width,g_menu_width*.75))g_menu_flat=0;
+        if(g_menu_flat)for(int eye=0;eye<2;eye++) {
+            memset(&g_eye_view[eye],0,sizeof g_eye_view[eye]);
+            g_eye_view[eye].struct_size=sizeof g_eye_view[eye];
+            g_eye_view[eye].rotation_q12[0]=g_eye_view[eye].rotation_q12[4]=g_eye_view[eye].rotation_q12[8]=4096;
         }
         g_in_pass = 1;
         int rendered = psx_mod_render_stereo(cpu, &frame, vr_stereo_fn, &pass);
@@ -664,7 +676,7 @@ static void vr_shot_basis_entry(CPUState *cpu,uint32_t address) {
  * object, restoring the eye view before any subsequent world/HUD draw. */
 static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
     if(!g_weapon_outer)vr_geo_entry(cpu,address);
-    if(!g_weapon_pose || !g_in_pass || g_weapon_outer)return 0;
+    if(!g_weapon_pose || !g_in_pass || g_weapon_outer || g_menu_flat)return 0;
     uint32_t player=psx_mod_read_word(0x8009d654u);
     if(player<0x80000000u || player>=0x801ff000u || psx_mod_read_word(player+8)!=1)return 0;
     uint32_t input=psx_mod_read_word(player+904);
@@ -682,15 +694,47 @@ static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
     for(int i=0;i<3;i++)p[i]=grip->position_m[i];
     if(!moh_vr_matrix_inverse(w,inverse) ||
        !vr_pose_to_transform(q,p,h.origin_orientation_xyzw,h.origin_position_m,
-                             g_units_per_meter,r,t) ||
-       !moh_vr_weapon_transform(inverse,r,t,g_units_per_meter/g_weapon_model_units_per_meter,
-                                g_weapon_pivot,g_weapon_draw_rotation,g_weapon_draw_translation))return 0;
+                             g_units_per_meter*g_weapon_projection_scale,r,t))return 0;
+    if(!moh_vr_weapon_transform(inverse,r,t,g_units_per_meter*g_weapon_projection_scale/g_weapon_model_units_per_meter,
+                               g_weapon_pivot,g_weapon_draw_rotation,g_weapon_draw_translation))return 0;
     /* Current measured weapon TR is zero; decline another transform contract. */
     if(cpu->gte_ctrl[5] || cpu->gte_ctrl[6] || cpu->gte_ctrl[7])return 0;
+    uint32_t header=psx_mod_read_word(cpu->gpr[4]+124u);
+    if(header<0x80000000u || header>=0x801ff000u)return 0;
+    uint32_t faces=psx_mod_read_word(header),count=psx_mod_read_word(header+4u),rifle_faces=0;
+    if(faces<0x80000000u || faces>=0x801fc000u || count!=280u)return 0;
+    for(uint32_t i=0;i<count;i++) {
+        uint32_t a=faces+i*28u;
+        if(psx_mod_read_byte(a+23u)==22 && psx_mod_read_byte(a+25u)==22 && psx_mod_read_byte(a+27u)==22) {
+            if(psx_mod_read_byte(a+22u)>=136 || psx_mod_read_byte(a+24u)>=136 || psx_mod_read_byte(a+26u)>=136)return 0;
+            rifle_faces++;
+        }
+    }
+    if(rifle_faces!=174u)return 0;
     g_weapon_render_entity=cpu->gpr[4];g_weapon_outer=1;
     PSXModRenderView view=g_eye_view[g_stereo_eye];
+    /* Uniformly enlarge camera coordinates AND the eye displacement. Ratios
+     * X/Z and physical stereo stay fixed, while packed XYZ and native depth
+     * retain precision and avoid the original H/2 divide threshold. */
+    for(int i=0;i<3;i++)view.translation[i]=(int32_t)llround(view.translation[i]*g_weapon_projection_scale);
     if(g_authored_focal)view.projection_h_ref=133;
-    (void)psx_mod_render_view(&view);
+    if(!psx_mod_render_view(&view)){g_weapon_outer=0;return 0;}
+    /* Measured rifle asset: node 22 is the gun (136 vertices, 174 GT3 faces).
+     * Other faces skin the original first-person arms. Do not move those
+     * arms around a controller pivot: retain only the rifle face group.
+     * Compact inside this eye transaction; original asset RAM is restored. */
+    {
+        uint32_t kept=0;
+        for(uint32_t i=0;i<count;i++) {
+            uint32_t a=faces+i*28u;
+            if(psx_mod_read_byte(a+23u)!=22 || psx_mod_read_byte(a+25u)!=22 ||
+               psx_mod_read_byte(a+27u)!=22)continue;
+            if(kept!=i)for(uint32_t k=0;k<28;k+=4)
+                psx_mod_write_word(faces+kept*28u+k,psx_mod_read_word(a+k));
+            kept++;
+        }
+        psx_mod_write_word(header+4u,kept);
+    }
     uint32_t ra=cpu->gpr[31];psx_dispatch_call(cpu,address,ra);
     (void)psx_mod_render_view(&g_eye_view[g_stereo_eye]);
     g_weapon_outer=0;return 1;
@@ -769,7 +813,15 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_STEREO"))) g_stereo = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_OPENXR"))) g_openxr = atoi(e) != 0;
     if ((e = getenv("PSX_VR_WEAPON_POSE"))) g_weapon_pose = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_MENU_SURFACE"))) g_menu_surface=atoi(e)!=0;
+    if ((e = getenv("PSX_VR_MENU_DISTANCE"))) g_menu_distance=strtod(e,NULL);
+    if ((e = getenv("PSX_VR_MENU_WIDTH"))) g_menu_width=strtod(e,NULL);
+    if(!isfinite(g_menu_distance) || g_menu_distance<.25 || g_menu_distance>20)g_menu_distance=2;
+    if(!isfinite(g_menu_width) || g_menu_width<.25 || g_menu_width>10)g_menu_width=2;
     if ((e = getenv("PSX_VR_WEAPON_MODEL_UNITS_PER_METER"))) g_weapon_model_units_per_meter=strtod(e,NULL);
+    if ((e = getenv("PSX_VR_WEAPON_PROJECTION_SCALE"))) g_weapon_projection_scale=strtod(e,NULL);
+    if(!isfinite(g_weapon_projection_scale) || g_weapon_projection_scale<1 ||
+       g_weapon_projection_scale>32)g_weapon_projection_scale=16;
     if(!isfinite(g_weapon_model_units_per_meter) || g_weapon_model_units_per_meter<1 ||
        g_weapon_model_units_per_meter>65536)g_weapon_model_units_per_meter=850;
     if ((e = getenv("PSX_VR_WEAPON_PIVOT"))) {

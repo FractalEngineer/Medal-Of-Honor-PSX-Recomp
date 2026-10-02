@@ -163,3 +163,35 @@ controller translation/rotation, then body turn/recenter and a freshly loaded
 visible enemy with tracing armed before firing. Diagnose the captured black
 polygon separately before accepting the visual mesh. Keep ordinary launches
 native and temporary grip aim until tracked aiming is accepted.
+
+
+## Rifle appearance and menu checkpoint (2026-10-03)
+
+User accepted physical grip/size/alignment of the earlier Quest build. Keep
+850 model units/meter, pivot (80,150,100), WorldScale 3. Garbled rifle and too
+near pause menu are the current priorities. Node-22 face isolation removes
+native arms from tracked-rifle drawing; guarded native fallback and eye asset
+restore are measured, including nested watchdog and save-load recovery.
+Projection precision scale 16 preserves physical ratios but alone did not fix
+folding. Failed two-sided/authored-axis experiments are removed. Renderer
+correction experiment labels are corrected explicitly in the status log.
+
+Pause uses a flat native frame on an OpenXR VIEW quad, default 2m distance,
+2m width. Framework 04714837 is pinned and documented for upstream; actual
+VDXR submissions/resume are measured. The owned bounded test is closed; user
+comfort and rifle visual acceptance are pending. Receipt:
+VR_WEAPON_VISUAL_RECEIPT.json. Ordinary weapon tracking remains opt-in.
+
+Next: incorporate headset visual feedback, isolate remaining gun-face/packet
+corruption if present, then recheck physical alignment without changing the
+accepted calibration. Diagnose the lower black world polygon separately.
+Use a freshly loaded slot 5 and arm native damage tracing before firing for
+barrel/shot alignment. Other menus, wrist HUD and other weapon asset layouts
+remain unmeasured. Always launch actual VDXR tests outside the tool sandbox.
+
+
+Headset acceptance follow-up: user reports "both the rifle and menu are fixed
+now perfect" for this candidate. Keep rifle-only faces, precision scale 16,
+menu distance/width 2m and the accepted physical calibration. This supersedes
+the pending visual/comfort assessment above. Shot/barrel alignment and the
+lower world polygon remain separate, unvalidated items. Owned game is closed.

@@ -8,8 +8,12 @@ param(
     [switch]$WeaponAimDiagnostic,
     [switch]$WeaponPoseDiagnostic,
     [ValidateRange(1,65536)][double]$WeaponModelUnitsPerMeter = 850,
+    [ValidateRange(1,32)][double]$WeaponProjectionScale = 16,
     [ValidateCount(3,3)][ValidateRange(-32766,32766)][double[]]$WeaponPivot = @(80,150,100),
     [switch]$DesktopFov,
+    [ValidateRange(.25,20)][double]$MenuDistance = 2,
+    [ValidateRange(.25,10)][double]$MenuWidth = 2,
+    [switch]$NoMenuSurfaceDiagnostic,
     [ValidateRange(0,3)][int]$StereoFaultDiagnostic = 0,
     [double]$MoveDeadzone = 0.2,
     [double]$TurnGain = 0.65,
@@ -33,6 +37,10 @@ $vrVariables = @{
     PSX_VR_WEAPON_AIM = [string][int]($WeaponAimDiagnostic -or $WeaponPoseDiagnostic);
     PSX_VR_WEAPON_POSE = [string][int]$WeaponPoseDiagnostic.IsPresent;
     PSX_VR_WEAPON_MODEL_UNITS_PER_METER = $WeaponModelUnitsPerMeter.ToString([Globalization.CultureInfo]::InvariantCulture);
+    PSX_VR_WEAPON_PROJECTION_SCALE = $WeaponProjectionScale.ToString([Globalization.CultureInfo]::InvariantCulture);
+    PSX_VR_MENU_SURFACE = [string][int](-not $NoMenuSurfaceDiagnostic);
+    PSX_VR_MENU_DISTANCE = $MenuDistance.ToString([Globalization.CultureInfo]::InvariantCulture);
+    PSX_VR_MENU_WIDTH = $MenuWidth.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_WEAPON_PIVOT = ($WeaponPivot | ForEach-Object { $_.ToString([Globalization.CultureInfo]::InvariantCulture) }) -join ',';
     PSX_VR_MOVE_DEADZONE = $MoveDeadzone.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_TURN_GAIN = $TurnGain.ToString([Globalization.CultureInfo]::InvariantCulture);
