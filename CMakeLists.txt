@@ -56,7 +56,8 @@ psxrecomp_add_game_runtime(psx-runtime
 # Game-owned trusted plugin: entity-transform probe + stereo injection point.
 # Registered via PSX_MOD_CONSTRUCTOR; activated by the moh.vr.stereo package.
 target_sources(psx-runtime PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/vr/psx_vr_stereo.c")
+    "${CMAKE_CURRENT_SOURCE_DIR}/vr/psx_vr_stereo.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vr/moh_vr_input.c")
 
 # Stage runtime configs next to the exe for direct build/ launches. Only copy
 # files that exist — never fail POST_BUILD when game_options.toml is absent.

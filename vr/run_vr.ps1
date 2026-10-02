@@ -3,6 +3,10 @@ param(
     [double]$IPDmm = 67,
     [double]$UnitsPerMeter = (48.0 / 0.067),
     [switch]$Desktop,
+    [switch]$MovementDiagnostic,
+    [switch]$NoMovement,
+    [double]$MoveDeadzone = 0.2,
+    [double]$TurnGain = 0.65,
     [switch]$HideHud,
     [switch]$Verify,
     [switch]$Build,
@@ -19,6 +23,9 @@ $vrVariables = @{
     PSX_OPENXR = [string][int](-not $Desktop);
     PSX_VR_OPENXR = [string][int](-not $Desktop);
     PSX_VR_STEREO = '1'; PSX_VR_PROBE = '0'; PSX_VR_INTERP = '0';
+    PSX_VR_MOVEMENT = [string][int]((-not $NoMovement) -and ((-not $Desktop) -or $MovementDiagnostic));
+    PSX_VR_MOVE_DEADZONE = $MoveDeadzone.ToString([Globalization.CultureInfo]::InvariantCulture);
+    PSX_VR_TURN_GAIN = $TurnGain.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_PASS_PROBE = '0'; PSX_VR_PASS_WATCHDOG = '0'; PSX_VR_PASS_DRAW = '1';
     PSX_VR_OFFSET = '0'; PSX_VR_RECT = $null; PSX_VR_RECT_ALT = '0';
     PSX_VR_STEREO_FAULT = '0'; PSX_VR_STEREO_FAULT_HOLD = '0';
@@ -34,6 +41,14 @@ $vrOldEnvironment = @{}
 $vrProcess = $null
 Push-Location $vrRoot
 try {
+    # A capture must not accidentally inspect an older game on the same TCP port.
+    $vrSocket = New-Object System.Net.Sockets.TcpClient
+    try {
+        $vrSocket.Connect('127.0.0.1',4370)
+        throw 'A game/debug server already uses port 4370. Close it before launching this VR test.'
+    } catch [System.Net.Sockets.SocketException] {
+        # Refused connection is expected before this owned process starts.
+    } finally { $vrSocket.Dispose() }
     if ($Build) {
         cmake -S . -B $vrBuild -DPSX_OPENXR=ON "-DPSXRECOMP_ROOT=$vrRoot/psxrecomp"
         if ($LASTEXITCODE -ne 0) { throw 'VR configure failed' }

@@ -1,0 +1,100 @@
+#include "moh_vr_input.h"
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
+static double finite_axis(double v) {
+    return isfinite(v) ? fmax(-1, fmin(1, v)) : 0;
+}
+static double scalar_deadzone(double v, double deadzone) {
+    v = finite_axis(v);
+    if (fabs(v) <= deadzone) return 0;
+    return copysign((fabs(v) - deadzone) / (1 - deadzone), v);
+}
+int32_t moh_vr_analog_response(const MOHVRAnalogResponse *response,
+                             unsigned axis, uint32_t byte) {
+    if (!response || axis >= 3 || byte > 255) return 0;
+    const MOHVRAnalogAxis *a = &response->axis[axis];
+    unsigned index;
+    int sign;
+    if (byte < a->negative_limit) {
+        index = ((a->negative_limit - byte) * a->negative_factor) >> 8;
+        sign = -1;
+    } else if (byte >= 166) {
+        index = ((byte - a->negative_limit) * a->positive_factor) >> 8;
+        sign = 1;
+    } else return 0;
+    if (index >= sizeof response->curve) return 0;
+    return sign * (int32_t)(response->curve[index] * a->scale);
+}
+static int valid_response(const MOHVRAnalogResponse *response) {
+    if (!response) return 0;
+    for (unsigned i = 0; i < 3; ++i) {
+        const MOHVRAnalogAxis *a = &response->axis[i];
+        if (a->negative_limit > 128 || !a->negative_factor ||
+            a->negative_factor > 65535 || !a->positive_factor ||
+            a->positive_factor > 65535 || !a->scale || a->scale > 65535)
+            return 0;
+    }
+    return 1;
+}
+static uint32_t inverse_axis(const MOHVRAnalogResponse *response,
+                             unsigned axis, double value) {
+    value = finite_axis(value);
+    if (!value) return 128;
+    /* Use the common reachable magnitude: neither sign gets a faster maximum.
+     * Search the actual curve rather than assuming centered linear pad bytes. */
+    uint8_t reachable[2][256] = {{0}};
+    uint32_t scale = response->axis[axis].scale;
+    for (uint32_t byte = 0; byte <= 255; ++byte) {
+        int32_t v = moh_vr_analog_response(response, axis, byte);
+        if (v) reachable[v > 0][(unsigned)abs(v) / scale] = 1;
+    }
+    unsigned full = 0;
+    for (unsigned i = 1; i <= 255; ++i)
+        if (reachable[0][i] && reachable[1][i]) full = i;
+    double target = fabs(value) * full;
+    double error = target;
+    unsigned magnitude = 0;
+    for (unsigned i = 1; i <= 255; ++i) {
+        if (!reachable[0][i] || !reachable[1][i]) continue;
+        double candidate = fabs(i - target);
+        if (candidate < error) { error = candidate; magnitude = i; }
+    }
+    uint32_t best = 128;
+    unsigned distance = 256;
+    int32_t desired = (int32_t)(magnitude * scale) * (value < 0 ? -1 : 1);
+    if (!magnitude) return 128;
+    for (uint32_t byte = 0; byte <= 255; ++byte) {
+        unsigned candidate = (unsigned)abs((int)byte - 128);
+        if (moh_vr_analog_response(response, axis, byte) == desired &&
+            candidate < distance) { distance = candidate; best = byte; }
+    }
+    return best;
+}
+int moh_vr_input_map(const PSXModOpenXRInput *input, double deadzone,
+                    double turn_gain, const MOHVRAnalogResponse *response,
+                    PSXModControllerState *pad) {
+    if (!pad) return 0;
+    memset(pad, 0, sizeof *pad); pad->struct_size = sizeof *pad;
+    pad->buttons = 0xffff;
+    pad->lx = pad->ly = pad->rx = pad->ry = 128; pad->analog = 1;
+    if (!input || input->struct_size != sizeof *input || !input->focused) return 1;
+    if (!isfinite(deadzone) || deadzone < 0 || deadzone >= 1 ||
+        !isfinite(turn_gain) || turn_gain < 0 || turn_gain > 2 ||
+        !valid_response(response)) return 0;
+    if (input->active[0]) {
+        double x = finite_axis(input->stick[0][0]);
+        double y = finite_axis(input->stick[0][1]);
+        double length = hypot(x, y);
+        if (length > deadzone) {
+            double magnitude = (fmin(1, length) - deadzone) / (1 - deadzone);
+            pad->ly = inverse_axis(response, 1, -y * magnitude / length);
+            pad->rx = inverse_axis(response, 2, x * magnitude / length);
+        }
+    }
+    if (input->active[1])
+        pad->lx = inverse_axis(response, 0,
+                              scalar_deadzone(input->stick[1][0], deadzone) * turn_gain);
+    return 1;
+}

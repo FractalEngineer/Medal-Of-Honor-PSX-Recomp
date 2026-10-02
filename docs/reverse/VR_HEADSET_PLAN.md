@@ -41,9 +41,20 @@ owned game process after each measurement. No bulk proof assets are committed.
 - [ ] Physical-reference calibration and final weapon/enemy size tuning.
 - [ ] Coherent compass/HUD projection; wrist placement deferred by user.
 - [ ] Independent headset-rate draw scheduling and wider-FOV culling coverage.
+- [x] User-prioritized locomotion actions and desktop movement/turn/release controls.
+- [x] Real Quest/VDXR controller action sampling; direction assessment recorded separately.
 
 Accepted provisional profile: WorldScale 3, user IPD 67mm (runtime measured
 66.780mm). Initial 3.3 GL refusal, XR Y flip and invalid half-scale launch are
 recorded in VR_PHASE9_STATUS.md. Usage: VR_OPENXR_SETUP.md. This phase establishes
 native projection submission and tracking, not physical calibration or full HUD
 comfort. Bulk captures remain in ignored analysis/vr-proof.
+
+User priority update: movement before HUD; left-stick move/strafe and right-stick
+smooth turn. See VR_MOVEMENT_PLAN.md. WorldScale stays 3. Wrist HUD and further
+weapon/enemy scale tuning remain deferred.
+
+Movement correction: live guest analog-curve inversion and radial movement
+deadzone; per-update heading magnitudes match left/right and the user confirmed
+movement fully consistent. Scale 4 reached its configured metric conversion;
+the user could not distinguish it visually. Default 3 remains provisional.

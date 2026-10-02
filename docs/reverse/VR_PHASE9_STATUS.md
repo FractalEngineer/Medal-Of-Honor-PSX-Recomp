@@ -702,3 +702,99 @@ guest timeline effects in the measured window. VERIFY is off, so it does not
 substitute for the separately verified Debug restore controls. Both processes
 closed automatically. Compact receipts include these producer values and the
 comparison; bulk captures remain ignored. Wrist placement remains deferred.
+
+# 2026-10-02: Quest locomotion, native analog response and scale-4 trial
+
+User priority changed to movement before HUD: left-stick forward/back/strafe,
+right-stick smooth turn. Added opt-in Touch thumbstick actions and a trusted
+offline controller source through normal SIO, not writes to player transforms.
+Input synchronization occurs at normal host input sampling, never eye replay.
+Neutral/invalid/unfocused/inactive/declined samples release axes; TCP override
+priority, coherent pad type, post-load suppression and selfcheck recording stay
+intact. The game forces analog presentation only for its opted-in input source.
+Keyboard/ordinary pad button words remain merged for menus. Framework defaults,
+netplay and resim do not acquire this source.
+
+Slot-3 native axis controls establish PSX LX turns, LY moves, RX strafes; RY
+pitch is left neutral for head tracking. Initial centered-byte mapping passed
+basic direction/release controls but was insufficient: the user reported slower
+left turns and weak combined/diagonal movement. Do not label those initial
+controls consistent movement. Producer tracing found native FUN_80075E7C reads
+calibration rows at 800B74B0 (40-byte stride) and the response lookup at 8009E3AC.
+Measured rows have negative threshold 91, positive branch threshold 166,
+negative/positive factors 360/199 and native scale from row+32 >> 8. Default
+semantic rows for LX/LY/RX are 3/0/1, selecting wire indices 2/3/0. An early
+response-mapper draft used the pitch row for forward motion; its scheme guard
+correctly delivered neutral and its control failed. It was corrected before
+accepted final controls. Other schemes/inverted axes deliberately release.
+
+Heading SW at pc=8007FC10 writes input object 800EEC2C+388 (800EEDB0), then
+pc=80080160 copies that heading to player 800EE860+556. Controlled pre-fix native
+bytes 45/211 produced per-update deltas -522,240/+1,167,360. This isolates actual
+heading increments; older before/after camera snapshots over 30-33 frames were
+not equal-duration angular-speed measurements. The replacement reads the live
+calibration/curve, selects a response attainable by both signs, and inverses it
+to native bytes. Movement uses a radial deadzone, preserving direction before
+quantization; turn uses a scalar deadzone and gain on decoded response.
+
+Final producer-bound controls: full Quest turn delivers LX=8/241 with heading
+increments -2,457,600/+2,457,600; the +/-600-thousandths turn control delivers
+LX=22/216 with -1,290,240/+1,290,240. Forward/strafe alone decode to magnitude
+255; diagonal +/-707 axes decode to +/-180 components (vector magnitude
+0.998268 relative to a cardinal). Combined movement/turn retains the full turn
+increment. These are native curve units and per-update writes, not physical
+meters/sec or degrees/sec; diagonal magnitude is decoder evidence, not a
+collision-free world trajectory measurement. All nine controls release to
+[128,128,128,128]. Mapping tests sweep turn symmetry and movement circle angles.
+The user confirmed corrected movement: "movement fully consistent now".
+
+Initial real VDXR input capture: 257 adjacent action/pad snapshots in 30 seconds,
+zero errors, synthetic=0, both hands active, sticks spanning both horizontal
+directions and forward/back. Its bounded counters record 3,131 submissions,
+zero XR failures and zero stereo shedding. Corrected worn-headset capture:
+174 adjacent snapshots in 20 seconds, zero errors, synthetic=0, and 2,432 XR
+submissions with zero failures/empty frames; user assessment supplies the
+consistency confirmation. Action and pad queries are separate snapshots and
+are not atomic producer/delivery comparisons. These counters do not establish
+independent headset cadence or motion-to-photon performance.
+
+Correction/limitation: restricted launches reported xrGetSystem=-35; a launch
+in the user's Virtual Desktop session succeeded. Launch context/timing changed,
+so a specific IPC cause or controller disconnection is not established. A later
+visibility complaint occurred despite 915 successful XR submissions and zero
+failures; restart produced a nonblack read-back eye and the user then confirmed
+movement. Its cause was not isolated. Do not equate successful submissions with
+what the user sees. The launcher now refuses an occupied debug port so captures
+cannot silently inspect an older game; headset captures require live XR startup
+submissions and retain refusal diagnostics. Owned games close in finally.
+
+WorldScale 4 actually reached VDXR: units/meter=179.104478, versus 238.805970 at
+3, with actual eye poses/IPD=0.066780m. The user could not see a difference; this
+is an inconclusive perceptual trial. Keep the accepted default 3, IPD preference
+67mm. Physical-reference calibration, weapon/enemy tuning and wrist HUD remain
+open/deferred; no calibrated-scale conclusion follows from this trial.
+
+Neutral stereo OFF/ON controls match all 96 guest fingerprint columns/cycles.
+A first held-source trial differed in 93/96 rows, first at relative frame 3.
+The save-load guard uses 90-700ms host time and those runs did not establish
+identical delivery schedules, so that experiment is not replay correctness
+evidence. Repeating with the measured native pad [216,7,243,128] held by TCP
+priority bypasses that guard and isolates stereo replay: all 96 consecutive
+rows match in every judge/locator column and cycle. No faithful guard changes.
+Corrected Debug response controls record 38 restore verifications with zero
+mismatches, VRAM leaks or dropped stores. The native held control has its own
+restore receipt; source polling is skipped under TCP priority by contract.
+
+Framework 5a1264b7 is committed/pushed, inventoried in UPSTREAM_PENDING.md and
+pinned in the game. Final OpenXR-enabled Debug/Release builds again use the pinned
+submodule (initial measurements used the external framework working tree).
+Controller-source and compiled-out XR-input C tests, game response C test,
+controller lifecycle/render guards, debug-less syntax and generated TCP index
+checks pass. Local compiler launchers were cleared after ccache children stalled;
+the underlying stall mechanism was not isolated. Configure still emits existing
+BIOS emitter-stamp warnings; generated BIOS/game C was not manually edited.
+Final bounded pinned Release desktop capture completed two equal-cycle eye
+manifests; VERIFY off is not restore proof. Build hashes and actual framework
+root/revision are in VR_MOVEMENT_RECEIPT.json. Full traces/images remain ignored.
+Real focus-loss/reconnection, other input schemes, controller buttons/poses/aiming,
+head-relative movement and physical sensitivity calibration remain untested.

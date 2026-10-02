@@ -1,0 +1,978 @@
+{
+  "date": "2026-10-02",
+  "profile": {
+    "headset": "Quest 3",
+    "runtime": "VDXR",
+    "world_scale": 3,
+    "ipd_mm": 67,
+    "move_deadzone": 0.2,
+    "turn_gain": 0.65
+  },
+  "framework_revision": "5a1264b79b69b5d75f7b8507e305b1e13a911a50",
+  "measurement_note": "Initial controls used external framework working tree; final builds use the pushed pinned submodule. Synthetic controls are distinct from device evidence. Heading deltas are per writer update, not physical degrees/sec. Calibration is live guest data. Bulk raw data stays ignored.",
+  "heading_producer": {
+    "pc": "0x8007FC10",
+    "address": "0x800EEDB0",
+    "input_object": "0x800EEC2C",
+    "copy_to_player_heading_pc": "0x80080160"
+  },
+  "calibration": {
+    "calibration_hex": "03000000000000000000000000ff5b5b5b00000068010000c700000000002300000023000000000000000000000000000000000000ff5b5b5b00000068010000c700000000002300000023000000000001000000000000000000000000ff5b5b5b00000068010000c700000000003c0000003c000000000002000000000000000000000000ff5b5b5b00000068010000c700000000003c0000003c0000000000",
+    "curve_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000a0a0a0a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f3031323436383a3c3e40424446484a4c4e50525456585a5e62666a6e72767a7e82868a8e9296a0aab4bec8d2dce6f0faffff"
+  },
+  "corrected_controls": {
+    "turn-left": {
+      "axes": {
+        "rx": -1000
+      },
+      "interval": {
+        "first": 216,
+        "last": 237
+      },
+      "pad": [
+        8,
+        128,
+        128,
+        128
+      ],
+      "heading_deltas": [
+        -2457600,
+        0
+      ],
+      "heading_writes": 11,
+      "curve_units": [
+        -160,
+        0,
+        0
+      ],
+      "movement_magnitude": 0.0,
+      "released": [
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "turn-right": {
+      "axes": {
+        "rx": 1000
+      },
+      "interval": {
+        "first": 321,
+        "last": 341
+      },
+      "pad": [
+        241,
+        128,
+        128,
+        128
+      ],
+      "heading_deltas": [
+        0,
+        2457600
+      ],
+      "heading_writes": 10,
+      "curve_units": [
+        160,
+        0,
+        0
+      ],
+      "movement_magnitude": 0.0,
+      "released": [
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "turn-half-left": {
+      "axes": {
+        "rx": -600
+      },
+      "interval": {
+        "first": 424,
+        "last": 444
+      },
+      "pad": [
+        22,
+        128,
+        128,
+        128
+      ],
+      "heading_deltas": [
+        -1290240
+      ],
+      "heading_writes": 10,
+      "curve_units": [
+        -84,
+        0,
+        0
+      ],
+      "movement_magnitude": 0.0,
+      "released": [
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "turn-half-right": {
+      "axes": {
+        "rx": 600
+      },
+      "interval": {
+        "first": 530,
+        "last": 551
+      },
+      "pad": [
+        216,
+        128,
+        128,
+        128
+      ],
+      "heading_deltas": [
+        0,
+        1290240
+      ],
+      "heading_writes": 11,
+      "curve_units": [
+        84,
+        0,
+        0
+      ],
+      "movement_magnitude": 0.0,
+      "released": [
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "forward": {
+      "axes": {
+        "ly": 1000
+      },
+      "interval": {
+        "first": 640,
+        "last": 660
+      },
+      "pad": [
+        128,
+        1,
+        128,
+        128
+      ],
+      "heading_deltas": [
+        0
+      ],
+      "heading_writes": 10,
+      "curve_units": [
+        0,
+        -255,
+        0
+      ],
+      "movement_magnitude": 1.0,
+      "released": [
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "strafe": {
+      "axes": {
+        "lx": 1000
+      },
+      "interval": {
+        "first": 744,
+        "last": 764
+      },
+      "pad": [
+        128,
+        128,
+        254,
+        128
+      ],
+      "heading_deltas": [
+        0
+      ],
+      "heading_writes": 11,
+      "curve_units": [
+        0,
+        0,
+        255
+      ],
+      "movement_magnitude": 1.0,
+      "released": [
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "diagonal": {
+      "axes": {
+        "lx": 707,
+        "ly": 707
+      },
+      "interval": {
+        "first": 857,
+        "last": 877
+      },
+      "pad": [
+        128,
+        7,
+        243,
+        128
+      ],
+      "heading_deltas": [
+        0
+      ],
+      "heading_writes": 10,
+      "curve_units": [
+        0,
+        -180,
+        180
+      ],
+      "movement_magnitude": 0.9982683969692436,
+      "released": [
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "diagonal-back": {
+      "axes": {
+        "lx": -707,
+        "ly": -707
+      },
+      "interval": {
+        "first": 965,
+        "last": 985
+      },
+      "pad": [
+        128,
+        243,
+        7,
+        128
+      ],
+      "heading_deltas": [
+        0
+      ],
+      "heading_writes": 11,
+      "curve_units": [
+        0,
+        180,
+        -180
+      ],
+      "movement_magnitude": 0.9982683969692436,
+      "released": [
+        128,
+        128,
+        128,
+        128
+      ]
+    },
+    "move-and-turn": {
+      "axes": {
+        "lx": 707,
+        "ly": 707,
+        "rx": 1000
+      },
+      "interval": {
+        "first": 1077,
+        "last": 1099
+      },
+      "pad": [
+        241,
+        7,
+        243,
+        128
+      ],
+      "heading_deltas": [
+        0,
+        2457600
+      ],
+      "heading_writes": 11,
+      "curve_units": [
+        160,
+        -180,
+        180
+      ],
+      "movement_magnitude": 0.9982683969692436,
+      "released": [
+        128,
+        128,
+        128,
+        128
+      ]
+    }
+  },
+  "user_feedback": {
+    "initial": "turning left slower than right and diagonal directions slower",
+    "corrected": "movement fully consistent now",
+    "scale4": "cannot see a difference; keep accepted profile 3"
+  },
+  "sources": [
+    {
+      "path": "analysis/vr-proof/movement-native-controls/controls.json",
+      "sha256": "589fabe8355d298881886f2efa20b8eeea266eba5ef490d1b02473464d22c32c"
+    },
+    {
+      "path": "analysis/vr-proof/movement-action-controls/controls.json",
+      "sha256": "9abd047043092e8a5a6141636124c6fbd34129fee12979d6723d165973f89398"
+    },
+    {
+      "path": "analysis/vr-proof/movement-neutral-timeline.json",
+      "sha256": "9130476845492c8802f9ee30a8d91021f253a50feee346f0c9c0dcbb05c7cc99"
+    },
+    {
+      "path": "analysis/vr-proof/movement-response/left-slot3-before-fix.json",
+      "sha256": "c91464a4e6424c6db2be25dc713eafe143657f6704a4c5e0214778f331a07150"
+    },
+    {
+      "path": "analysis/vr-proof/movement-response/right-slot3-before-fix.json",
+      "sha256": "00a8957a83aebc3f15a6aba780b46fbdd1412fc79b6f2b89421a17899110e75e"
+    },
+    {
+      "path": "analysis/vr-proof/movement-response-final/response.json",
+      "sha256": "602d1684654c718958a0aa728705fc3b27d90a02273ccd8b3855737139631598"
+    },
+    {
+      "path": "analysis/vr-proof/movement-response-final/render_pass_stats.json",
+      "sha256": "0ecdeafba46ee241969db478e1d9d96490caad125d95d43fde686fc56b9e72ae"
+    },
+    {
+      "path": "analysis/vr-proof/movement-response-final/stereo_stats.json",
+      "sha256": "2a6ac1d5821426432e93ffad400b1ed47d7316c073cf909fb84005f7a9ea8934"
+    },
+    {
+      "path": "analysis/vr-proof/movement-live-active/input_samples.json",
+      "sha256": "83554f3b51488d7759f6470e8dbf55ca40efcfcf18f763dbce74961375eb1c41"
+    },
+    {
+      "path": "analysis/vr-proof/movement-live-active/openxr_stats.json",
+      "sha256": "3b6e97bb6107e0a3903c79679996bcad1bc2cfc3e61282fd487bf6ea5d5bd3b9"
+    },
+    {
+      "path": "analysis/vr-proof/movement-headset-confirmed/input_samples.json",
+      "sha256": "9632cb4b07fa94e942f4dbd38065c6e363894279aa4df6510726f814dcf78bab"
+    },
+    {
+      "path": "analysis/vr-proof/movement-headset-confirmed/openxr_stats.json",
+      "sha256": "718a8746a2fc08c19954b1c375e9539f25e725d110e82113b27424ec3572cf68"
+    },
+    {
+      "path": "analysis/vr-proof/movement-headset-confirmed/stereo_stats.json",
+      "sha256": "e206a172170e1a8461288a1d6ea6a352ec588d5958a20fc89d9b503a0579f14c"
+    },
+    {
+      "path": "analysis/vr-proof/movement-scale4/openxr_stats.json",
+      "sha256": "fa17ac51009ae112f5d1d565c99a3ede7b2540ec3c75b4bffeae96ad8c6cd7eb"
+    },
+    {
+      "path": "analysis/vr-proof/run-20261002-191836/build_provenance.json",
+      "sha256": "586b463f05c1a263b0814cb34e257377ac682c53e54ef57f184bd4367aaaa387"
+    },
+    {
+      "path": "analysis/vr-proof/run-20261002-192012/build_provenance.json",
+      "sha256": "f5d15eb136bcac347afd746132d78ab630a8908d6d58d16eeb1a0b1fe32a8859"
+    },
+    {
+      "path": "analysis/vr-proof/run-20261002-192012/save_provenance.json",
+      "sha256": "62a30e44b97d1d1b362e29eebcf0981ce08d2f92f58b8e24abc02bf31a03b2c2"
+    },
+    {
+      "path": "analysis/vr-proof/movement-native-held-timeline.json",
+      "sha256": "2ca6470b69913b29dbd5f271e4a97032ccdbdd026a3a7e940cedecb91ebdf36e"
+    },
+    {
+      "path": "analysis/vr-proof/movement-held-timeline.json",
+      "sha256": "32951a05983e6ab8f19b09161571a7faa13c61499212e2df0f48883da03b71c3"
+    },
+    {
+      "path": "analysis/vr-proof/movement-native-held-0/build_provenance.json",
+      "sha256": "ce7e64d10d68093e799dc22bf6876ad267796b438e197d699191eecf7a529b38"
+    },
+    {
+      "path": "analysis/vr-proof/movement-native-held-1/build_provenance.json",
+      "sha256": "ce7e64d10d68093e799dc22bf6876ad267796b438e197d699191eecf7a529b38"
+    },
+    {
+      "path": "analysis/vr-proof/movement-native-held-0/held_pad.json",
+      "sha256": "474b615f147d07b809799b6bd9d94e9ba4a786829b2cb203f227a074a81f5019"
+    },
+    {
+      "path": "analysis/vr-proof/movement-native-held-1/held_pad.json",
+      "sha256": "474b615f147d07b809799b6bd9d94e9ba4a786829b2cb203f227a074a81f5019"
+    },
+    {
+      "path": "analysis/vr-proof/movement-native-held-1/render_pass_stats.json",
+      "sha256": "b90c824f8fb0445700d9fd2a2bdcea9634b000d71eff149a7ffb704a3c208325"
+    },
+    {
+      "path": "analysis/vr-proof/movement-pinned-release/build_provenance.json",
+      "sha256": "243cb4d610396c91e91b9e9094de0dea81c5e70cf3e8d276d0e48e7f44e5ebcf"
+    },
+    {
+      "path": "analysis/vr-proof/movement-pinned-release/stereo_stats.json",
+      "sha256": "b1bb6691bf04f0f54b8b890c82f9a9246de1769a3a6c6087a679d9b2f70ecd5c"
+    },
+    {
+      "path": "analysis/vr-proof/movement-pinned-release/p000001.json",
+      "sha256": "c5a7791679bbdfdb7d1969030a8edda577514b02885ee778771deda315aba6a3"
+    },
+    {
+      "path": "analysis/vr-proof/movement-pinned-release/p000002.json",
+      "sha256": "c31cb9034ccf5c1d0c54a7caa1feab96de85aefebdd673f54194d2280a640452"
+    }
+  ],
+  "initial_headset": {
+    "adjacent_snapshots": 257,
+    "errors": 0,
+    "synthetic_values": [
+      0
+    ],
+    "focused_values": [
+      1
+    ],
+    "stick_ranges": [
+      [
+        [
+          -0.991424,
+          0.924314
+        ],
+        [
+          -0.99237,
+          1.0
+        ]
+      ],
+      [
+        [
+          -0.869442,
+          0.989807
+        ],
+        [
+          -0.229499,
+          0.0
+        ]
+      ]
+    ],
+    "atomic_action_pad_comparison": false,
+    "openxr": {
+      "id": 0,
+      "ok": true,
+      "compiled": 1,
+      "enabled": 1,
+      "initialized": 1,
+      "running": 1,
+      "state": 5,
+      "tracking": 1,
+      "frame_open": 0,
+      "result": 0,
+      "stage": "submitted",
+      "runtime": "VirtualDesktopXR",
+      "last_failure": "",
+      "last_failure_result": 0,
+      "view_flags": 15,
+      "waits": 3131,
+      "submitted": 3131,
+      "empty": 0,
+      "failures": 0,
+      "predicted_time": 176150587227099,
+      "ipd_m": 0.06678,
+      "units_per_meter": 238.80597,
+      "gl_version": 1125925676646400,
+      "min_gl_version": 1125899906842624,
+      "max_gl_version": 1407374883553280
+    },
+    "stereo": {
+      "id": 0,
+      "ok": true,
+      "attempts": 3132,
+      "pairs": 3131,
+      "refused": 0,
+      "failed": 0,
+      "shed": 0,
+      "status": 6,
+      "last_pair_id": 3131,
+      "last_guest_cycle": 21374529399,
+      "eye_cycles": [
+        21375674706,
+        21375674706
+      ],
+      "eye_hashes": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "eye_view": [
+        [
+          2,
+          263,
+          -11
+        ],
+        [
+          -14,
+          263,
+          -11
+        ]
+      ],
+      "last_eye": 1,
+      "last_failure": "",
+      "last_failed_attempt": 0,
+      "last_failed_eye": 0,
+      "last_failed_reason": "",
+      "retained_pair_id": 0,
+      "last_pair_ms": 6.028,
+      "avg_pair_ms": 6.087,
+      "published": {
+        "valid": 1,
+        "pair_id": 3131,
+        "guest_cycle": 21374529399,
+        "width": 2560,
+        "height": 1200,
+        "staged_mask": 1,
+        "mode": 1,
+        "presents": 6414
+      }
+    }
+  },
+  "corrected_headset": {
+    "adjacent_snapshots": 174,
+    "errors": 0,
+    "synthetic_values": [
+      0
+    ],
+    "focused_values": [
+      1
+    ],
+    "stick_ranges": [
+      [
+        [
+          -0.592181,
+          0.391034
+        ],
+        [
+          0.656789,
+          0.999664
+        ]
+      ],
+      [
+        [
+          -0.8099,
+          0.998077
+        ],
+        [
+          -0.344462,
+          0.07181
+        ]
+      ]
+    ],
+    "atomic_action_pad_comparison": false,
+    "openxr": {
+      "id": 0,
+      "ok": true,
+      "compiled": 1,
+      "enabled": 1,
+      "initialized": 1,
+      "running": 1,
+      "state": 5,
+      "tracking": 1,
+      "frame_open": 0,
+      "result": 0,
+      "stage": "submitted",
+      "runtime": "VirtualDesktopXR",
+      "last_failure": "",
+      "last_failure_result": 0,
+      "view_flags": 15,
+      "waits": 2432,
+      "submitted": 2432,
+      "empty": 0,
+      "failures": 0,
+      "predicted_time": 177490390946199,
+      "ipd_m": 0.06678,
+      "units_per_meter": 238.80597,
+      "gl_version": 1125925676646400,
+      "min_gl_version": 1125899906842624,
+      "max_gl_version": 1407374883553280
+    },
+    "stereo": {
+      "id": 0,
+      "ok": true,
+      "attempts": 2432,
+      "pairs": 2432,
+      "refused": 0,
+      "failed": 0,
+      "shed": 0,
+      "status": 0,
+      "last_pair_id": 2432,
+      "last_guest_cycle": 20498928470,
+      "eye_cycles": [
+        20498928470,
+        20498928470
+      ],
+      "eye_hashes": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "eye_view": [
+        [
+          16,
+          265,
+          -36
+        ],
+        [
+          0,
+          265,
+          -36
+        ]
+      ],
+      "last_eye": 1,
+      "last_failure": "",
+      "last_failed_attempt": 0,
+      "last_failed_eye": 0,
+      "last_failed_reason": "",
+      "retained_pair_id": 0,
+      "last_pair_ms": 5.907,
+      "avg_pair_ms": 5.613,
+      "published": {
+        "valid": 1,
+        "pair_id": 2432,
+        "guest_cycle": 20498928470,
+        "width": 2560,
+        "height": 1200,
+        "staged_mask": 3,
+        "mode": 1,
+        "presents": 4862
+      }
+    }
+  },
+  "corrected_restore": {
+    "id": 0,
+    "ok": true,
+    "plans": 0,
+    "planned": 0,
+    "wanted": 0,
+    "refused": 0,
+    "passes": 38,
+    "aborted": 0,
+    "discarded": 0,
+    "watchdog": 0,
+    "vram_leaks": 0,
+    "nesting_repairs": 0,
+    "verify_checks": 38,
+    "verify_mismatch": 0,
+    "dropped": {
+      "spu": 0,
+      "cd": 0,
+      "timer": 0,
+      "dma": 0,
+      "gpu": 0,
+      "other": 0
+    },
+    "last_pass_ms": 18.054,
+    "avg_pass_ms": 19.125,
+    "avg_begin_ms": 0.948,
+    "avg_guest_ms": 16.509,
+    "avg_end_ms": 1.324,
+    "avg_restore_ms": 0.112,
+    "guest_cycles_last": 656846,
+    "disabled": 0,
+    "promotions": 0,
+    "pass_presents": 0,
+    "blended_presents": 0,
+    "expired": 0,
+    "late_presents": 0,
+    "unmatched_flips": 0,
+    "early_presents": 0,
+    "cost_us": 0,
+    "cost_rewarms": 0,
+    "frame_images": 0,
+    "journaled": 12,
+    "image_textures": 0,
+    "image_bytes": 0,
+    "status": 1,
+    "backups_reused": 19,
+    "pass_attempts": 38,
+    "argument_refused": 0,
+    "status_refused": 0,
+    "begin_refused": 0,
+    "checkpoint_refused": 0,
+    "last_failure": null
+  },
+  "scale4": {
+    "id": 0,
+    "ok": true,
+    "compiled": 1,
+    "enabled": 1,
+    "initialized": 1,
+    "running": 1,
+    "state": 5,
+    "tracking": 1,
+    "frame_open": 0,
+    "result": 0,
+    "stage": "submitted",
+    "runtime": "VirtualDesktopXR",
+    "last_failure": "",
+    "last_failure_result": 0,
+    "view_flags": 15,
+    "waits": 1045,
+    "submitted": 1045,
+    "empty": 0,
+    "failures": 0,
+    "predicted_time": 176419533416398,
+    "ipd_m": 0.06678,
+    "units_per_meter": 179.104478,
+    "gl_version": 1125925676646400,
+    "min_gl_version": 1125899906842624,
+    "max_gl_version": 1407374883553280
+  },
+  "neutral_timeline": {
+    "comparisons": [
+      {
+        "baseline": "analysis\\vr-proof\\movement-stereo-off\\fingerprint.json",
+        "candidate": "analysis\\vr-proof\\movement-native-ready\\fingerprint.json",
+        "frames": 96,
+        "baseline_first_label": 9,
+        "candidate_first_label": 2,
+        "judge_columns": [
+          "wc",
+          "ws",
+          "mmio",
+          "mc",
+          "sp",
+          "sc",
+          "qc",
+          "cyc"
+        ],
+        "locator_columns": [
+          "wr",
+          "pc"
+        ],
+        "equal": true,
+        "differences": []
+      },
+      {
+        "baseline": "analysis\\vr-proof\\movement-stereo-off\\fingerprint.json",
+        "candidate": "analysis\\vr-proof\\movement-actions-ready\\fingerprint.json",
+        "frames": 96,
+        "baseline_first_label": 9,
+        "candidate_first_label": 8,
+        "judge_columns": [
+          "wc",
+          "ws",
+          "mmio",
+          "mc",
+          "sp",
+          "sc",
+          "qc",
+          "cyc"
+        ],
+        "locator_columns": [
+          "wr",
+          "pc"
+        ],
+        "equal": true,
+        "differences": []
+      }
+    ]
+  },
+  "native_held_timeline": {
+    "comparisons": [
+      {
+        "baseline": "analysis\\vr-proof\\movement-native-held-0\\fingerprint.json",
+        "candidate": "analysis\\vr-proof\\movement-native-held-1\\fingerprint.json",
+        "frames": 96,
+        "baseline_first_label": 37,
+        "candidate_first_label": 44,
+        "judge_columns": [
+          "wc",
+          "ws",
+          "mmio",
+          "mc",
+          "sp",
+          "sc",
+          "qc",
+          "cyc"
+        ],
+        "locator_columns": [
+          "wr",
+          "pc"
+        ],
+        "equal": true,
+        "differences": []
+      }
+    ]
+  },
+  "uncontrolled_source_trial": {
+    "equal": false,
+    "different_rows": 93,
+    "first_difference": {
+      "relative_frame": 3,
+      "columns": {
+        "ws": [
+          "0x04a557b975d4afb0",
+          "0xc57c8f6e0ff177fa"
+        ],
+        "wr": [
+          "0x94821b076be3497a",
+          "0xe44ab47f1907de36"
+        ]
+      }
+    },
+    "note": "Held XR override used the host-time post-load guard. The two runs did not establish identical input delivery schedules. This is an unsuccessful experiment, not stereo correctness evidence. Native override control bypasses that guard; no faithful guard changes."
+  },
+  "final_build_provenance": {
+    "executable": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\build-release\\Medal_of_Honor__Recompiled.exe",
+    "sha256": "05ded370e2bdfaf86de729683d3b929245b9870a7b8c04ca1f78042cbf4789be",
+    "framework_root": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\psxrecomp",
+    "framework_revision": "5a1264b79b69b5d75f7b8507e305b1e13a911a50",
+    "framework_tracked_changes": []
+  },
+  "final_release_stereo": {
+    "id": 0,
+    "ok": true,
+    "attempts": 49,
+    "pairs": 48,
+    "refused": 0,
+    "failed": 0,
+    "shed": 0,
+    "status": 6,
+    "last_pair_id": 48,
+    "last_guest_cycle": 17808127912,
+    "eye_cycles": [
+      17809207848,
+      17809207848
+    ],
+    "eye_hashes": [
+      "0000000000000000",
+      "0000000000000000"
+    ],
+    "eye_view": [
+      [
+        8,
+        0,
+        0
+      ],
+      [
+        -8,
+        0,
+        0
+      ]
+    ],
+    "last_eye": 1,
+    "last_failure": "",
+    "last_failed_attempt": 0,
+    "last_failed_eye": 0,
+    "last_failed_reason": "",
+    "retained_pair_id": 0,
+    "last_pair_ms": 17.178,
+    "avg_pair_ms": 17.198,
+    "published": {
+      "valid": 1,
+      "pair_id": 48,
+      "guest_cycle": 17808127912,
+      "width": 2560,
+      "height": 1200,
+      "staged_mask": 1,
+      "mode": 1,
+      "presents": 96
+    }
+  },
+  "native_held_restore": {
+    "id": 0,
+    "ok": true,
+    "plans": 0,
+    "planned": 0,
+    "wanted": 0,
+    "refused": 0,
+    "passes": 4,
+    "aborted": 0,
+    "discarded": 0,
+    "watchdog": 0,
+    "vram_leaks": 0,
+    "nesting_repairs": 0,
+    "verify_checks": 4,
+    "verify_mismatch": 0,
+    "dropped": {
+      "spu": 0,
+      "cd": 0,
+      "timer": 0,
+      "dma": 0,
+      "gpu": 0,
+      "other": 0
+    },
+    "last_pass_ms": 13.717,
+    "avg_pass_ms": 18.99,
+    "avg_begin_ms": 1.276,
+    "avg_guest_ms": 16.094,
+    "avg_end_ms": 1.239,
+    "avg_restore_ms": 0.121,
+    "guest_cycles_last": 473953,
+    "disabled": 0,
+    "promotions": 0,
+    "pass_presents": 0,
+    "blended_presents": 0,
+    "expired": 0,
+    "late_presents": 0,
+    "unmatched_flips": 0,
+    "early_presents": 0,
+    "cost_us": 0,
+    "cost_rewarms": 0,
+    "frame_images": 0,
+    "journaled": 0,
+    "image_textures": 0,
+    "image_bytes": 0,
+    "status": 1,
+    "backups_reused": 2,
+    "pass_attempts": 4,
+    "argument_refused": 0,
+    "status_refused": 0,
+    "begin_refused": 0,
+    "checkpoint_refused": 0,
+    "last_failure": null
+  },
+  "final_release_pairs": [
+    {
+      "pair_id": 1,
+      "guest_cycle": 17754990083,
+      "width": 2560,
+      "height": 1200,
+      "left_eye": 0,
+      "right_eye": 1,
+      "view_offset": [
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          -8,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "pair_id": 2,
+      "guest_cycle": 17756102836,
+      "width": 2560,
+      "height": 1200,
+      "left_eye": 0,
+      "right_eye": 1,
+      "view_offset": [
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          -8,
+          0,
+          0
+        ]
+      ]
+    }
+  ]
+}

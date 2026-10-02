@@ -1,5 +1,5 @@
 /*
- * Medal of Honor VR — entity-transform probe / stereo injection point.
+ * Medal of Honor VR - entity-transform probe / stereo injection point.
  *
  * FUN_80084718 is the per-entity transform builder (M1, docs/reverse/M1_VIEW_MATRIX.md):
  *
@@ -28,6 +28,9 @@
  *   PSX_VR_UNITS_PER_METER=N provisional metric mapping (default 48/.067)
  *   PSX_VR_WORLD_SCALE=N divisor on units/meter (default 1; Quest profile 3)
  *   PSX_VR_OPENXR=1      headset mode; compile PSX_OPENXR and set host PSX_OPENXR=1
+ *   PSX_VR_MOVEMENT=0|1  Quest movement source (default on for XR, off otherwise)
+ *   PSX_VR_MOVE_DEADZONE=N radial move/scalar turn deadzone (default .2)
+ *   PSX_VR_TURN_GAIN=N   decoded turn response gain (default .65; native game rate)
  *   PSX_VR_AUTHORED_FOCAL=0 disable guest H/400 ratio for XR projection control
  *   PSX_VR_TEXT=0 / PSX_VR_HUD_ICON=0 omit measured text/icon draw calls
  *   PSX_VR_HEAD_YAW=degrees / PSX_VR_HEAD_POSITION=x,y,z synthetic desktop pose
@@ -50,6 +53,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include "moh_vr_input.h"
 
 #define FUN_80084718 0x80084718u
 /* Geometry pass: entity -> screen geometry. FUN_80082948 dispatches here on
@@ -316,6 +320,8 @@ static double g_world_scale = 1.0;
 static unsigned g_draw_mask = 15u; /* diagnostic call exclusion, not HUD labels */
 static int g_icon_visible = 1, g_text_visible = 1;
 static int g_openxr;
+static int g_movement = -1;
+static double g_move_deadzone = .2, g_turn_gain = .65;
 static int g_authored_focal = 1, g_desktop_fov;
 static double g_head_yaw, g_head_position[3];
 static PSXModRenderView g_eye_view[2];
@@ -571,9 +577,41 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
     g_in_pass = 0;
 }
 
+static int vr_controller_source(PSXModControllerState *pad) {
+    PSXModOpenXRInput input;
+    memset(&input,0,sizeof input);input.struct_size=sizeof input;
+    if (!psx_mod_openxr_input(&input)) return 0;
+    MOHVRAnalogResponse response;
+    const unsigned entry[3] = {3, 0, 1};
+    const unsigned native_axis[3] = {2, 3, 0};
+    for (unsigned i = 0; i < 3; ++i) {
+        uint32_t base = 0x800b74b0u + entry[i] * 40;
+        /* Other input schemes/inverted axes need their own measured mapping.
+         * Keep this source neutral until the default scheme is initialized. */
+        if (psx_mod_read_word(base) != native_axis[i] ||
+            psx_mod_read_word(base + 36)) return 0;
+        response.axis[i].negative_limit = psx_mod_read_byte(base + 14);
+        response.axis[i].negative_factor = psx_mod_read_word(base + 20);
+        response.axis[i].positive_factor = psx_mod_read_word(base + 24);
+        response.axis[i].scale = psx_mod_read_word(base + 32) >> 8;
+    }
+    for (unsigned i = 0; i < sizeof response.curve; ++i)
+        response.curve[i] = psx_mod_read_byte(0x8009e3acu + i);
+    return moh_vr_input_map(&input, g_move_deadzone, g_turn_gain, &response, pad);
+}
+static uint32_t vr_controller_mode(const PSXModControllerInput *input) {
+    (void)input;return PSX_MOD_CONTROLLER_ANALOG;
+}
+
 static void vr_entity_activate(void) {
     if (g_stereo) (void)psx_mod_set_stereo_presentation(1);
     if (g_openxr) (void)psx_mod_openxr_enable(1);
+    if (g_movement) {
+        (void)psx_mod_set_controller_mode_override(0,PSX_MOD_CONTROLLER_ANALOG);
+        (void)psx_mod_set_controller_presentation_policy(0,vr_controller_mode,
+                                                        PSX_MOD_CONTROLLER_ANALOG,1);
+        (void)psx_mod_set_controller_source(0,vr_controller_source);
+    }
     fprintf(stdout,
             "vr-probe: moh.vr.stereo ACTIVATED (probe=%d target=%08X axis=%d offset=%d)\n",
             g_probe, g_target, g_axis, g_offset);
@@ -604,6 +642,12 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_PASS_DRAW"))) g_pass_draw = atoi(e);
     if ((e = getenv("PSX_VR_STEREO"))) g_stereo = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_OPENXR"))) g_openxr = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_MOVEMENT"))) g_movement = atoi(e) != 0;
+    if (g_movement < 0) g_movement = g_openxr;
+    if ((e = getenv("PSX_VR_MOVE_DEADZONE"))) g_move_deadzone = strtod(e,NULL);
+    if ((e = getenv("PSX_VR_TURN_GAIN"))) g_turn_gain = strtod(e,NULL);
+    if (!isfinite(g_move_deadzone) || g_move_deadzone < 0 || g_move_deadzone > .9) g_move_deadzone = .2;
+    if (!isfinite(g_turn_gain) || g_turn_gain < 0 || g_turn_gain > 2) g_turn_gain = .65;
     if ((e = getenv("PSX_VR_HEAD_YAW"))) g_head_yaw = strtod(e, NULL);
     if (!isfinite(g_head_yaw) || fabs(g_head_yaw)>180) g_head_yaw=0;
     if ((e = getenv("PSX_VR_HEAD_POSITION"))) {

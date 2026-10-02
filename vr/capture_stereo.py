@@ -92,6 +92,18 @@ def main():
         if time.monotonic() > deadline:
             raise TimeoutError("save load did not complete")
         time.sleep(.1)
+    if os.environ.get("PSX_OPENXR") == "1":
+        # A submitted pair establishes a live XR test, unlike an audible desktop
+        # process whose runtime initialization failed. Retain refusal diagnostics.
+        deadline = time.monotonic() + 30
+        while True:
+            xr = command("openxr_stats")
+            save(directory, "openxr_startup.json", xr)
+            if xr.get("running") and xr.get("submitted", 0) > 0:
+                break
+            if xr.get("failures", 0) or time.monotonic() > deadline:
+                raise RuntimeError("No live OpenXR submission: " + json.dumps(xr))
+            time.sleep(.1)
     if args.pairs:
         save(directory, "dump_arm.json", command("stereo_dump", path=directory.as_posix(), count=args.pairs))
     deadline = time.monotonic() + 45
@@ -108,6 +120,9 @@ def main():
         save(directory, cmd + ".json", command(cmd))
     if os.environ.get("PSX_VR_OPENXR") == "1":
         for cmd in ("openxr_stats", "openxr_views"):
+            save(directory, cmd + ".json", command(cmd))
+    if os.environ.get("PSX_VR_MOVEMENT") == "1" or os.environ.get("PSX_VR_OPENXR") == "1":
+        for cmd in ("openxr_input", "pad_status"):
             save(directory, cmd + ".json", command(cmd))
     shot = command("present_shot_seq")
     save(directory, "present_arm.json", command("present_shot", path=(directory / "presented.png").as_posix()))
