@@ -7,6 +7,8 @@ param(
     [switch]$NoMovement,
     [switch]$WeaponAimDiagnostic,
     [switch]$WeaponPoseDiagnostic,
+    [ValidateRange(1,65536)][double]$WeaponModelUnitsPerMeter = 850,
+    [ValidateCount(3,3)][ValidateRange(-32766,32766)][double[]]$WeaponPivot = @(80,150,100),
     [switch]$DesktopFov,
     [ValidateRange(0,3)][int]$StereoFaultDiagnostic = 0,
     [double]$MoveDeadzone = 0.2,
@@ -30,7 +32,8 @@ $vrVariables = @{
     PSX_VR_MOVEMENT = [string][int]((-not $NoMovement) -and ((-not $Desktop) -or $MovementDiagnostic));
     PSX_VR_WEAPON_AIM = [string][int]($WeaponAimDiagnostic -or $WeaponPoseDiagnostic);
     PSX_VR_WEAPON_POSE = [string][int]$WeaponPoseDiagnostic.IsPresent;
-    PSX_VR_WEAPON_MODEL_UNITS_PER_METER = '850'; PSX_VR_WEAPON_PIVOT = '80,150,100';
+    PSX_VR_WEAPON_MODEL_UNITS_PER_METER = $WeaponModelUnitsPerMeter.ToString([Globalization.CultureInfo]::InvariantCulture);
+    PSX_VR_WEAPON_PIVOT = ($WeaponPivot | ForEach-Object { $_.ToString([Globalization.CultureInfo]::InvariantCulture) }) -join ',';
     PSX_VR_MOVE_DEADZONE = $MoveDeadzone.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_TURN_GAIN = $TurnGain.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_PASS_PROBE = '0'; PSX_VR_PASS_WATCHDOG = '0'; PSX_VR_PASS_DRAW = '1';

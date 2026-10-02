@@ -126,8 +126,8 @@ separate from physical calibration or an enemy-size conclusion.
 
 The compass ring/disc still needs a coherent HUD policy. Flat text/icon can be
 hidden; held weapon geometry is not removed by the icon switch. Wrist placement
-and controller poses/aiming are later work. Locomotion is now prioritized over
-further HUD work. The current XR loop
+is later work; the experimental tracked rifle is described below. Locomotion
+is now prioritized over further HUD work. The current XR loop
 runs at the game's draw boundary, approximately 30Hz here. An independent headset
 cadence, culling coverage for large head turns, frame-time tails and comfort remain
 unverified. Successful submissions do not establish headset-rate performance.
@@ -143,7 +143,8 @@ VR_MOVEMENT_RECEIPT.json; full traces and images stay ignored.
 The normal headset launcher enables movement and combat through the same offline
 source. NoMovement disables that source. The game must use the measured default
 scheme; other action/axis tables decline to neutral. Head tracking remains a
-rendered view change; firing still follows native game aim.
+rendered view change; ordinary launches still follow native game aim. The
+experimental tracked-rifle launcher below enables independent controller aim.
 
 | Quest control | Native game control |
 |---|---|
@@ -161,7 +162,7 @@ the slot-3 grenade throws on release. Pause/resume was observed on desktop;
 the user subsequently confirmed all controls in Quest 3/VDXR. The pause menu is
 visible but appears too close. Full menu navigation, a controlled focus/reconnect
 test and target-specific use behavior remain open. Right grip is temporary native
-aim; controller-based 6DoF weapon aiming has not been implemented.
+aim; the tracked-rifle prototype is desktop verified and awaits Quest alignment.
 
 Desktop synthetic checks: `python vr/check_combat.py analysis/vr-proof/<fresh-dir>`
 against a windowed Desktop MovementDiagnostic run. They establish weapon-id,
@@ -190,3 +191,23 @@ shot origin is not yet a calibrated barrel tip. Right-grip native aim is still
 temporary. See VR_WEAPON_AIM_PLAN.md and VR_WEAPON_POSE_RECEIPT.json for desktop
 producer evidence and remaining hardware checks. Pause/wrist HUD and independent
 headset cadence remain deferred. The launcher closes its owned game afterward.
+
+The launcher exposes `-WeaponModelUnitsPerMeter 850` and
+`-WeaponPivot @(80,150,100)` for physical calibration without rebuilding.
+The pivot is in native mesh coordinates; it is not a distance in meters.
+Increasing model units/meter makes the weapon smaller at fixed WorldScale;
+1700 gives half the linear size of 850. Leave WorldScale 3 unchanged while
+tuning the weapon. These controls affect the mesh; shots still start at the
+aim-space origin, so pivot adjustment does not calibrate the muzzle.
+
+During the bounded headset test, a separate terminal can retain real hand
+poses and their validity/predicted time through existing TCP commands:
+
+```powershell
+python vr/capture_movement_input.py analysis/vr-proof/<fresh-dir> --hands --seconds 30
+```
+
+Hand/action/pad queries are adjacent requests, not an atomic shot or mesh
+producer receipt. Check synthetic=0, focus/origin validity, right grip/aim
+activity, both validity bits and pose age; synthetic=0 alone does not prove a
+device sample. Hardware alignment and shot direction still need their own checks.

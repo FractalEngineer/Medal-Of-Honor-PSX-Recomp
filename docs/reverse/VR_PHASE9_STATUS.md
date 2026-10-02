@@ -998,3 +998,20 @@ Subsequent slot load and pairs recover. Both SDK Debug/Release builds pass.
 Compact evidence in VR_WEAPON_POSE_RECEIPT.json; raw files remain ignored.
 Owned desktop game closed. Real Quest alignment/pose validity, muzzle offset,
 range, weapon sizes and native animation acceptance remain open.
+
+
+## 2026-10-03: calibration tooling, hardware alignment pending
+
+Exposed existing rifle mesh scale/pivot inputs as launcher parameters without
+changing defaults or rebuilding. The TCP collector now optionally retains
+read-only grip/aim snapshots and trailing restore diagnostics. Locale checks
+and a three-second desktop capture passed: 24 samples, zero query errors.
+All sampled poses were inactive/unfocused/origin-invalid with predicted time
+zero and age UINT32_MAX; synthetic=0 is not evidence of device tracking.
+Verification was disabled (zero checks); no new restore proof is claimed.
+Compact evidence: VR_WEAPON_CALIBRATION_CHECK.json. Owned game is closed.
+
+Documentation clarification: older OpenXR overview sentences said controller
+aiming was unimplemented. The prototype is implemented and desktop verified;
+ordinary launches retain native aim, while Quest alignment remains untested.
+Updated that overview explicitly. No framework source changes this checkpoint.

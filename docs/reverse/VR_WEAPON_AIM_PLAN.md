@@ -121,3 +121,26 @@ right-hand grip/aim activity/validity, move/rotate the rifle with body still,
 then turn/recenter and fire at the enemy. Tune pivot/scale/muzzle offset from
 those observations. Ordinary launches retain native weapon handling until
 tracked aiming is accepted; temporary right-grip native aim remains.
+
+## Calibration tooling checkpoint (2026-10-03)
+
+Launcher parameters now expose WeaponModelUnitsPerMeter (default 850) and
+WeaponPivot (default 80,150,100), with bounds matching the existing plugin
+inputs and invariant decimal formatting. Larger units/meter reduces weapon
+size; use 1700 for half the linear size, independently of WorldScale 3.
+The existing input collector accepts --hands to retain read-only pose snapshots
+and trailing hand/restore diagnostics. Each snapshot keeps its own sequence,
+predicted time and age; adjacent queries are not an atomic producer comparison.
+
+PowerShell parsing and direct parameter/environment checks pass, including a
+German decimal locale with fractional pivot values. A bounded Release desktop
+run on slot 0 collected 24 samples over three seconds, with no query or trailing
+diagnostic errors. Poses were inactive, unfocused, origin-invalid, predicted
+time zero and age UINT32_MAX, as expected without XR. No device tracking or
+physical calibration is established by this control. Verification was disabled;
+zero mismatch with zero verify checks is not a restore proof. The existing
+binary hash still matches VR_WEAPON_POSE_RECEIPT.json. The owned game is closed.
+See VR_WEAPON_CALIBRATION_CHECK.json; raw captures remain ignored.
+
+Quest availability was requested; alignment remains pending. Next hardware run
+uses the same bounded command above, no synthetic controls or injected faults.

@@ -2,6 +2,8 @@
 
 Action and pad queries are separate requests; their rows are not an atomic
 producer/delivery comparison. Synthetic samples are explicitly identified.
+Optional hand queries retain their own predicted time and sequence; they are
+also separate from the action/pad requests.
 """
 import argparse
 from datetime import datetime, timezone
@@ -15,6 +17,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('directory',type=Path)
     p.add_argument('--seconds',type=float,default=30)
+    p.add_argument('--hands',action='store_true',help='Include read-only grip/aim snapshots')
     args=p.parse_args()
     if not 0<args.seconds<=60:p.error('seconds must be >0 and <=60')
     out=args.directory.resolve();out.mkdir(parents=True,exist_ok=True)
@@ -23,8 +26,10 @@ def main():
     started_utc=datetime.now(timezone.utc).isoformat()
     while time.monotonic()<end:
         try:
-            rows.append({'frame':command('frame')['frame'],
-                         'actions':command('openxr_input'),'pad':command('pad_status')})
+            row={'frame':command('frame')['frame'],
+                 'actions':command('openxr_input'),'pad':command('pad_status')}
+            if args.hands:row['hands']=command('openxr_hands')
+            rows.append(row)
         except (OSError,RuntimeError) as e:
             errors.append(str(e))
         time.sleep(.1)
@@ -32,7 +37,9 @@ def main():
          'started_utc':started_utc,'requested_seconds':args.seconds,
          'elapsed_seconds':time.monotonic()-started})
     diagnostic_errors={}
-    for cmd in ('openxr_stats','openxr_views','stereo_stats','pad_status'):
+    diagnostics=['openxr_stats','openxr_views','stereo_stats','pad_status']
+    if args.hands:diagnostics+=['openxr_hands','render_pass_stats']
+    for cmd in diagnostics:
         try:
             save(out,cmd+'.json',command(cmd))
         except (OSError,RuntimeError) as e:

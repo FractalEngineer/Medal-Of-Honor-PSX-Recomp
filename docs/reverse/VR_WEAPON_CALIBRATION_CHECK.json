@@ -1,0 +1,309 @@
+{
+  "date": "2026-10-03",
+  "scope": "Desktop calibration tooling control; no headset acceptance",
+  "atomic": false,
+  "launch": {
+    "environment": {
+      "PSX_OPENXR": "0",
+      "PSX_RENDER_PASS_VERIFY": "0",
+      "PSX_VR_AUTHORED_FOCAL": "1",
+      "PSX_VR_DESKTOP_FOV": "1",
+      "PSX_VR_DRAW_MASK": "15",
+      "PSX_VR_HEAD_POSITION": "0,0,0",
+      "PSX_VR_HEAD_YAW": "0",
+      "PSX_VR_HUD_ICON": "1",
+      "PSX_VR_INTERP": "0",
+      "PSX_VR_IPD_MM": "67",
+      "PSX_VR_MOVEMENT": "1",
+      "PSX_VR_MOVE_DEADZONE": "0.2",
+      "PSX_VR_OFFSET": "0",
+      "PSX_VR_OPENXR": "0",
+      "PSX_VR_PASS_DRAW": "1",
+      "PSX_VR_PASS_PROBE": "0",
+      "PSX_VR_PASS_WATCHDOG": "0",
+      "PSX_VR_PROBE": "0",
+      "PSX_VR_RECT_ALT": "0",
+      "PSX_VR_STEREO": "1",
+      "PSX_VR_STEREO_FAULT": "0",
+      "PSX_VR_STEREO_FAULT_HOLD": "0",
+      "PSX_VR_TEXT": "1",
+      "PSX_VR_TURN_GAIN": "0.65",
+      "PSX_VR_UNITS_PER_METER": "716.417910447761",
+      "PSX_VR_WEAPON_AIM": "1",
+      "PSX_VR_WEAPON_MODEL_UNITS_PER_METER": "850",
+      "PSX_VR_WEAPON_PIVOT": "80,150,100",
+      "PSX_VR_WEAPON_POSE": "1",
+      "PSX_VR_WORLD_SCALE": "3"
+    },
+    "game_revision": "b71cc9705522346356723a8e950e4412f9ecac25",
+    "framework_pin": "35b209d406c168e14f51bb8bbd549742473c7388",
+    "note": "Environment inherited by capture client; launch must use the same environment."
+  },
+  "build": {
+    "executable": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\build-release\\Medal_of_Honor__Recompiled.exe",
+    "sha256": "c3837259925b4df66569bf3e887af160c6f9d9335d35705c11a8b14ad6f2af3d",
+    "framework_root": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\psxrecomp",
+    "framework_revision": "35b209d406c168e14f51bb8bbd549742473c7388",
+    "framework_tracked_changes": []
+  },
+  "save": {
+    "slot": 0,
+    "file": "saves\\openbios\\state_8001DFD4_slot00.pst",
+    "size": 1892438,
+    "mtime_ns": 1790878898046999500,
+    "sha256": "b065e06ee8c8df61249b7f93927ddbbfa45d44e7ad14c74d83f8c2ebd1843093"
+  },
+  "capture": {
+    "requested_seconds": 3.0,
+    "elapsed_seconds": 3.033930399978999,
+    "sample_count": 24,
+    "errors": [],
+    "status": {
+      "complete": true,
+      "diagnostic_errors": {}
+    },
+    "first_hands": {
+      "id": 0,
+      "ok": true,
+      "sequence": 1595,
+      "synthetic": 0,
+      "focused": 0,
+      "origin_valid": 0,
+      "predicted_time": 0,
+      "age_ms": 4294967295,
+      "origin_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "origin_orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "pose": [
+        [
+          {
+            "active": 0,
+            "flags": 0,
+            "position_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "orientation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "active": 0,
+            "flags": 0,
+            "position_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "orientation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        [
+          {
+            "active": 0,
+            "flags": 0,
+            "position_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "orientation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "active": 0,
+            "flags": 0,
+            "position_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "orientation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      ]
+    },
+    "last_hands": {
+      "id": 0,
+      "ok": true,
+      "sequence": 1945,
+      "synthetic": 0,
+      "focused": 0,
+      "origin_valid": 0,
+      "predicted_time": 0,
+      "age_ms": 4294967295,
+      "origin_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "origin_orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "pose": [
+        [
+          {
+            "active": 0,
+            "flags": 0,
+            "position_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "orientation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "active": 0,
+            "flags": 0,
+            "position_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "orientation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        [
+          {
+            "active": 0,
+            "flags": 0,
+            "position_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "orientation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "active": 0,
+            "flags": 0,
+            "position_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "orientation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      ]
+    }
+  },
+  "restore": {
+    "id": 0,
+    "ok": true,
+    "plans": 0,
+    "planned": 0,
+    "wanted": 0,
+    "refused": 0,
+    "passes": 978,
+    "aborted": 0,
+    "discarded": 0,
+    "watchdog": 0,
+    "vram_leaks": 0,
+    "nesting_repairs": 0,
+    "verify_checks": 0,
+    "verify_mismatch": 0,
+    "dropped": {
+      "spu": 0,
+      "cd": 0,
+      "timer": 0,
+      "dma": 0,
+      "gpu": 0,
+      "other": 0
+    },
+    "last_pass_ms": 3.381,
+    "avg_pass_ms": 4.677,
+    "avg_begin_ms": 0.138,
+    "avg_guest_ms": 2.44,
+    "avg_end_ms": 1.982,
+    "avg_restore_ms": 0.116,
+    "guest_cycles_last": 304396,
+    "disabled": 0,
+    "promotions": 0,
+    "pass_presents": 0,
+    "blended_presents": 0,
+    "expired": 0,
+    "late_presents": 0,
+    "unmatched_flips": 0,
+    "early_presents": 0,
+    "cost_us": 0,
+    "cost_rewarms": 0,
+    "frame_images": 0,
+    "journaled": 488,
+    "image_textures": 0,
+    "image_bytes": 0,
+    "status": 1,
+    "backups_reused": 489,
+    "pass_attempts": 978,
+    "argument_refused": 0,
+    "status_refused": 0,
+    "begin_refused": 0,
+    "checkpoint_refused": 0,
+    "last_failure": null,
+    "last_abort_detail": ""
+  },
+  "launcher_checks": {
+    "parser_errors": 0,
+    "default_units": "850",
+    "default_pivot": "80,150,100",
+    "culture": "de-DE",
+    "tuned_units": "1700.5",
+    "tuned_pivot": "80.25,150,-100.5"
+  },
+  "limitations": [
+    "Desktop XR disabled; inactive non-synthetic snapshot is not a device sample.",
+    "Separate action/pad/hand queries do not establish shot or mesh producer alignment.",
+    "Restore verification disabled; zero checks supplies no restore verification evidence.",
+    "Physical size, pivot and muzzle calibration remain pending."
+  ],
+  "game_closed": true
+}
