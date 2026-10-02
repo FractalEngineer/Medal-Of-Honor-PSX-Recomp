@@ -909,3 +909,25 @@ The utility's partial-disconnect path passes a simulated closed-server check
 (one retained synthetic row, errors saved, later diagnostics attempted, exit 1).
 That check is tooling validation, not device evidence. Python syntax and diff
 checks pass. No new game/runtime binary or guest behavior changes in this commit.
+
+## 2026-10-02: native rifle shot and damage / tracked pose foundation
+
+Slot 0 controls establish a moving id5110 shot actor, with constructor speed
+800454C4, origin from player input+408/+412/+416 at 800450C8/CC/D0, angles
+computed by 80044D18 and first movement stores 8006CC10/2C/48. Body turn changes
+that trajectory. Native auto-aim uses input+420 target, so player angles alone
+are not the shot producer. Slot 5 forward fire reduces enemy actor+244 at
+8004ACC0 (6 -> 3.5); idle/turned-away controls leave it unchanged.
+VR_WEAPON_AIM_RECEIPT.json records the exact writer and controls.
+
+Correction: an unpublished ignored slot-0 results field was named
+player_pitch_yaw_roll_hex, but read player+524 position, not +552 angles.
+It is renamed player_position_q16_hex. No angle conclusion relies on it.
+Early broad/truncated trace replies and empty function traces do not establish
+absence of shot code; complete narrow address controls are used for damage.
+
+Framework 734977c9 adds read-only grip/aim snapshots with shared eye predicted
+time/recenter origin and age/validity, inverse pose math, synthetic TCP controls
+and post-hoc producer-PC filtering. Tests and live synthetic controls pass;
+no actual Quest poses or controller-to-shot override are established yet.
+The game test is closed. Continue VR_WEAPON_AIM_PLAN.md.

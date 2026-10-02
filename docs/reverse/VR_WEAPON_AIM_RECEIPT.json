@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-02",
+  "synthetic_input": true,
+  "headset_pose_test": false,
+  "save": {
+    "slot": 5,
+    "file": "saves\\openbios\\state_8001DFD4_slot05.pst",
+    "size": 1883709,
+    "mtime_ns": 1790955117367172900,
+    "sha256": "a97a3ba8d1287132c5e2f239f9eb9d66aa23d069baac7b18809425cf4ede5db8"
+  },
+  "native_damage_controls": [
+    {
+      "case": "idle",
+      "health": [
+        {
+          "actor": "0x800bcb30",
+          "before": 393216,
+          "after": 393216
+        },
+        {
+          "actor": "0x800ba31c",
+          "before": 393216,
+          "after": 393216
+        },
+        {
+          "actor": "0x800b7b08",
+          "before": 393216,
+          "after": 393216
+        }
+      ],
+      "total": 582,
+      "emitted": 582,
+      "health_writes": []
+    },
+    {
+      "case": "forward-fire",
+      "health": [
+        {
+          "actor": "0x800bcb30",
+          "before": 393216,
+          "after": 393216
+        },
+        {
+          "actor": "0x800ba31c",
+          "before": 393216,
+          "after": 393216
+        },
+        {
+          "actor": "0x800b7b08",
+          "before": 393216,
+          "after": 229376
+        }
+      ],
+      "total": 578,
+      "emitted": 578,
+      "health_writes": [
+        {
+          "seq": 576,
+          "addr": "0x000B7BFC",
+          "old": "0x00060000",
+          "new": "0x00038000",
+          "ra": "0x8004C61C",
+          "func": "0x000029CC",
+          "pc": "0x8004ACC0",
+          "cpu_pc": "0x8004ACB0",
+          "sp": "0x801FFE10",
+          "v0": "0x00038000",
+          "v1": "0x20000000",
+          "a0": "0x800B7B08",
+          "a1": "0x00028000",
+          "a2": "0x800EC340",
+          "a3": "0xFFFFFFFF",
+          "t0": "0x00000000",
+          "t1": "0x00000008",
+          "s0": "0x800B7B08",
+          "s1": "0x800EC340",
+          "s2": "0x00000000",
+          "s3": "0x00028000",
+          "s4": "0x800EC340",
+          "s5": "0x00000000",
+          "frame": 21937,
+          "w": 4,
+          "dma_ch": -1
+        }
+      ]
+    },
+    {
+      "case": "turned-fire",
+      "health": [
+        {
+          "actor": "0x800bcb30",
+          "before": 393216,
+          "after": 393216
+        },
+        {
+          "actor": "0x800ba31c",
+          "before": 393216,
+          "after": 393216
+        },
+        {
+          "actor": "0x800b7b08",
+          "before": 393216,
+          "after": 393216
+        }
+      ],
+      "total": 0,
+      "emitted": 0,
+      "health_writes": []
+    }
+  ],
+  "hands_snapshot_controls": {
+    "valid_readonly_sequence": true,
+    "invalid_quaternion_preserves_snapshot": true,
+    "partial_validity_flags": true,
+    "unfocused_clears_pose": true,
+    "clear_unavailable_age_max": true
+  },
+  "bulk_evidence": "analysis/vr-proof/aim-slot5 (ignored)",
+  "limits": [
+    "Live frame polling is not exact deterministic replay.",
+    "Native rifle damage is verified; controller-to-shot aiming and tracked weapon rendering are not implemented.",
+    "Health interpretation is supported by SUBU a1 at 8004ACB8 and SW to actor+244 at 8004ACC0."
+  ]
+}
