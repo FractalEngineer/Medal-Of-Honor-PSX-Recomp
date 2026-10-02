@@ -138,7 +138,7 @@ user confirmed movement "fully consistent" after the native-curve correction.
 Producer-bound heading writes and response controls are retained in
 VR_MOVEMENT_RECEIPT.json; full traces and images stay ignored.
 
-## Combat controls (desktop checked; headset test pending)
+## Combat controls (desktop checked; Quest accepted)
 
 The normal headset launcher enables movement and combat through the same offline
 source. NoMovement disables that source. The game must use the measured default
@@ -158,7 +158,10 @@ rendered view change; firing still follows native game aim.
 
 Trigger/grip activate at 0.55. Native weapon logic keeps press/hold/release;
 the slot-3 grenade throws on release. Pause/resume was observed on desktop;
-headset menus/navigation and physical focus/reconnect are still untested.
+the user subsequently confirmed all controls in Quest 3/VDXR. The pause menu is
+visible but appears too close. Full menu navigation, a controlled focus/reconnect
+test and target-specific use behavior remain open. Right grip is temporary native
+aim; controller-based 6DoF weapon aiming has not been implemented.
 
 Desktop synthetic checks: `python vr/check_combat.py analysis/vr-proof/<fresh-dir>`
 against a windowed Desktop MovementDiagnostic run. They establish weapon-id,
@@ -167,3 +170,10 @@ TCP `openxr_input` now reports trigger/squeeze and separate click activity/value
 masks. Synthetic example: `openxr_input_override right_trigger=1000` or
 `openxr_input_override left_buttons=1`; clear=1 releases. These values always
 say synthetic=1. See VR_COMBAT_PLAN.md and VR_COMBAT_RECEIPT.json.
+
+A separate real input capture caught right squeeze/R2 and a later unfocused
+neutral state, but missed the other button presses. Its trailing status queries
+failed after bounded shutdown; do not treat it as a complete button trace or
+whole-test performance sample. The utility now preserves failed trailing queries
+in capture_status.json and returns a partial-capture exit status. Owned games
+are closed after tests.

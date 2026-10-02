@@ -1,7 +1,7 @@
 {
   "date": "2026-10-02",
   "framework_commit": "ac6f84ba",
-  "scope": "Desktop synthetic Quest actions through native SIO/game writers; hardware actions pending",
+  "scope": "Desktop synthetic native gameplay writer controls, with subsequent Quest user acceptance and limited real grip/focus samples",
   "default_scheme_required": true,
   "world_scale": 3,
   "provenance_release": {
@@ -1221,5 +1221,243 @@
       "override_axes_valid": false
     },
     "restoration_verification_enabled": false
+  },
+  "quest_acceptance": {
+    "date": "2026-10-02",
+    "user_feedback": "all controls are coming through well done -- pause menu appears way too close and aiming button on RGrip will become obsolete once we get 6dof weapon aiming",
+    "world_scale": 3,
+    "build_provenance": {
+      "executable": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\build-release\\Medal_of_Honor__Recompiled.exe",
+      "sha256": "5451506606fdd6c6bb453ed52facbb64c57cd388ffa29df26e44a9012ff16cd1",
+      "framework_root": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\psxrecomp",
+      "framework_revision": "ac6f84ba039b1d27bb1e93d3b6d05390dfa42ff9",
+      "framework_tracked_changes": []
+    },
+    "launch_config": {
+      "game_revision": "5232f16d5389264335abc0eeaca158d2a004ffb9",
+      "framework_pin": "ac6f84ba039b1d27bb1e93d3b6d05390dfa42ff9",
+      "environment": {
+        "PSX_OPENXR": "1",
+        "PSX_RENDER_PASS_VERIFY": "0",
+        "PSX_VR_MOVEMENT": "1",
+        "PSX_VR_WORLD_SCALE": "3",
+        "PSX_VR_IPD_MM": "67",
+        "PSX_VR_MOVE_DEADZONE": "0.2",
+        "PSX_VR_TURN_GAIN": "0.65"
+      }
+    },
+    "save_provenance": {
+      "slot": 3,
+      "sha256": "582aa0b34485bc013e84fe296781f496d51e60ac279a9557cc6d9837399ed455"
+    },
+    "startup_snapshot": {
+      "id": 0,
+      "ok": true,
+      "compiled": 1,
+      "enabled": 1,
+      "initialized": 1,
+      "running": 1,
+      "state": 5,
+      "tracking": 1,
+      "frame_open": 0,
+      "result": 0,
+      "stage": "submitted",
+      "runtime": "VirtualDesktopXR",
+      "last_failure": "",
+      "last_failure_result": 0,
+      "view_flags": 15,
+      "waits": 50,
+      "submitted": 50,
+      "empty": 0,
+      "failures": 0,
+      "predicted_time": 190870402516211,
+      "ipd_m": 0.06678,
+      "units_per_meter": 238.80597,
+      "gl_version": 1125925676646400,
+      "min_gl_version": 1125899906842624,
+      "max_gl_version": 1407374883553280
+    },
+    "startup_snapshot_scope": "Startup only; not whole-session throughput, visibility or restore proof",
+    "input_capture": {
+      "requested_seconds": 55,
+      "measured_elapsed_seconds": null,
+      "raw_sha256": "23c8bdcf3474673233be0c8462b49735d27d3d49ace6489fe1da06c22ce9ede0",
+      "sample_count": 246,
+      "sample_errors": [],
+      "atomic_action_pad_queries": false,
+      "synthetic_values": [
+        0
+      ],
+      "focused_counts": {
+        "1": 44,
+        "0": 202
+      },
+      "native_pad_counts": {
+        "0xFDFF": 44,
+        "0xFFFF": 202
+      },
+      "frame_first": 233,
+      "frame_last": 787,
+      "sequence_first": 464,
+      "sequence_last": 1572,
+      "trigger_max": [
+        0.0,
+        0.0
+      ],
+      "squeeze_max": [
+        0.0,
+        1.0
+      ],
+      "buttons_values": [
+        [
+          0,
+          0
+        ]
+      ],
+      "buttons_active_values": [
+        [
+          0,
+          0
+        ],
+        [
+          15,
+          11
+        ]
+      ],
+      "representative_focused": {
+        "frame": 233,
+        "actions": {
+          "sequence": 464,
+          "synthetic": 0,
+          "focused": 1,
+          "active": [
+            1,
+            1
+          ],
+          "stick": [
+            [
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          "trigger": [
+            0.0,
+            0.0
+          ],
+          "squeeze": [
+            0.0,
+            1.0
+          ],
+          "trigger_active": [
+            1,
+            1
+          ],
+          "squeeze_active": [
+            1,
+            1
+          ],
+          "buttons": [
+            0,
+            0
+          ],
+          "buttons_active": [
+            15,
+            11
+          ],
+          "p1_source": 1
+        },
+        "pad": {
+          "buttons": "0xFDFF",
+          "connected": true,
+          "analog": true,
+          "sticks": [
+            128,
+            128,
+            128,
+            128
+          ]
+        },
+        "tcp_override": -1
+      },
+      "first_unfocused": {
+        "frame": 332,
+        "actions": {
+          "sequence": 664,
+          "synthetic": 0,
+          "focused": 0,
+          "active": [
+            0,
+            0
+          ],
+          "stick": [
+            [
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          "trigger": [
+            0.0,
+            0.0
+          ],
+          "squeeze": [
+            0.0,
+            0.0
+          ],
+          "trigger_active": [
+            0,
+            0
+          ],
+          "squeeze_active": [
+            0,
+            0
+          ],
+          "buttons": [
+            0,
+            0
+          ],
+          "buttons_active": [
+            0,
+            0
+          ],
+          "p1_source": 1
+        },
+        "pad": {
+          "buttons": "0xFFFF",
+          "connected": true,
+          "analog": true,
+          "sticks": [
+            128,
+            128,
+            128,
+            128
+          ]
+        },
+        "tcp_override": -1
+      },
+      "trailing_diagnostics_complete": false,
+      "trailing_error": "ConnectionRefusedError at openxr_stats after bounded process closure; later diagnostic commands were not reached",
+      "last_focused_frame": 329,
+      "last_focused_sequence": 656,
+      "last_sample_frame": 787,
+      "last_sample_sequence": 1572
+    },
+    "first_capture": "0 rows, 22 connection errors after the preceding bounded launch closed; no action evidence",
+    "limitations": [
+      "User acceptance covers all controls; sampled action evidence covers grip/R2 and later unfocused neutral input only",
+      "Other clicks/triggers were outside the retained sample; no new hardware ammo/stance writer trace",
+      "Use target and full menu navigation not independently measured",
+      "Physical cause of focus change and reconnection not isolated",
+      "No full-session XR performance or restore receipt; VERIFY off",
+      "6DoF controller weapon rendering and shot aiming not implemented"
+    ],
+    "owned_game_processes_after_test": 0
   }
 }

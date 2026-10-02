@@ -21,10 +21,10 @@ stays 3. Wrist HUD and independent rendering cadence follow playable combat.
    pose before changing aiming. Add controller pose/aim input only after that
    relationship is established. A rendered head turn is not bullet-aim proof.
 
-Provisional ergonomics: right trigger fire, right A use/confirm, right B
+Desktop-checked mapping: right trigger fire/confirm, right A use, right B
 weapon cycle/back, left X reload/use, left Y jump, left stick click crouch,
 right grip native aim, left Menu pause.
-Finalize native button words only after tracing the game's configured actions.
+Native button words are established below. Quest acceptance is recorded below.
 
 ## Desktop results (2026-10-02)
 
@@ -44,3 +44,29 @@ before an aim hook is chosen. No controller or head-to-shot aim change is made.
 Delivery: framework ac6f84ba pushed/pinned; final pinned Release capture has two
 complete pairs and the default action source. All owned games are closed at
 delivery. A Quest button test is the next hardware step.
+
+## Quest results and next work (2026-10-02)
+
+The user confirmed all controls are coming through. The pause menu appears too
+close; right-grip native aim is temporary until 6DoF weapon aiming replaces it.
+All owned games are closed. World scale remains 3; wrist HUD remains deferred.
+The real sample caught grip/R2 and later unfocused neutral input, but missed the
+other button presses. Their acceptance is user feedback, not a recorded native
+writer measurement. See VR_COMBAT_RECEIPT.json for provenance and capture limits.
+
+Next, complete step 5 on desktop: identify the actual damage/raycast or moving
+projectile producer, distinguish the currently found spawn from muzzle effects,
+and record its position/direction before any aim override. Then expose tracked
+controller grip/aim poses with validity and time through TCP, convert them into
+the measured game basis, and drive the verified shot origin/direction together
+with the rendered weapon. Keep native ammo/reload logic and neutral release.
+Test stationary body/head with changed controller direction and the converse;
+only actual shot or hit evidence establishes aiming. Controller tracking loss
+must suppress stale pose use. The next headset test follows desktop proof.
+
+Pause placement needs a separate comfortable menu surface; preserve readable
+pause/navigation before wrist HUD work. Do not change global world scale to fix
+the menu depth. Independent headset cadence remains a later rendering task.
+
+Validation follow-up is pushed/pinned at framework 26281aac (docs only). Tested
+Release binary provenance remains ac6f84ba; runtime sources are identical.

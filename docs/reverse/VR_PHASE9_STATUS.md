@@ -866,3 +866,46 @@ Final Release launch uses clean submodule ac6f84ba, verified slot 3 and two comp
 paired captures with source enabled. VERIFY is off for this smoke capture; the
 earlier verify-enabled writer controls provide restore evidence. Launch/build/save
 provenance is included in VR_COMBAT_RECEIPT.json. All owned games closed.
+
+## 2026-10-02 - Quest combat acceptance and capture limits
+
+The user tested the pushed Release build with Quest 3/VDXR and reports all
+controls coming through. The pause menu appears too close. Right-grip native
+aim is accepted as temporary until 6DoF weapon aiming replaces it; no shot-aim
+implementation or direction claim follows from this acceptance. World scale
+remains 3. Pause/menu placement is separate from world-scale calibration.
+
+The first bounded launch ended before action sampling: the attempted capture
+has zero rows and connection errors, so supplies no button evidence. The restart
+verified slot 3 and actual XR submissions using the clean pinned Release binary
+SHA256 5451506606fdd6c6bb453ed52facbb64c57cd388ffa29df26e44a9012ff16cd1.
+The restart's startup snapshot records 50 submissions, zero failures; this is
+startup evidence, not whole-session throughput or visibility proof.
+
+The separate 55-second requested sample retained 246 adjacent action/pad rows:
+synthetic=0 throughout, 44 focused rows with right squeeze=1.0 and pad FDFF (R2),
+then 202 unfocused rows with neutral actions and pad FFFF. First/last frame
+233/787; last focused frame329 and first unfocused frame332. Left/right active
+click masks are 15/11 when focused. All captured click values and triggers are
+zero: the other button presses were missed. User acceptance is distinct from
+trace evidence; adjacent TCP queries are not atomic delivery proof. The physical
+cause of focus change and reconnection were not controlled or established.
+
+Trailing status queries encountered connection refusal after the owned process
+closed. No final complete XR/performance/restore receipt exists for this sample.
+The capture utility now saves trailing errors with its partial-capture status
+instead of dropping out with only a traceback. Both owned launches have exited;
+no game process remains. Compact samples/provenance and exact user feedback are
+retained in VR_COMBAT_RECEIPT.json; bulk files remain ignored.
+
+Next desktop work follows VR_COMBAT_PLAN.md: establish an actual shot-direction
+producer before controller pose/weapon aim changes. The previously found spawn
+is still a candidate, potentially a particle/muzzle effect. Wrist HUD remains
+deferred; menu depth and independent headset cadence are still open.
+
+Follow-up framework 26281aac is pushed and pinned: validation documentation only,
+including UPSTREAM_PENDING.md; runtime source is unchanged from tested ac6f84ba.
+The utility's partial-disconnect path passes a simulated closed-server check
+(one retained synthetic row, errors saved, later diagnostics attempted, exit 1).
+That check is tooling validation, not device evidence. Python syntax and diff
+checks pass. No new game/runtime binary or guest behavior changes in this commit.
