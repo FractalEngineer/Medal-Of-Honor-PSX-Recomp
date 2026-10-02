@@ -1,0 +1,156 @@
+{
+  "expect": "different",
+  "ok": true,
+  "pairs": [
+    {
+      "manifest": "p000001.json",
+      "pair_id": 1,
+      "guest_cycle": 17754984967,
+      "width": 2560,
+      "height": 1200,
+      "left_eye": 0,
+      "right_eye": 1,
+      "view_offset": [
+        [
+          24,
+          0,
+          0
+        ],
+        [
+          -24,
+          0,
+          0
+        ]
+      ],
+      "changed_pixels": 2000083,
+      "roi_grid_sample_step": 5,
+      "row_bands": [
+        {
+          "display_rows": [
+            0,
+            30
+          ],
+          "changed_pixels": 30127
+        },
+        {
+          "display_rows": [
+            30,
+            120
+          ],
+          "changed_pixels": 470644
+        },
+        {
+          "display_rows": [
+            120,
+            180
+          ],
+          "changed_pixels": 736283
+        },
+        {
+          "display_rows": [
+            180,
+            240
+          ],
+          "changed_pixels": 763029
+        }
+      ],
+      "roi_correspondences": {
+        "wall": {
+          "box": [
+            50,
+            100,
+            170,
+            130
+          ],
+          "right_minus_left_px": -5,
+          "ncc": 0.9629036901207295
+        },
+        "ground": {
+          "box": [
+            50,
+            195,
+            200,
+            230
+          ],
+          "right_minus_left_px": -13,
+          "ncc": 0.9852410755398283
+        }
+      }
+    },
+    {
+      "manifest": "p000002.json",
+      "pair_id": 2,
+      "guest_cycle": 17756089911,
+      "width": 2560,
+      "height": 1200,
+      "left_eye": 0,
+      "right_eye": 1,
+      "view_offset": [
+        [
+          24,
+          0,
+          0
+        ],
+        [
+          -24,
+          0,
+          0
+        ]
+      ],
+      "changed_pixels": 1999956,
+      "roi_grid_sample_step": 5,
+      "row_bands": [
+        {
+          "display_rows": [
+            0,
+            30
+          ],
+          "changed_pixels": 30127
+        },
+        {
+          "display_rows": [
+            30,
+            120
+          ],
+          "changed_pixels": 470677
+        },
+        {
+          "display_rows": [
+            120,
+            180
+          ],
+          "changed_pixels": 736123
+        },
+        {
+          "display_rows": [
+            180,
+            240
+          ],
+          "changed_pixels": 763029
+        }
+      ],
+      "roi_correspondences": {
+        "wall": {
+          "box": [
+            50,
+            100,
+            170,
+            130
+          ],
+          "right_minus_left_px": -5,
+          "ncc": 0.9629036901207295
+        },
+        "ground": {
+          "box": [
+            50,
+            195,
+            200,
+            230
+          ],
+          "right_minus_left_px": -13,
+          "ncc": 0.9852410755398283
+        }
+      }
+    }
+  ]
+}

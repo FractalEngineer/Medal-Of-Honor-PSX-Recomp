@@ -1,0 +1,14 @@
+{
+  "id": 0,
+  "ok": true,
+  "enabled": 0,
+  "suspended": 0,
+  "history": 0,
+  "host_hz": 60.0,
+  "target_hz": 0.0,
+  "swaps": 0,
+  "source": "vblank",
+  "flip_period": 1,
+  "captures": 0,
+  "duplicates": 0
+}

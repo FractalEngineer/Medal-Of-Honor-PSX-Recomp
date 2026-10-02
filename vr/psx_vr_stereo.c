@@ -22,6 +22,11 @@
  *                       =2 inject while inside the real level draw dispatch
  *   PSX_VR_PASS_DRAW=1    experimental bounded scene draw, excluding wait/flip
  *                    =2  clear-only control; =3 level-only coverage control
+ *   PSX_VR_STEREO=1      paired-eye scene draw and side-by-side presentation
+ *   PSX_VR_EYE_OFFSET=N  camera-space half-separation (default 24; 0 control)
+ *   PSX_VR_STEREO_FAULT=1 decline one right eye after a successful pair
+ *                     =2 watchdog inside right-eye level dispatch
+ *   PSX_VR_STEREO_FAULT_HOLD=1 stop pair requests after the injected fault
  *
  * The offset is applied as patch-then-restore: the entity's original value is
  * written back at the start of its NEXT call before re-patching, so the stored
@@ -292,6 +297,11 @@ static int g_pass_watchdog;   /* opt-in synthetic abort, not a guest draw */
 static int g_pass_watchdog_done;
 static int g_pass_draw;
 static int g_in_pass;         /* cleared after API return, including watchdog abort */
+static int g_stereo;
+static int32_t g_eye_offset = 24;
+static uint32_t g_stereo_eye;
+static uint32_t g_stereo_success;
+static int g_stereo_fault, g_stereo_fault_done, g_stereo_fault_hold;
 static uint32_t g_interp_hz;  /* PSX_VR_INTERP_HZ: 0 = follow display refresh */
 /* The pass rect. RENDER_PASSES.md wants "the display rect the next flip shows
  * (its DISPENV)". MoH double buffers - the GP1 0x05 origin alternates y=0 and
@@ -316,6 +326,11 @@ static void vr_watchdog_inject(CPUState* cpu) {
 }
 
 static void vr_nested_watchdog(CPUState* cpu) {
+    if (g_in_pass && g_stereo && g_stereo_success && g_stereo_eye == PSX_MOD_EYE_RIGHT &&
+        g_stereo_fault == 2 && !g_stereo_fault_done) {
+        g_stereo_fault_done = 1;
+        vr_watchdog_inject(cpu);
+    }
     if (g_in_pass && g_pass_draw && g_pass_watchdog == 2 && !g_pass_watchdog_done)
         vr_watchdog_inject(cpu);
 }
@@ -402,9 +417,24 @@ static int vr_pass_fn(CPUState* cpu, void* user, uint32_t alpha_q16) {
     return 1;   /* keep the image */
 }
 
+static int vr_stereo_fn(CPUState* cpu, void* user, uint32_t eye) {
+    g_stereo_eye = eye;
+    if (g_stereo_success && eye == PSX_MOD_EYE_RIGHT &&
+        g_stereo_fault == 1 && !g_stereo_fault_done) {
+        g_stereo_fault_done = 1;
+        return 0;
+    }
+    /* A camera to the left sees scene coordinates translated right. The host
+     * seam replaces its value per eye, affects RTPS/RTPT before division, and
+     * restores automatically after the eye (including longjmp rollback). */
+    if (!psx_mod_render_view_offset(eye == PSX_MOD_EYE_LEFT ? g_eye_offset :
+                                   -g_eye_offset, 0, 0)) return 0;
+    return user ? vr_draw_scene(cpu, user) : 0;
+}
+
 static void vr_vsync_entry(CPUState* cpu, uint32_t address) {
     (void)address;
-    if (g_in_pass || g_pass_probe) return;
+    if (g_in_pass || g_pass_probe || g_stereo) return;
     /* Diagnostic: $ra is NOT reliable here. Static recompilation turns a guest
      * JAL into a native C call, so the callee's $ra is only meaningful when the
      * caller was interpreted (overlay code). Print what actually arrives so the
@@ -460,7 +490,8 @@ static void vr_vsync_entry(CPUState* cpu, uint32_t address) {
  * the exact !buffer_index calculation at 0x80090CCC..0x80090CE8. */
 static void vr_wait_entry(CPUState* cpu, uint32_t address) {
     (void)address;
-    if (!g_pass_probe || g_in_pass) return;
+    if ((!g_pass_probe && !g_stereo) || g_in_pass) return;
+    if (g_stereo && g_stereo_fault_done && g_stereo_fault_hold) return;
     uint32_t index = psx_mod_read_word(0x8009c824u);
     if (index > 1u) return;
     uint32_t env = 0x8009a7a0u + (index == 0u ? 20u : 0u);
@@ -474,6 +505,19 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
     /* Scope the first proof to the measured gameplay mode; startup is 256 wide. */
     if (pass.w != 512u || pass.h != 240u || pass.x + pass.w > 1024u ||
         pass.y + pass.h > 512u) return;
+    if (g_stereo) {
+        PSXModStereoFrame frame;
+        memset(&frame, 0, sizeof frame);
+        frame.struct_size = sizeof frame;
+        frame.period_vblanks = MOH_FLIP_PERIOD_VBLANKS;
+        frame.x = pass.x; frame.y = pass.y; frame.w = pass.w; frame.h = pass.h;
+        g_in_pass = 1;
+        if (psx_mod_render_stereo(cpu, &frame, vr_stereo_fn, &pass))
+            g_stereo_success++;
+        g_in_pass = 0;
+        g_stereo_eye = 0;
+        return;
+    }
     uint32_t alpha[1];
     uint32_t n = psx_mod_render_pass_plan(MOH_FLIP_PERIOD_VBLANKS, 1u, alpha, 1u);
     if (!n) return;
@@ -484,6 +528,7 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
 }
 
 static void vr_entity_activate(void) {
+    if (g_stereo) (void)psx_mod_set_stereo_presentation(1);
     fprintf(stdout,
             "vr-probe: moh.vr.stereo ACTIVATED (probe=%d target=%08X axis=%d offset=%d)\n",
             g_probe, g_target, g_axis, g_offset);
@@ -491,7 +536,7 @@ static void vr_entity_activate(void) {
      * FLIP source (RENDER_PASSES.md "Gates"). HOLD means "repeat the newest game
      * frame" instead of crossfading, which is what a plugin supplying its own
      * pass images wants. Opt-in so the faithful path is untouched. */
-    if (g_interp) {
+    if (g_interp && !g_stereo) {
         int a = psx_mod_set_frame_interpolation_source(PSX_MOD_FRAME_SOURCE_FLIP);
         int b = psx_mod_set_frame_interpolation_blend(PSX_MOD_FRAME_INTERPOLATION_HOLD);
         int c = psx_mod_set_frame_interpolation(g_interp_hz);
@@ -512,6 +557,17 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_PASS_PROBE"))) g_pass_probe = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_PASS_WATCHDOG"))) g_pass_watchdog = atoi(e);
     if ((e = getenv("PSX_VR_PASS_DRAW"))) g_pass_draw = atoi(e);
+    if ((e = getenv("PSX_VR_STEREO"))) g_stereo = (e[0] && e[0] != '0');
+    if ((e = getenv("PSX_VR_EYE_OFFSET"))) g_eye_offset = (int32_t)strtol(e, NULL, 0);
+    if ((e = getenv("PSX_VR_STEREO_FAULT"))) g_stereo_fault = atoi(e);
+    if ((e = getenv("PSX_VR_STEREO_FAULT_HOLD"))) g_stereo_fault_hold = atoi(e) != 0;
+    if (g_stereo_fault < 0 || g_stereo_fault > 2) g_stereo_fault = 0;
+    if (g_eye_offset < 0 || g_eye_offset > 4096) g_eye_offset = 24;
+    if (g_stereo) {
+        g_pass_draw = 1;
+        g_offset = 0; /* legacy entity/TRX patches cannot leak into eye pairs */
+        g_pass_watchdog = 0;
+    }
     if (g_pass_watchdog < 0 || g_pass_watchdog > 2) g_pass_watchdog = 0;
     if (g_pass_draw < 0 || g_pass_draw > 3) g_pass_draw = 0;
     if ((e = getenv("PSX_VR_INTERP_HZ"))) g_interp_hz = (uint32_t)strtoul(e, NULL, 0);

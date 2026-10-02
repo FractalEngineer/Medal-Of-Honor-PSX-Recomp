@@ -1,8 +1,9 @@
 # VR: scope of the per-eye double render
 
 **Headline: I was wrong that this is a framework change. The redraw-and-restore
-machinery already exists, is documented, and is tested. What is genuinely
-missing is the stereo *presentation* path, not the emulation plumbing.**
+machinery already exists, is documented, and is tested. At the time of this
+feasibility note the stereo presentation path was missing. The appended
+2026-10-02 update records its implementation and measurements.**
 
 ## What already exists: render passes
 
@@ -118,3 +119,17 @@ An earlier summary of mine called the double render "the remaining structural
 piece" and "a framework change". That was wrong: the structural piece exists.
 The honest statement is that the *redraw* half is solved and reusable, and the
 *output* half is missing.
+## 2026-10-02 measured update: stereo output is implemented
+
+The earlier feasibility notes above are retained as history. Windowed OpenGL
+scene replay, same-checkpoint eye pairs and composed SBS presentation now work
+for the measured slot-3 enemy scene. Temporal interpolation is disabled. Framework
+`0a955971` exposes `psx_mod_render_stereo`, explicit eye IDs, atomic staging and a
+scoped pre-divide GTE view offset while sharing the pass snapshot/restore internals.
+The same-state zero-offset control gives identical eye pixels; +/-24 gives wall/
+near-ground correspondences of 5/13px. A failed right eye preserves the previous
+pair and the measured guest timeline. See `vr/proof/stereo-pairs/README.md`.
+
+Debug pair cost triggers shedding. OpenXR/head-pose submission, calibrated world
+scale/IPD and HUD/weapon comfort remain separate work. The original headless-only
+and "no output path" statements are superseded by these measurements.

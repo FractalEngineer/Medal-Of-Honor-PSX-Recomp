@@ -1,0 +1,154 @@
+{
+  "expect": "equal",
+  "ok": true,
+  "pairs": [
+    {
+      "manifest": "p000001.json",
+      "pair_id": 1,
+      "guest_cycle": 17754990083,
+      "width": 512,
+      "height": 240,
+      "left_eye": 0,
+      "right_eye": 1,
+      "view_offset": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "changed_pixels": 0,
+      "row_bands": [
+        {
+          "rows": [
+            0,
+            30
+          ],
+          "changed_pixels": 0
+        },
+        {
+          "rows": [
+            30,
+            120
+          ],
+          "changed_pixels": 0
+        },
+        {
+          "rows": [
+            120,
+            180
+          ],
+          "changed_pixels": 0
+        },
+        {
+          "rows": [
+            180,
+            240
+          ],
+          "changed_pixels": 0
+        }
+      ],
+      "roi_correspondences": {
+        "wall": {
+          "box": [
+            50,
+            100,
+            170,
+            130
+          ],
+          "right_minus_left_px": 0,
+          "ncc": 1.0000000000000058
+        },
+        "ground": {
+          "box": [
+            50,
+            195,
+            200,
+            230
+          ],
+          "right_minus_left_px": 0,
+          "ncc": 1.0000000000000089
+        }
+      }
+    },
+    {
+      "manifest": "p000031.json",
+      "pair_id": 31,
+      "guest_cycle": 17788879401,
+      "width": 512,
+      "height": 240,
+      "left_eye": 0,
+      "right_eye": 1,
+      "view_offset": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ]
+      ],
+      "changed_pixels": 0,
+      "row_bands": [
+        {
+          "rows": [
+            0,
+            30
+          ],
+          "changed_pixels": 0
+        },
+        {
+          "rows": [
+            30,
+            120
+          ],
+          "changed_pixels": 0
+        },
+        {
+          "rows": [
+            120,
+            180
+          ],
+          "changed_pixels": 0
+        },
+        {
+          "rows": [
+            180,
+            240
+          ],
+          "changed_pixels": 0
+        }
+      ],
+      "roi_correspondences": {
+        "wall": {
+          "box": [
+            50,
+            100,
+            170,
+            130
+          ],
+          "right_minus_left_px": 0,
+          "ncc": 1.0000000000000058
+        },
+        "ground": {
+          "box": [
+            50,
+            195,
+            200,
+            230
+          ],
+          "right_minus_left_px": 0,
+          "ncc": 1.0000000000000089
+        }
+      }
+    }
+  ]
+}

@@ -65,8 +65,9 @@ Calling the vertex transformer alone does not satisfy this milestone.
 
 ## 4. Capture two eyes from the same checkpoint
 
-Run each eye from the same CPU/GTE/RAM/device state. Apply TRX offset only while
-that eye's draw runs; reset the host eye selector after the pass API returns,
+Run each eye from the same CPU/GTE/RAM/device state. Apply camera-space offset
+only while that eye's draw runs. The implemented GTE seam supplies it before
+division without editing TRX; reset the host eye selector after the API returns,
 including watchdog aborts. Verify offsets are not accumulated across transforms.
 
 Acceptance: a pair of images carries one guest frame/cycle identifier, near
@@ -105,9 +106,9 @@ projection/convergence and world scale after the paired-image proof.
 - [x] No-op capture/restore proved: two matching PNG pairs; 727 checks, zero mismatches.
 - [x] Live no-op fingerprint comparison and synthetic watchdog rollback (96 frames).
 - [x] Bounded scene draw established in slot 1; level, weapon and HUD rebuilt.
-- [ ] Animated enemy/world-object coverage and additional scene modes verified.
-- [ ] Same-state eye pair captured and measured.
-- [ ] Paired-eye API and side-by-side presentation implemented.
+- [x] Animated-enemy redraw verified in completed slot-3 loads; other modes remain open.
+- [x] Same-state eye pairs captured, with measured depth-dependent parallax.
+- [x] Paired-eye API and side-by-side presentation implemented and measured.
 
 Evidence: [pass-diagnostics README](../../vr/proof/pass-diagnostics/README.md).
 The no-op cost includes verification; it is not a redraw or stereo cost estimate.
@@ -121,3 +122,23 @@ also restores and recovers; full-draw and nested-abort 96-frame timelines match
 the controls. See [scene replay evidence](../../vr/proof/scene-replay/README.md).
 These timeline and real-dispatch checks are complete for this scene; repeat them
 when introducing eye transforms, additional callbacks or other scene modes.
+
+The slot-3 paired bundle now verifies both animated enemies, held grenade, level
+and HUD from one checkpoint. Zero separation produces pixel-identical eyes;
+offsets +/-24 give 5px correspondence at the wall and 13px at nearby ground.
+Both entry cycles/hashes match and all 96-frame timeline columns match the
+no-redraw control, including a right-eye watchdog that preserves the previous
+pair and later recovers. Interpolation is off. Framework `0a955971` shares the
+transaction internals through explicit eye APIs and a non-accumulating scoped
+GTE camera-space offset. See [paired evidence](../../vr/proof/stereo-pairs/README.md).
+
+Release/no-VERIFY warm sample: 1,719 complete pairs, zero shedding/failures,
+12.013ms last / 11.584ms EMA, at measured internal scale 5 (2560x1200 eyes).
+Its first 96 fingerprint rows match a Release OFF control at identical settings.
+This is a different build/settings sample, not a direct Debug speedup ratio.
+
+Next: calibrate scale/eye
+separation and HUD/weapon policy before adding head-pose/OpenXR submission.
+Debug verification cost exceeds the conservative cadence budget and sheds pairs;
+the first SBS implementation is not a headset performance result. Other scene
+modes remain unverified. Framework changes are listed in its UPSTREAM_PENDING.md.

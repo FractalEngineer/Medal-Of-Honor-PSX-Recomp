@@ -509,3 +509,64 @@ and proof/docs changes; no framework transaction behavior was changed. This
 establishes a bounded complete scene replay for slot 1, not animated-object
 coverage, other game modes or a simultaneous stereo pair. Debug verification
 timings are recorded as samples, not a stereo performance claim.
+# 2026-10-02: scene selection correction and simultaneous eye proof
+
+The user corrected the requested scene to slot 3. Earlier exploratory slot-2
+and initial slot-3 captures are retained with caveats, and are not evidence for
+animated coverage or timeline equivalence. Completed TCP slot-3 loads now record
+`pending=0`, `last_ok=1`, `last_slot=3`, plus save file metadata and SHA256. TCP
+slot 3 maps to `state_8001DFD4_slot03.pst`; its OSD uses one-based "Loaded slot 4".
+Ordinary temporal baseline/replay dumps in the additional scenes differ slightly;
+their cause has not been isolated and is not attributed to draw completeness.
+
+Framework `0a955971` adds explicit paired-eye transactions, atomic publication,
+TCP inspection/dumps and SBS, independent of interpolation. Its scoped GTE offset
+replaces camera-space translation before RTPS/RTPT division without writing TR
+or accumulating at transform entries. Existing snapshot/watchdog protections are
+shared. Framework changes are inventoried in docs/UPSTREAM_PENDING.md.
+
+TCP view offsets are sampled from the projection ambient at callback end, not at
+each RTPS instruction. They describe callback scope; the GTE translation test and
+the two image ROI correspondences independently establish the projection effect.
+
+The fresh slot-3 zero-offset control captures both enemies and their exact poses
+with zero differing decoded RGB eye pixels in both pairs. Offset-24 pairs differ
+on 78,026/77,961 pixels across all bands. Named, inspected wall/near-ground ROIs
+match at -5px/-13px (NCC .9412/.9637). These are image correspondences, not world
+distances. GTE tests independently measure 12px/3px at Z=800/3200, preserve TR and
+confirm repeatability. Eye entry cycles and VERIFY state hashes match. The first
+96 consecutive post-load fingerprints/cycles match the no-redraw control for
+zero, offset, held-abort and recovery runs. All verification mismatches, VRAM
+leaks and dropped stores are zero in these samples.
+
+A watchdog inside real right-eye level dispatch aborts attempt 31 while published
+pair 1 remains valid, with staging mask zero and one watchdog. A second run permits
+subsequent successful pairs and retains the failed-eye/retained-pair record. Host
+selector and view ambient recover; native nesting depth is not inferred from the
+live `nesting_repairs` counter. Nested unit tests cover skipped native exits.
+
+Composed-present readback confirms SBS with interpolation disabled and no temporal
+plans or promotions. Debug pairs sampled around 35ms exceed the 26.67ms cadence
+budget and trigger whole-pair shedding; no real-time headset claim is made. Eye
+offset 24 remains uncalibrated. Compass geometry also receives the offset; flat
+ammo text stays coincident. Scale/IPD, HUD comfort, head poses and OpenXR remain.
+Evidence and commands: vr/proof/stereo-pairs/README.md. All test processes are
+closed after measurements at the user's request.
+# 2026-10-02: Release measurement configuration and matched control
+
+The first Release launch had `PSX_DEBUG_TOOLS=OFF`; no TCP measurement was
+available and it was closed. The local Release build was reconfigured with
+`PSX_DEBUG_TOOLS=ON`, retaining `-O3`/`NDEBUG`, and run with VERIFY/interpolation
+off. `video_info` measures scale 5 and 2560x1200 eye textures, unlike Debug's
+scale 1. The warm receipt records 1,719 pairs, zero refused/failed/shed, 12.013ms
+last pair and 11.584ms EMA, with equal eye entry cycles. Zero state hashes mean
+VERIFY was off; they are not a hash-verification signal. This is a bounded pair
+cost sample, not a Debug/Release speedup ratio or headset throughput guarantee.
+
+A preliminary cross-build fingerprint comparison differs and is retained with
+its mismatches. It does not isolate the effect of stereo: build and renderer
+settings differ. A separate Release OFF run at the same scale/settings matches
+all 96 recorded fingerprint columns and guest cycles against Release stereo.
+Evidence: vr/proof/stereo-pairs/release_matching_timeline_comparison.json. Two
+Release image pairs retain 5/13 display-pixel correspondences on a documented
+scale-5 grid sample. All measurement instances have been closed.

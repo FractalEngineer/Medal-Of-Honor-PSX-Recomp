@@ -80,3 +80,13 @@ compare per VSync.
 - Only the graphics half is addressed here. `VSync(0)` also blocks the guest
   clock, and a pass runs with guest time frozen, so pass placement relative to
   the flip needs checking once something can run.
+## 2026-10-02 measured hook update
+
+The earlier VSync/RA proposal is superseded. Gameplay replay and paired-eye
+capture use the main-thread overlay entry `FUN_80090B80`, before its IRQ-flip
+permission stores. The upcoming DISPENV rect is read using the measured inverted
+buffer-index calculation. No `$ra` gate is used. VSync remains only a legacy
+startup probe and requires a generated entry hook. The paired API needs neither
+temporal planning nor interpolation. DrawOTag is `0x800172D8`; PutDrawEnv is
+`0x80017348`, as corrected in VR_PHASE9_STATUS.md. See the scene replay and
+paired-eye proof bundles for live measurements and exact controls.

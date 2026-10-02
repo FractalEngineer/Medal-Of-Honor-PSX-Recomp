@@ -1,0 +1,62 @@
+{
+  "method": "decoded RGB pixel comparison",
+  "comparisons": [
+    {
+      "baseline": "g002_00_a00000.png",
+      "pass": "g002_01_a32768.png",
+      "baseline_size": [
+        512,
+        240
+      ],
+      "pass_size": [
+        512,
+        240
+      ],
+      "changed_pixels": 1139,
+      "equal": false
+    },
+    {
+      "baseline": "g003_00_a00000.png",
+      "pass": "g003_01_a32768.png",
+      "baseline_size": [
+        512,
+        240
+      ],
+      "pass_size": [
+        512,
+        240
+      ],
+      "changed_pixels": 1231,
+      "equal": false
+    },
+    {
+      "baseline": "g004_00_a00000.png",
+      "pass": "g004_01_a32768.png",
+      "baseline_size": [
+        512,
+        240
+      ],
+      "pass_size": [
+        512,
+        240
+      ],
+      "changed_pixels": 46741,
+      "equal": false
+    },
+    {
+      "baseline": "g005_00_a00000.png",
+      "pass": "g005_01_a32768.png",
+      "baseline_size": [
+        512,
+        240
+      ],
+      "pass_size": [
+        512,
+        240
+      ],
+      "changed_pixels": 50,
+      "equal": false
+    }
+  ],
+  "ok": false
+}

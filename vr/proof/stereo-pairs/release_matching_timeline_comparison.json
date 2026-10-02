@@ -1,0 +1,27 @@
+{
+  "comparisons": [
+    {
+      "baseline": "vr\\proof\\stereo-pairs\\slot3-release-off\\fingerprint.json",
+      "candidate": "vr\\proof\\stereo-pairs\\slot3-release-noverify\\fingerprint.json",
+      "frames": 96,
+      "baseline_first_label": 1304,
+      "candidate_first_label": 502,
+      "judge_columns": [
+        "wc",
+        "ws",
+        "mmio",
+        "mc",
+        "sp",
+        "sc",
+        "qc",
+        "cyc"
+      ],
+      "locator_columns": [
+        "wr",
+        "pc"
+      ],
+      "equal": true,
+      "differences": []
+    }
+  ]
+}

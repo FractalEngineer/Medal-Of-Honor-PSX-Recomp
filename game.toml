@@ -41,8 +41,9 @@ strict = true
 # planned from its entry, per docs/RENDER_PASSES.md; see
 # docs/reverse/VR_HOOK_POINT.md.
 # See vr/psx_vr_stereo.c and docs/reverse/M1_VIEW_MATRIX.md.
-# The gameplay no-op probe hooks overlay entry 0x80090B80 at runtime;
-# PSX_VR_PASS_PROBE=1 selects it instead of the legacy VSync probe.
+# Gameplay probes and paired stereo hook overlay entry 0x80090B80 at runtime.
+# PSX_VR_PASS_PROBE=1 selects temporal diagnostics; PSX_VR_STEREO=1 selects
+# explicit paired-eye capture/SBS without enabling temporal interpolation.
 mod_function_entry_funcs = ["0x80084718", "0x80016E38"]
 
 [runtime]

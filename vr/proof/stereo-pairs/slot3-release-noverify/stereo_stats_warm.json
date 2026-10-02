@@ -1,0 +1,50 @@
+﻿{
+  "id": 0,
+  "ok": true,
+  "attempts": 1719,
+  "pairs": 1719,
+  "refused": 0,
+  "failed": 0,
+  "shed": 0,
+  "status": 0,
+  "last_pair_id": 1719,
+  "last_guest_cycle": 19694574116,
+  "eye_cycles": [
+    19694574116,
+    19694574116
+  ],
+  "eye_hashes": [
+    "0000000000000000",
+    "0000000000000000"
+  ],
+  "eye_view": [
+    [
+      24,
+      0,
+      0
+    ],
+    [
+      -24,
+      0,
+      0
+    ]
+  ],
+  "last_eye": 1,
+  "last_failure": "",
+  "last_failed_attempt": 0,
+  "last_failed_eye": 0,
+  "last_failed_reason": "",
+  "retained_pair_id": 0,
+  "last_pair_ms": 12.013,
+  "avg_pair_ms": 11.584,
+  "published": {
+    "valid": 1,
+    "pair_id": 1719,
+    "guest_cycle": 19694574116,
+    "width": 2560,
+    "height": 1200,
+    "staged_mask": 3,
+    "mode": 1,
+    "presents": 3437
+  }
+}

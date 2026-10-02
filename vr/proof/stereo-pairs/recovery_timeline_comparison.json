@@ -1,0 +1,27 @@
+{
+  "comparisons": [
+    {
+      "baseline": "vr\\proof\\stereo-pairs\\slot3-off\\fingerprint.json",
+      "candidate": "vr\\proof\\stereo-pairs\\slot3-right-watchdog-recovery\\fingerprint.json",
+      "frames": 96,
+      "baseline_first_label": 189,
+      "candidate_first_label": 785,
+      "judge_columns": [
+        "wc",
+        "ws",
+        "mmio",
+        "mc",
+        "sp",
+        "sc",
+        "qc",
+        "cyc"
+      ],
+      "locator_columns": [
+        "wr",
+        "pc"
+      ],
+      "equal": true,
+      "differences": []
+    }
+  ]
+}
