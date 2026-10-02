@@ -18,7 +18,10 @@
  *   PSX_VR_OFFSET=N       signed delta added to that axis (0 = disabled)
  *   PSX_VR_PASS_PROBE=1   no-op capture at gameplay's render-wait entry
  *                        (also set PSX_VR_INTERP=1; inspect render_pass_stats)
- *   PSX_VR_PASS_WATCHDOG=1 one-shot rollback fault injection inside that probe
+ *   PSX_VR_PASS_WATCHDOG=1 one-shot synthetic rollback fault injection
+ *                       =2 inject while inside the real level draw dispatch
+ *   PSX_VR_PASS_DRAW=1    experimental bounded scene draw, excluding wait/flip
+ *                    =2  clear-only control; =3 level-only coverage control
  *
  * The offset is applied as patch-then-restore: the entity's original value is
  * written back at the start of its NEXT call before re-patching, so the stored
@@ -82,6 +85,7 @@ static int g_probe;      /* PSX_VR_PROBE */
 static uint32_t g_target;/* PSX_VR_TARGET, 0 = all */
 static int g_axis;       /* PSX_VR_AXIS */
 static int32_t g_offset; /* PSX_VR_OFFSET */
+static void vr_nested_watchdog(CPUState* cpu);
 
 static int16_t vr_rd(uint32_t ent, int axis) {
     return (int16_t)psx_mod_read_half(ent + 0x98 + (uint32_t)axis * 2);
@@ -259,6 +263,7 @@ static int g_lvtx_logged;
 
 static void vr_lvtx_entry(CPUState* cpu, uint32_t address) {
     (void)address;
+    vr_nested_watchdog(cpu);
     g_lvtx_calls++;
     if (g_probe && !g_lvtx_logged) {
         g_lvtx_logged = 1;
@@ -285,6 +290,7 @@ static int g_interp;          /* PSX_VR_INTERP: enable interpolation + FLIP src 
 static int g_pass_probe;      /* PSX_VR_PASS_PROBE: no-op before render wait */
 static int g_pass_watchdog;   /* opt-in synthetic abort, not a guest draw */
 static int g_pass_watchdog_done;
+static int g_pass_draw;
 static int g_in_pass;         /* cleared after API return, including watchdog abort */
 static uint32_t g_interp_hz;  /* PSX_VR_INTERP_HZ: 0 = follow display refresh */
 /* The pass rect. RENDER_PASSES.md wants "the display rect the next flip shows
@@ -296,30 +302,99 @@ static int g_rect_x, g_rect_y = 0;
 static int g_rect_w = 512, g_rect_h = 240;
 static int g_rect_alt;
 
-/* The pass body. For now it draws nothing: a no-op pass still exercises the
- * whole mechanism (freeze, capture, restore) and proves an image is produced,
- * which is what the harness test needs. The per-eye redraw goes here next. */
+/* Default body is a no-op. Opt-in draw/coverage controls exercise the measured
+ * slot-1 scene slice; paired-eye capture and presentation remain separate work. */
 static uint32_t g_pass_runs;
 
+static void vr_watchdog_inject(CPUState* cpu) {
+    g_pass_watchdog_done = 1;
+    cpu->gpr[4] ^= 0x13579bdfu;
+    cpu->gte_ctrl[5] ^= 0x2468ace0u;
+    psx_mod_write_word(0x800a0100u, 0x12345678u);
+    psx_mod_write_word(0x1f8003f0u, 0x89abcdefu);
+    for (uint32_t i = 0; i < 256u; ++i) psx_advance_cycles(65536u);
+}
+
+static void vr_nested_watchdog(CPUState* cpu) {
+    if (g_in_pass && g_pass_draw && g_pass_watchdog == 2 && !g_pass_watchdog_done)
+        vr_watchdog_inject(cpu);
+}
+
+/* Reconstruct the calls before 0x8005047C from FUN_800503D4, then submit the
+ * freshly built OT directly. Calling the enclosing function would enter a
+ * frozen-time wait/flip. Each real function returns through the existing hook
+ * caller's return address, which dispatch uses as its stop contract. */
+static void vr_guest_call(CPUState* cpu, uint32_t entry, uint32_t a0,
+                          uint32_t a1, uint32_t a2, uint32_t ra) {
+    cpu->gpr[4] = a0;
+    cpu->gpr[5] = a1;
+    cpu->gpr[6] = a2;
+    cpu->gpr[31] = ra;
+    psx_dispatch_call(cpu, entry, ra);
+}
+
+static int vr_draw_scene(CPUState* cpu, const PSXModRenderPass* pass) {
+    const uint32_t ctx = 0x8009a620u;
+    const uint32_t ra = cpu->gpr[31];
+    uint32_t index = psx_mod_read_word(ctx + 8708u);
+    uint32_t world = psx_mod_read_word(0x8009cc64u);
+    uint32_t camera = psx_mod_read_word(0x8009d654u);
+    if (index > 1u || world < 0x80000000u || world >= 0x80200000u ||
+        camera < 0x80000000u || camera >= 0x80200000u) return 0;
+    /* Set the game's current draw environment without PutDispEnv or a wait.
+     * Then clear the entire pass rect: untouched baseline pixels cannot hide
+     * missing coverage in the first replay image. */
+    vr_guest_call(cpu, 0x80017348u, ctx + 16u + 184u * index, 0, 0, ra);
+    psx_mod_write_word(0x1f801810u, 0x02000000u);
+    psx_mod_write_word(0x1f801810u, ((uint32_t)pass->y << 16) | pass->x);
+    psx_mod_write_word(0x1f801810u, ((uint32_t)pass->h << 16) | pass->w);
+    if (g_pass_draw == 2) return 1;
+    vr_guest_call(cpu, 0x80050548u, psx_mod_read_word(0x8009d638u), 0, 0, ra);
+    if (g_pass_draw == 3) {
+        /* Resolve the level callback's entity from the current scene list.
+         * Do not pin the observed slot-1 entity address. */
+        uint32_t entity = psx_mod_read_word(0x8009d64cu);
+        uint32_t remaining = 512u;
+        while (entity >= 0x80000000u && entity < 0x801ff000u && remaining--) {
+            if (psx_mod_read_word(entity + 880u) == 0x80053c20u) break;
+            entity = psx_mod_read_word(entity + 4u);
+        }
+        if (entity < 0x80000000u || entity >= 0x801ff000u ||
+            psx_mod_read_word(entity + 880u) != 0x80053c20u) return 0;
+        vr_guest_call(cpu, 0x80053c20u, entity, ctx, 0, ra);
+        vr_guest_call(cpu, 0x800172d8u,
+                      psx_mod_read_word(ctx + 8728u) + 511u * 4u, 0, 0, ra);
+        return 1;
+    }
+    if (psx_mod_read_byte(world + 1423u))
+        vr_guest_call(cpu, 0x80088368u, ctx, 0, 0, ra);
+    if (psx_mod_read_word(world + 1420u) & 0x00ffffffu)
+        vr_guest_call(cpu, 0x80089a0cu, ctx, 0, 0, ra);
+    vr_guest_call(cpu, 0x80064550u, 0, 0, 0, ra);
+    vr_guest_call(cpu, 0x8005f86cu, psx_mod_read_word(ctx + 8728u),
+                  psx_mod_read_word(ctx + 8732u), 0, ra);
+    vr_guest_call(cpu, 0x8006c714u, ctx, psx_mod_read_word(0x8009d64cu), 0, ra);
+    vr_guest_call(cpu, 0x8008019cu, camera, ctx, 0, ra);
+    /* ClearOTagR initializes 512 entries; DrawOTag starts from the final one.
+     * 0x800172D8 is DrawOTag, confirmed by its own debug-string producer. */
+    vr_guest_call(cpu, 0x800172d8u, psx_mod_read_word(ctx + 8728u) + 511u * 4u,
+                  0, 0, ra);
+    return 1;
+}
+
 static int vr_pass_fn(CPUState* cpu, void* user, uint32_t alpha_q16) {
-    (void)cpu;
-    (void)user;
     g_pass_runs++;
-    if (g_pass_probe && g_pass_watchdog && !g_pass_watchdog_done) {
+    if (g_pass_probe && g_pass_watchdog == 1 && !g_pass_watchdog_done) {
         /* Host selector survives rollback. Set it before the watchdog longjmp,
          * so later passes prove the entry guard recovered and can run again.
          * Deliberately change checkpointed CPU, GTE, RAM and scratchpad state;
          * PSX_RENDER_PASS_VERIFY checks restoration after the abort. */
-        g_pass_watchdog_done = 1;
-        cpu->gpr[4] ^= 0x13579bdfu;
-        cpu->gte_ctrl[5] ^= 0x2468ace0u;
-        psx_mod_write_word(0x800a0100u, 0x12345678u);
-        psx_mod_write_word(0x1f8003f0u, 0x89abcdefu);
         /* The default watchdog is 8M cycles; it can only be lowered by env.
          * Keep the injection bounded even if that contract changes. */
-        for (uint32_t i = 0; i < 256u; ++i) psx_advance_cycles(65536u);
+        vr_watchdog_inject(cpu);
         return 0; /* Unexpected survival: discard rather than publish. */
     }
+    if (g_pass_draw) return user ? vr_draw_scene(cpu, user) : 0;
     if (g_probe && g_pass_runs <= 4u) {
         fprintf(stdout, "vr-pass-run: run=%u alpha=%u\n", g_pass_runs, alpha_q16);
         fflush(stdout);
@@ -404,7 +479,7 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
     if (!n) return;
     pass.alpha_q16 = alpha[0];
     g_in_pass = 1;
-    (void)psx_mod_render_pass(cpu, &pass, vr_pass_fn, NULL);
+    (void)psx_mod_render_pass(cpu, &pass, vr_pass_fn, &pass);
     g_in_pass = 0;
 }
 
@@ -435,7 +510,10 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_OFFSET"))) g_offset = (int32_t)strtol(e, NULL, 0);
     if ((e = getenv("PSX_VR_INTERP"))) g_interp = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_PASS_PROBE"))) g_pass_probe = (e[0] && e[0] != '0');
-    if ((e = getenv("PSX_VR_PASS_WATCHDOG"))) g_pass_watchdog = (e[0] && e[0] != '0');
+    if ((e = getenv("PSX_VR_PASS_WATCHDOG"))) g_pass_watchdog = atoi(e);
+    if ((e = getenv("PSX_VR_PASS_DRAW"))) g_pass_draw = atoi(e);
+    if (g_pass_watchdog < 0 || g_pass_watchdog > 2) g_pass_watchdog = 0;
+    if (g_pass_draw < 0 || g_pass_draw > 3) g_pass_draw = 0;
     if ((e = getenv("PSX_VR_INTERP_HZ"))) g_interp_hz = (uint32_t)strtoul(e, NULL, 0);
     if ((e = getenv("PSX_VR_RECT"))) {
         int rx, ry, rw, rh;

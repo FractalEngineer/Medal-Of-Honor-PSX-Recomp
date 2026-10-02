@@ -1,0 +1,27 @@
+{
+  "comparisons": [
+    {
+      "baseline": "vr\\proof\\replay-scope\\fingerprint_off_1.json",
+      "candidate": "vr\\proof\\scene-replay\\fingerprint_draw.json",
+      "frames": 96,
+      "baseline_first_label": 15,
+      "candidate_first_label": 115,
+      "judge_columns": [
+        "wc",
+        "ws",
+        "mmio",
+        "mc",
+        "sp",
+        "sc",
+        "qc",
+        "cyc"
+      ],
+      "locator_columns": [
+        "wr",
+        "pc"
+      ],
+      "equal": true,
+      "differences": []
+    }
+  ]
+}

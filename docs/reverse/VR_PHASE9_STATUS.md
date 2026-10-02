@@ -479,3 +479,33 @@ the scene entity traversal with observed a0=0x801693E0, a1=0x8009A620. It iterat
 level groups and calls `0x8008BF00`, which invokes `0x8008B3E8` and primitive
 construction. These observations locate a candidate slice; no complete redraw
 has yet been claimed.
+# 2026-10-02: first complete slot-1 redraw and nested abort proof
+
+The plugin now provides opt-in `PSX_VR_PASS_DRAW=1`: reconstruct the calls before
+`0x8005047C` in `FUN_800503D4`, then submit the rebuilt OT using the corrected
+DrawOTag address. It excludes the wait/flip helper. The pass first sets the
+current game draw environment and clears its full rect. Two promoted replay
+images match the baseline decoded RGB pixels exactly and contain the room,
+weapon, compass and ammo counter. Nonzero work is measured at 389,779 guest
+cycles in the sampled pass; 87 checks have zero mismatches or dropped stores.
+
+Clear-only mode 2 produces an entirely black image; the capture therefore reflects
+the modified rect. Level-only mode 3 resolves the current level entity by callback
+pointer instead of pinning an observed RAM address. It retains the room and compass
+and omits the weapon/ammo counter (11,095 changed pixels). Do not call this a
+HUD-free level pass: the compass is retained.
+
+`PSX_VR_PASS_WATCHDOG=2` injects one abort at the level-transform hook inside a
+real pass dispatch. TCP records 1 watchdog/abort, 388 subsequent successes,
+389 verification checks, zero mismatches/leaks/dropped stores and no disable.
+The full-draw and nested-abort runs both match all measured fingerprint columns
+and cycle counts for the first 96 consecutive post-load frames against the
+repeatable probe-disabled control. Recorded `nesting_repairs=0` is not used to
+infer a particular native dispatch depth.
+
+Evidence: `vr/proof/scene-replay/`, with PNGs, raw TCP responses, exact controls,
+comparison receipts and reproduction commands. All changes here are game plugin
+and proof/docs changes; no framework transaction behavior was changed. This
+establishes a bounded complete scene replay for slot 1, not animated-object
+coverage, other game modes or a simultaneous stereo pair. Debug verification
+timings are recorded as samples, not a stereo performance claim.

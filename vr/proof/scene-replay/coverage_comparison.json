@@ -1,0 +1,94 @@
+{
+  "comparisons": [
+    {
+      "mode": "clear",
+      "size": [
+        512,
+        240
+      ],
+      "all_black": true,
+      "changed_pixels": 122871,
+      "diff_bbox": [
+        0,
+        0,
+        512,
+        240
+      ],
+      "row_bands": [
+        {
+          "rows": [
+            0,
+            30
+          ],
+          "changed": 15360
+        },
+        {
+          "rows": [
+            30,
+            120
+          ],
+          "changed": 46080
+        },
+        {
+          "rows": [
+            120,
+            180
+          ],
+          "changed": 30720
+        },
+        {
+          "rows": [
+            180,
+            240
+          ],
+          "changed": 30711
+        }
+      ]
+    },
+    {
+      "mode": "level",
+      "size": [
+        512,
+        240
+      ],
+      "all_black": false,
+      "changed_pixels": 11095,
+      "diff_bbox": [
+        109,
+        18,
+        486,
+        240
+      ],
+      "row_bands": [
+        {
+          "rows": [
+            0,
+            30
+          ],
+          "changed": 275
+        },
+        {
+          "rows": [
+            30,
+            120
+          ],
+          "changed": 3177
+        },
+        {
+          "rows": [
+            120,
+            180
+          ],
+          "changed": 1257
+        },
+        {
+          "rows": [
+            180,
+            240
+          ],
+          "changed": 6386
+        }
+      ]
+    }
+  ]
+}

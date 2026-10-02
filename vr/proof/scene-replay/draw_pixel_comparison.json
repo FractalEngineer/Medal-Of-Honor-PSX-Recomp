@@ -1,0 +1,34 @@
+{
+  "method": "decoded RGB pixel comparison",
+  "comparisons": [
+    {
+      "baseline": "g000_00_a00000.png",
+      "pass": "g000_01_a32768.png",
+      "baseline_size": [
+        512,
+        240
+      ],
+      "pass_size": [
+        512,
+        240
+      ],
+      "changed_pixels": 0,
+      "equal": true
+    },
+    {
+      "baseline": "g001_00_a00000.png",
+      "pass": "g001_01_a32768.png",
+      "baseline_size": [
+        512,
+        240
+      ],
+      "pass_size": [
+        512,
+        240
+      ],
+      "changed_pixels": 0,
+      "equal": true
+    }
+  ],
+  "ok": true
+}

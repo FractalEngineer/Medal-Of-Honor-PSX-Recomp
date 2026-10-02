@@ -104,12 +104,20 @@ projection/convergence and world scale after the paired-image proof.
 - [x] Live refusing branch measured: startup requested 512x240, history 256x240.
 - [x] No-op capture/restore proved: two matching PNG pairs; 727 checks, zero mismatches.
 - [x] Live no-op fingerprint comparison and synthetic watchdog rollback (96 frames).
-- [ ] Replayable complete draw slice established.
+- [x] Bounded scene draw established in slot 1; level, weapon and HUD rebuilt.
+- [ ] Animated enemy/world-object coverage and additional scene modes verified.
 - [ ] Same-state eye pair captured and measured.
 - [ ] Paired-eye API and side-by-side presentation implemented.
 
 Evidence: [pass-diagnostics README](../../vr/proof/pass-diagnostics/README.md).
 The no-op cost includes verification; it is not a redraw or stereo cost estimate.
-The watchdog injection changes CPU/GTE/RAM/scratchpad and advances frozen cycles;
-it does not yet test an abort from nested guest draw dispatch. Draw replay must
-repeat the timeline/rollback checks with nonzero guest work.
+The initial synthetic watchdog injection changes CPU/GTE/RAM/scratchpad and
+advances frozen cycles. It was followed by an abort inside real guest dispatch.
+
+Measured follow-up: `PSX_VR_PASS_DRAW=1` reconstructs the frame's draw calls and
+submits the completed OT without the wait/flip helper. Clear-only and level-only
+controls isolate coverage. A watchdog injected inside the real level dispatch
+also restores and recovers; full-draw and nested-abort 96-frame timelines match
+the controls. See [scene replay evidence](../../vr/proof/scene-replay/README.md).
+These timeline and real-dispatch checks are complete for this scene; repeat them
+when introducing eye transforms, additional callbacks or other scene modes.
