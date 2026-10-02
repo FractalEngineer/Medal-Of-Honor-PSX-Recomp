@@ -26,3 +26,22 @@ had none. Generally useful, not VR-specific. Strong upstream candidate.
 `runtime/src/gte.cpp`: `gte_set_fov_scale(num,den)` applied to `H` at the
 perspective divide; `PSX_GTE_FOV_SCALE` env; the GTE ring records effective H.
 VR-facing; upstream only as part of a settled VR design.
+
+
+## Native XR startup and pacing inspection (2026-10-03 checkpoint)
+
+Framework checkpoint 5bafeebf is committed and pushed; this submodule now pins it.
+Inventory: runtime/include/{mod_plugins,psx_openxr,gpu_gl_renderer}.h;
+runtime/src/{gpu_gl_renderer,psx_openxr,debug_server}.c. Generic persistent
+psx_mod_openxr_native_surface API copies fresh native presentation to VIEW quads
+before host OSD; source/native-frame stats and actual GL swap interval extend
+existing TCP commands. Off-XR stats test and GL runner cleanup linking updated
+in main framework. No guest timing/decode/default-render modifications.
+
+Normal boot/menu and natural genuine-stereo gameplay handoff accepted on Quest
+3/VDXR, with save generation zero. Game launcher desktop VSync 0 resolved user
+sound/framerate complaint; native MDEC control guest rates 49.547 -> 59.195 Hz,
+actual swap intervals measured, turbo off. Bicubic trial removed at user request.
+Main framework docs/UPSTREAM_PENDING.md carries API/test details for later PR.
+User authorized this checkpoint. Framework committed and pushed first; game pin
+updated and generation rerun (all 25 C shards and dispatch unchanged).

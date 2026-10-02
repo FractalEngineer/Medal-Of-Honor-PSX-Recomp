@@ -1,0 +1,106 @@
+{
+  "date": "2026-10-03",
+  "state": "User authorized commit/push checkpoint",
+  "framework_submodule": "clean at pushed 5bafeebf checkpoint; runtime bytes match measured mirrors",
+  "retracted_workaround": {
+    "removed_commits": [
+      "7ef7a20",
+      "15d9f09"
+    ],
+    "quick_start_save_default": "removed; normal boot Slot=-1"
+  },
+  "correction": "First native attempt supplied 1856x1392 to bounded PSX view math, resulting in zero submissions; use 512x240 for unused matrices and copy full drawable.",
+  "boot": {
+    "native_submitted": 554,
+    "empty": 0,
+    "failures": 0,
+    "save_generation": 0,
+    "last_slot": -1,
+    "user": "Visible and controls work; all menus fixed"
+  },
+  "natural_gameplay_inspection": {
+    "submitted": 4029,
+    "source": 1,
+    "empty": 0,
+    "failures": 0,
+    "save_generation": 0
+  },
+  "pacing": {
+    "vsync_on": {
+      "intervals": 25,
+      "seconds": 13.502267950010719,
+      "guest_frames": 669,
+      "decoded_frames": 159,
+      "actual_gl_swap_intervals": [
+        1
+      ],
+      "guest_hz": 49.5472318040814,
+      "decoded_hz": 11.775799487068673,
+      "note": "Adjacent queries, native MDEC intervals only; not display motion-to-photon proof."
+    },
+    "vsync_off": {
+      "intervals": 28,
+      "seconds": 15.052020850009285,
+      "guest_frames": 891,
+      "decoded_frames": 206,
+      "actual_gl_swap_intervals": [
+        0
+      ],
+      "guest_hz": 59.19470939342011,
+      "decoded_hz": 13.685869960768287,
+      "note": "Adjacent queries, native MDEC intervals only; not display motion-to-photon proof."
+    },
+    "bicubic_removed": {
+      "intervals": 33,
+      "seconds": 17.90912065000157,
+      "guest_frames": 1047,
+      "decoded_frames": 246,
+      "actual_gl_swap_intervals": [
+        0
+      ],
+      "guest_hz": 58.46183184878529,
+      "decoded_hz": 13.73601779828193,
+      "note": "Adjacent queries, native MDEC intervals only; not display motion-to-photon proof."
+    }
+  },
+  "bicubic_trial": {
+    "retained": false,
+    "user": "Little difference; earlier attempt better; keep earlier",
+    "GL_controls": "168 checks, zero failures at each scale 1 and 4",
+    "submitted_inspection": 2914,
+    "native_submitted": 2892,
+    "failures": 0
+  },
+  "accepted_current": "Original video presentation, XR desktop VSync 0, deadline guest cap intact; user sound/framerate fixed",
+  "limits": [
+    "Adjacent TCP queries, not audio underrun or compositor cadence proof",
+    "No independent decoder fidelity comparison",
+    "Native-mode activity policy has four-VBlank timeout"
+  ],
+  "raw_ignored": "analysis/vr-proof/",
+  "owned_game_closed": true,
+  "source_sha256": {
+    "runtime/src/gpu_gl_renderer.c": "1c6dda056b2324f20db0017702a23fdfc94489dca8ca41ba5708766864b2dfe9",
+    "runtime/src/psx_openxr.c": "4f1e53751e6e1acd1e403ec9759963285fcfd127ffd59af35583a9227cfd9f11",
+    "runtime/src/debug_server.c": "ee60529239eb1d7f0139ddbd5ed17b37a1e3325790eabf843ce9c14a366ef031"
+  },
+  "final_validation": {
+    "release_build": "passed after removal of bicubic trial",
+    "debug_build": "passed after removal of bicubic trial",
+    "native_GL_regression": "157 checks / zero failures each at 1x and 4x after filter removal",
+    "menu_input_strict": "passed",
+    "off_XR_strict": "passed",
+    "render_guards": "passed",
+    "TCP_index": "332 commands current",
+    "diff_check": "passed",
+    "regeneration": "passed after pin update: 25 shards and dispatch unchanged",
+    "checkpoint_release_build": "passed after clean framework pin update and regeneration",
+    "checkpoint_menu_input_strict": "passed"
+  },
+  "executable_sha256": "8d987f5ded905323f51c6d1d2c43b6d93287c18a7ce41d705dcf2b924e28ce6e",
+  "launcher_sha256": "ea1ecd27c0d38c2615fc81b18441430d9caf393f5399572eab7a91ec8b667a3f",
+  "game_base": "4613331",
+  "tested_framework_base": "6134f8b8",
+  "framework_checkpoint": "5bafeebf3f0c2eaaa38212f960b9f6f88351cb74",
+  "checkpoint_executable_sha256": "d2e206e5860a2774b8a521f43bdea6ea725de591d7764662fb09fc08e81bfa47"
+}

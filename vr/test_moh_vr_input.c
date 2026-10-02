@@ -75,5 +75,22 @@ int main(void) {
     assert(!moh_vr_input_map(&input, 1, .65, &response, &pad));
     response.axis[0].negative_factor = 0;
     assert(!moh_vr_input_map(&input, .2, .65, &response, &pad));
+    /* Menu input works before the gameplay response table is initialized. */
+    memset(&input,0,sizeof input);input.struct_size=sizeof input;input.focused=1;
+    input.buttons_active[1]=PSX_MOD_XR_CLICKS;input.buttons[1]=PSX_MOD_XR_PRIMARY;
+    assert(moh_vr_menu_input_map(&input,.2,&pad) && pad.buttons==0xbfff);
+    input.buttons[1]=PSX_MOD_XR_SECONDARY;
+    assert(moh_vr_menu_input_map(&input,.2,&pad) && pad.buttons==0xdfff);
+    input.buttons[1]=0;input.active[0]=1;input.stick[0][0]=-1;input.stick[0][1]=1;
+    assert(moh_vr_menu_input_map(&input,.2,&pad) && pad.buttons==0xff6f);
+    input.stick[0][0]=NAN;input.stick[0][1]=.2f;
+    assert(moh_vr_menu_input_map(&input,.2,&pad) && pad.buttons==0xffff);
+    input.trigger_active[1]=1;input.trigger[1]=.9f;input.active[0]=0;
+    assert(moh_vr_menu_input_map(&input,.2,&pad) && pad.buttons==0xbfff);
+    input.focused=0;
+    assert(moh_vr_menu_input_map(&input,.2,&pad) && pad.buttons==0xffff && pad.lx==128);
+    input.focused=1;input.trigger[1]=NAN;input.buttons_active[1]=0;
+    assert(moh_vr_menu_input_map(&input,.2,&pad) && pad.buttons==0xffff);
+    assert(!moh_vr_menu_input_map(&input,1,&pad));
     return 0;
 }

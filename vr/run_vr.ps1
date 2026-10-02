@@ -3,6 +3,7 @@ param(
     [double]$IPDmm = 67,
     [double]$UnitsPerMeter = (48.0 / 0.067),
     [switch]$Desktop,
+    [switch]$DesktopVSyncDiagnostic,
     [switch]$MovementDiagnostic,
     [switch]$NoMovement,
     [switch]$WeaponAimDiagnostic,
@@ -31,6 +32,9 @@ $vrBuild = Join-Path $vrRoot $BuildDirectory
 $vrExe = Join-Path $vrBuild 'Medal_of_Honor__Recompiled.exe'
 $vrVariables = @{
     PSX_OPENXR = [string][int](-not $Desktop);
+    # XR waits for its compositor; avoid an additional desktop VSync wait.
+    # The runtime retains its deadline-based guest speed cap.
+    PSX_VSYNC = $(if ($Desktop) { [Environment]::GetEnvironmentVariable('PSX_VSYNC','Process') } else { [string][int]$DesktopVSyncDiagnostic.IsPresent });
     PSX_VR_OPENXR = [string][int](-not $Desktop);
     PSX_VR_STEREO = '1'; PSX_VR_PROBE = '0'; PSX_VR_INTERP = '0';
     PSX_VR_MOVEMENT = [string][int]((-not $NoMovement) -and ((-not $Desktop) -or $MovementDiagnostic));
@@ -87,6 +91,9 @@ try {
         $vrRunDir = 'analysis/vr-proof/run-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
         python vr/capture_stereo.py $vrRunDir --slot $Slot --pairs 0 --executable $vrExe
         if ($LASTEXITCODE -ne 0) { throw 'VR slot load failed' }
+    } elseif (-not $Desktop) {
+        python vr/check_vr_startup.py
+        if ($LASTEXITCODE -ne 0) { throw 'VR startup failed; no headset frames submitted' }
     }
     if ($Seconds -gt 0) {
         $null = $vrProcess.WaitForExit($Seconds * 1000)

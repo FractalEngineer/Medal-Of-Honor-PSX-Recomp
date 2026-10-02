@@ -30,6 +30,29 @@ static uint32_t combat_buttons(const PSXModOpenXRInput *input) {
         input->squeeze[1] >= .55f && input->squeeze[1] <= 1) pressed |= 0x0200; /* right grip: R2/native aim */
     return 0xffffu ^ pressed;
 }
+int moh_vr_menu_input_map(const PSXModOpenXRInput *input,double deadzone,
+                         PSXModControllerState *pad) {
+    if(!pad)return 0;
+    memset(pad,0,sizeof *pad);pad->struct_size=sizeof *pad;
+    pad->buttons=0xffff;pad->lx=pad->ly=pad->rx=pad->ry=128;pad->analog=1;
+    if(!input || input->struct_size!=sizeof *input || !input->focused)return 1;
+    if(!isfinite(deadzone) || deadzone<0 || deadzone>=1)return 0;
+    uint32_t left=input->buttons[0]&input->buttons_active[0];
+    uint32_t right=input->buttons[1]&input->buttons_active[1],pressed=0;
+    if(right&PSX_MOD_XR_PRIMARY)pressed|=0x4000; /* A: Cross/confirm */
+    if(right&PSX_MOD_XR_SECONDARY)pressed|=0x2000; /* B: Circle/back */
+    if(left&PSX_MOD_XR_MENU)pressed|=8; /* Menu: Start/skip */
+    if(input->trigger_active[1] && isfinite(input->trigger[1]) &&
+       input->trigger[1]>=.55f && input->trigger[1]<=1)pressed|=0x4000;
+    if(input->active[0]) {
+        double threshold=fmax(.55,deadzone),x=finite_axis(input->stick[0][0]),y=finite_axis(input->stick[0][1]);
+        if(x>threshold)pressed|=0x20;
+        if(x< -threshold)pressed|=0x80;
+        if(y>threshold)pressed|=0x10;
+        if(y< -threshold)pressed|=0x40;
+    }
+    pad->buttons=0xffffu^pressed;return 1;
+}
 int32_t moh_vr_analog_response(const MOHVRAnalogResponse *response,
                              unsigned axis, uint32_t byte) {
     if (!response || axis >= 3 || byte > 255) return 0;

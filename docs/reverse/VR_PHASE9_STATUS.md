@@ -1113,3 +1113,103 @@ lower world polygon remain separate, unvalidated items. Owned game is closed.
 
 Framework final pin 6134f8b8 adds the user acceptance documentation to the
 04714837 API build; no subsequent runtime source changes. Both commits pushed.
+
+
+## 2026-10-03: double-click VR launcher
+
+Added root RunVR.bat wrapping vr/run_vr.ps1 with WeaponPoseDiagnostic enabled
+and the existing accepted defaults. It boots normally, runs until game exit,
+forwards optional arguments (-Slot 0/5, -Build), and keeps startup errors
+visible. README records usage. A bounded -Desktop -Seconds 3 invocation from
+the framework folder passed with exit 0; no owned game remains. This verifies
+wrapper paths/argument forwarding/closure, not another headset check. No
+framework changes or calibration changes.
+
+
+## 2026-10-03: batch startup correction
+
+User reports RunVR.bat loads flat. Original wrapper omitted the saved-state
+entry used by successful headset runs. Native boot measured at guest frame
+935: XR stage=requested, initialized=0, submitted=0, stereo attempts=0.
+The prior three-second Desktop wrapper check established path/closure only;
+it did not validate actual VR startup. Corrected batch passes QuickStart;
+script selects slot 0 unless Slot is explicitly supplied, then the existing
+loader checks live submissions. No gameplay/render/framework changes.
+
+External bounded batch test from the framework folder loads slot 0 (generation
+1, pending=0, last_ok=1). VDXR snapshot: running/tracking=1, submitted=551,
+failures=0, layer=projection. Actual XR submission is measured; headset
+visibility still requires user observation. This snapshot is not a whole-run
+total. Intro/main menu remains outside the measured gameplay VR hook. Normal
+double-click has no timeout; only this test uses a 45-second bound.
+Compact receipt: VR_LAUNCH_RECEIPT.json; raw evidence remains ignored.
+
+The bounded corrected test ended with exit 0; owned game is closed.
+
+
+## 2026-10-03: normal VR boot and movie pacing (local, uncommitted)
+
+User requested full normal boot without any save state and withdrawal of the
+last two game commits. Removed 7ef7a20 and 15d9f09 from local/remote vr-dev with
+force-with-lease, retaining their files locally. Current game HEAD is 4613331;
+framework HEAD/pin remains 6134f8b8. No further commits or pushes until explicit
+user instruction. The prior QuickStart/save-slot workaround described above is
+superseded; RunVR.bat now starts normally with Slot=-1.
+
+Framework native-surface API copies only fresh native presentation before host
+OSD and tags successful XR sources. Game vblank/scene activity selects native
+boot/menu/video versus genuine gameplay pair rendering. Four VBlanks without
+the scene hook re-enable native mode; prolonged gameplay stalls remain an
+activity-policy limitation to revisit. Menu input uses a table-independent
+D-pad/Cross/Circle/Start map; gameplay controls retain measured calibration.
+
+Correction: the first native attempt submitted zero layers because drawable
+1856x1392 was passed into bounded PSX view math (stage=view_math). Changed only
+unused projection dimensions to 512x240; the full drawable still feeds the quad.
+Successful snapshot: 554 native quads, zero empty/failures, save generation 0,
+last slot -1. Natural gameplay handoff: source 1, 4029 total submissions, zero
+empty/failures. User confirmed "Visible and controls work" and all menus fixed.
+These are inspections, not whole-run totals or new guest rollback verification.
+
+User then reported laggy sound/video from intro through briefing. Controlled
+native MDEC intervals, with turbo off and equal display dimensions per interval:
+actual desktop swap interval 1: 25 intervals / 13.502s / 669 guest frames / 159
+decodes = 49.547 guest Hz / 11.776 decode Hz. Actual interval 0: 28 intervals /
+15.052s / 891 frames / 206 decodes = 59.195 / 13.686 Hz. Launcher now sets
+PSX_VSYNC=0 only for XR; deadline guest speed cap is intact. User confirmed
+"sound/framerate fixed". These adjacent TCP samples do not isolate audio
+underruns or headset compositor cadence; movie decode rate is not guest VBlank.
+
+Image trial: native 320x240 movie texels reconstructed with bicubic only during
+recent MDEC/native surface. Source-owned real GL at 1x/4x passed 168 checks each,
+including texel/orientation retention, unchanged canonical VRAM, GL bindings,
+and diagonal smoothing. Live trial: 58.462 guest Hz / 13.736 decode Hz, actual
+swap interval 0; filter activation 3 during video, -1 afterward. Inspection:
+2914 submissions, 2892 native, zero failures, save generation 0. User preferred
+the earlier presentation (little visible improvement). Removed the filter and
+restored prior visuals, retaining the accepted pacing fix. Grain/compression
+remains unresolved; do not infer decoder correctness from this screenshot.
+
+SDK Debug/Release candidates, strict menu/XR input tests, render guards and TCP
+index passed. Filter removal rebuilt for Release; final checks recorded in
+VR_LAUNCH_RECEIPT.json. Framework edits listed in both UPSTREAM_PENDING.md files;
+owned game closed. Raw traces remain ignored under analysis/vr-proof/.
+
+Final checkpoint: both SDK Release and Debug rebuilt after filter removal.
+Existing source-owned GL controls pass 157 checks each at 1x/4x. Both worktree
+diff checks pass; six framework runtime/header mirrors match exactly. No game
+process remains, and no new commits/pushes were made.
+
+## 2026-10-03: authorized commit/push checkpoint
+
+User explicitly authorized commit and push. Framework 5bafeebf committed and
+pushed to fork/vr-dev, with native boot/menu surfaces, source metadata, actual
+swap interval inspection, tests and UPSTREAM_PENDING.md inventory. Game
+submodule now pins that commit cleanly; verified temporary runtime mirrors
+were replaced by exactly matching committed sources. Reran game generation
+with the real disc: 25 C shards, decls, ranges and dispatch unchanged. No new
+headset claim; accepted earlier visuals and pacing retained.
+
+Clean-pin checkpoint checks passed: Release build, strict menu input tests and
+diff check. Earlier Debug/XR/GL checks remain applicable to identical runtime
+source bytes. Framework submodule is clean; raw proof remains ignored.

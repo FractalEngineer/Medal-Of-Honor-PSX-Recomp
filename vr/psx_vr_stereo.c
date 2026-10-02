@@ -355,6 +355,23 @@ static uint32_t g_stereo_eye;
 static uint32_t g_stereo_success;
 static int g_menu_surface=1,g_menu_flat;
 static double g_menu_distance=2,g_menu_width=2;
+static int g_native_surface=-1;
+static uint32_t g_scene_age=4;
+static void vr_native_surface_mode(int enabled) {
+    if(!g_stereo || g_native_surface==enabled)return;
+    if(g_openxr && !psx_mod_openxr_native_surface(enabled?g_menu_distance:0,
+                                     enabled?g_menu_width:0,enabled?g_units_per_meter:0))return;
+    g_native_surface=enabled;
+    (void)psx_mod_set_stereo_presentation(enabled?0:1);
+}
+static void vr_surface_vblank(void) {
+    if(!g_stereo || g_in_pass)return;
+    /* Explicit render-activity policy: allow two missed 30Hz draw intervals
+     * before returning to native UI/video presentation. A claimed draw keeps
+     * failures on the scene's empty-layer path, never a flat gameplay fallback. */
+    if(g_scene_age<4)g_scene_age++;
+    if(g_scene_age>=4)vr_native_surface_mode(1);
+}
 static int g_stereo_fault, g_stereo_fault_done, g_stereo_fault_hold;
 static uint32_t g_interp_hz;  /* PSX_VR_INTERP_HZ: 0 = follow display refresh */
 /* The pass rect. RENDER_PASSES.md wants "the display rect the next flip shows
@@ -561,6 +578,9 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
     if (pass.w != 512u || pass.h != 240u || pass.x + pass.w > 1024u ||
         pass.y + pass.h > 512u) return;
     if (g_stereo) {
+        uint32_t world=psx_mod_read_word(0x8009cc64u),camera=psx_mod_read_word(0x8009d654u);
+        if(world<0x80000000u || world>=0x80200000u || camera<0x80000000u || camera>=0x80200000u)return;
+        g_scene_age=0;vr_native_surface_mode(0);
         PSXModStereoFrame frame;
         /* Native pause flag: measured 0->1 writer 80062760 after Start. */
         g_menu_flat=g_menu_surface && psx_mod_read_word(0x8009a61cu)==1u;
@@ -620,6 +640,8 @@ static int vr_controller_source(PSXModControllerState *pad) {
     PSXModOpenXRInput input;
     memset(&input,0,sizeof input);input.struct_size=sizeof input;
     if (!psx_mod_openxr_input(&input)) return 0;
+    if(g_native_surface==1 || g_menu_flat)
+        return moh_vr_menu_input_map(&input,g_move_deadzone,pad);
     const uint32_t action_masks[9] = {0x40,0x10,0x20,1,0x80,0x80,0x800,0x200,2};
     for (unsigned i = 0; i < 9; ++i)
         if (psx_mod_read_word(0x800b7790u + i*4) != action_masks[i] ||
@@ -776,6 +798,7 @@ static uint32_t vr_controller_mode(const PSXModControllerInput *input) {
 static void vr_entity_activate(void) {
     if (g_stereo) (void)psx_mod_set_stereo_presentation(1);
     if (g_openxr) (void)psx_mod_openxr_enable(1);
+    g_scene_age=4;g_native_surface=-1;vr_native_surface_mode(1);
     if (g_movement) {
         (void)psx_mod_set_controller_mode_override(0,PSX_MOD_CONTROLLER_ANALOG);
         (void)psx_mod_set_controller_presentation_policy(0,vr_controller_mode,
@@ -909,4 +932,5 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
                                                  vr_shot_basis_entry);
     (void)psx_mod_register_activation_plugin("moh.vr.stereo",
                                              vr_entity_activate);
+    (void)psx_mod_register_vblank_plugin("moh.vr.stereo",vr_surface_vblank);
 }

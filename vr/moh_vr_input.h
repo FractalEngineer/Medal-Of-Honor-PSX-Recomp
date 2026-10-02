@@ -15,3 +15,6 @@ int32_t moh_vr_analog_response(const MOHVRAnalogResponse *response,
 int moh_vr_input_map(const PSXModOpenXRInput *input, double deadzone,
                     double turn_gain, const MOHVRAnalogResponse *response,
                     PSXModControllerState *pad);
+/* Native menu buttons/D-pad, independent of gameplay calibration tables. */
+int moh_vr_menu_input_map(const PSXModOpenXRInput *input,double deadzone,
+                         PSXModControllerState *pad);

@@ -69,6 +69,22 @@ Optional box art under `launcher_assets/img/` may come from
 
 ## Quick start (dev)
 
+For the local Quest 3 / VDXR build, connect Virtual Desktop and double-click
+`RunVR.bat` in the project folder. It starts normally in VR: boot videos,
+main menu and briefing use a comfortable native-screen surface, and gameplay
+switches to genuine per-eye rendering. No save state is required. Left stick
+navigates menus; A or right trigger confirms, B goes back. Accepted world scale,
+tracked rifle, movement/combat controls and pause distance remain enabled.
+It runs until you close the game; startup errors stay visible in the console.
+
+Optional: `RunVR.bat -Slot 5` explicitly loads the enemy test save.
+`RunVR.bat -Build` rebuilds before normal boot. The default executable is
+`build-release/Medal_of_Honor__Recompiled.exe`. VR disables desktop VSync to
+avoid a second wait; the guest real-time speed cap remains active. The
+`-DesktopVSyncDiagnostic` option restores VSync only for comparison.
+
+Framework pin `5bafeebf` includes the matching native VR startup support.
+
 ```bash
 git submodule update --init --recursive
 ./psxrecomp/tools/ci/build_emitters.sh
