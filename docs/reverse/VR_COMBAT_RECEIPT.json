@@ -1,0 +1,1225 @@
+{
+  "date": "2026-10-02",
+  "framework_commit": "ac6f84ba",
+  "scope": "Desktop synthetic Quest actions through native SIO/game writers; hardware actions pending",
+  "default_scheme_required": true,
+  "world_scale": 3,
+  "provenance_release": {
+    "executable": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\build-release\\Medal_of_Honor__Recompiled.exe",
+    "sha256": "3ff5f8948348e7afb04d5bc715c82ba050965b7c45d51e5c8b2db9f45c4b9bfa",
+    "framework_root": "C:\\Users\\titan\\Desktop\\Github_Projects\\psxrecomp",
+    "framework_revision": "5a1264b79b69b5d75f7b8507e305b1e13a911a50",
+    "framework_tracked_changes": [
+      " M runtime/include/mod_plugins.h",
+      " M runtime/src/debug_server.c",
+      " M runtime/src/psx_openxr.c",
+      " M runtime/tests/test_openxr_input.c"
+    ]
+  },
+  "save_provenance": {
+    "slot": 3,
+    "file": "saves\\openbios\\state_8001DFD4_slot03.pst",
+    "size": 1904338,
+    "mtime_ns": 1790900405927447400,
+    "sha256": "582aa0b34485bc013e84fe296781f496d51e60ac279a9557cc6d9837399ed455"
+  },
+  "results": {
+    "debug": {
+      "synthetic": true,
+      "atomic_action_pad_queries": false,
+      "controls": {
+        "native_tables": {
+          "required_hex": "400000001000000020000000010000008000000080000000000800000002000002000000",
+          "forbidden_hex": "000000000000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "weapon-cycle": {
+          "fields": {
+            "right_buttons": 2
+          },
+          "interval": {
+            "first": 8554,
+            "last": 8566
+          },
+          "pad": {
+            "buttons": "0xDFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "equipped_hex": "000c2600",
+          "synthetic": 1,
+          "focused": 1,
+          "writers": [
+            {
+              "frame": 8583,
+              "pc": "0x8007A960",
+              "addr": "0x000EEC80",
+              "old": "0x00000001",
+              "new": "0x00000000",
+              "w": 1
+            },
+            {
+              "frame": 8583,
+              "pc": "0x8007DDFC",
+              "addr": "0x000EEC81",
+              "old": "0x00000003",
+              "new": "0x0000000C",
+              "w": 1
+            }
+          ]
+        },
+        "fire": {
+          "fields": {
+            "right_trigger": 1000
+          },
+          "interval": {
+            "first": 8636,
+            "last": 8648
+          },
+          "pad": {
+            "buttons": "0xBFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "clip_before": 8,
+          "clip_after": 7,
+          "synthetic": 1,
+          "focused": 1,
+          "writers": [
+            {
+              "frame": 8637,
+              "pc": "0x8007DC24",
+              "addr": "0x000EEC92",
+              "old": "0x00000008",
+              "new": "0x00000007",
+              "w": 2
+            }
+          ]
+        },
+        "reload": {
+          "fields": {
+            "left_buttons": 1
+          },
+          "interval": {
+            "first": 8690,
+            "last": 8703
+          },
+          "pad": {
+            "buttons": "0x7FFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "clip_before": 7,
+          "clip_after": 8,
+          "reserve_before": 38,
+          "reserve_after": 37,
+          "synthetic": 1,
+          "focused": 1,
+          "writers": [
+            {
+              "frame": 8693,
+              "pc": "0x80046184",
+              "addr": "0x000EEC92",
+              "old": "0x00000007",
+              "new": "0x00000008",
+              "w": 2
+            },
+            {
+              "frame": 8693,
+              "pc": "0x800461A8",
+              "addr": "0x000EEC82",
+              "old": "0x00000026",
+              "new": "0x00000025",
+              "w": 2
+            }
+          ]
+        },
+        "crouch": {
+          "fields": {
+            "left_buttons": 8
+          },
+          "interval": {
+            "first": 8897,
+            "last": 8910
+          },
+          "pad": {
+            "buttons": "0xFEFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1,
+          "writers": [
+            {
+              "frame": 8900,
+              "pc": "0x8007ACD8",
+              "addr": "0x000EEC2C",
+              "old": "0x00080000",
+              "new": "0x00080002",
+              "w": 4
+            }
+          ]
+        },
+        "crouch-second-press": {
+          "fields": {
+            "left_buttons": 8
+          },
+          "interval": {
+            "first": 8919,
+            "last": 8931
+          },
+          "pad": {
+            "buttons": "0xFEFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "jump": {
+          "fields": {
+            "left_buttons": 2
+          },
+          "interval": {
+            "first": 9001,
+            "last": 9013
+          },
+          "pad": {
+            "buttons": "0xEFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "use": {
+          "fields": {
+            "right_buttons": 1
+          },
+          "interval": {
+            "first": 9026,
+            "last": 9038
+          },
+          "pad": {
+            "buttons": "0x7FFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "native-aim": {
+          "fields": {
+            "right_squeeze": 1000
+          },
+          "interval": {
+            "first": 9048,
+            "last": 9060
+          },
+          "pad": {
+            "buttons": "0xFDFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "combined": {
+          "fields": {
+            "right_trigger": 1000,
+            "lx": 707,
+            "ly": 707,
+            "rx": 1000
+          },
+          "interval": {
+            "first": 9072,
+            "last": 9084
+          },
+          "pad": {
+            "buttons": "0xBFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              241,
+              7,
+              243,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "unfocused": {
+          "fields": {
+            "right_trigger": 1000,
+            "right_buttons": 3,
+            "left_buttons": 15,
+            "right_squeeze": 1000,
+            "focused": 0
+          },
+          "interval": {
+            "first": 9086,
+            "last": 9098
+          },
+          "pad": {
+            "buttons": "0xFFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 0
+        },
+        "inactive": {
+          "fields": {
+            "right_trigger": 1000,
+            "right_buttons": 3,
+            "left_buttons": 15,
+            "right_squeeze": 1000,
+            "right_trigger_active": 0,
+            "right_squeeze_active": 0,
+            "left_buttons_active": 0,
+            "right_buttons_active": 0
+          },
+          "interval": {
+            "first": 9100,
+            "last": 9113
+          },
+          "pad": {
+            "buttons": "0xFFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "buttons-with-inactive-sticks": {
+          "fields": {
+            "right_trigger": 1000,
+            "left_active": 0,
+            "right_active": 0
+          },
+          "interval": {
+            "first": 9123,
+            "last": 9136
+          },
+          "pad": {
+            "buttons": "0xBFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "pause": {
+          "fields": {
+            "left_buttons": 4
+          },
+          "interval": {
+            "first": 9209,
+            "last": 9221
+          },
+          "pad": {
+            "buttons": "0xFFF7",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "resume": {
+          "fields": {
+            "left_buttons": 4
+          },
+          "interval": {
+            "first": 9238,
+            "last": 9252
+          },
+          "pad": {
+            "buttons": "0xFFF7",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        }
+      },
+      "render_pass_stats": {
+        "id": 0,
+        "ok": true,
+        "plans": 0,
+        "planned": 0,
+        "wanted": 0,
+        "refused": 0,
+        "passes": 594,
+        "aborted": 0,
+        "discarded": 0,
+        "watchdog": 0,
+        "vram_leaks": 0,
+        "nesting_repairs": 0,
+        "verify_checks": 594,
+        "verify_mismatch": 0,
+        "dropped": {
+          "spu": 0,
+          "cd": 0,
+          "timer": 0,
+          "dma": 0,
+          "gpu": 0,
+          "other": 0
+        },
+        "last_pass_ms": 19.939,
+        "avg_pass_ms": 20.612,
+        "avg_begin_ms": 2.087,
+        "avg_guest_ms": 15.935,
+        "avg_end_ms": 2.242,
+        "avg_restore_ms": 0.114,
+        "guest_cycles_last": 676796,
+        "disabled": 0,
+        "promotions": 0,
+        "pass_presents": 0,
+        "blended_presents": 0,
+        "expired": 0,
+        "late_presents": 0,
+        "unmatched_flips": 0,
+        "early_presents": 0,
+        "cost_us": 0,
+        "cost_rewarms": 0,
+        "frame_images": 0,
+        "journaled": 148,
+        "image_textures": 0,
+        "image_bytes": 0,
+        "status": 1,
+        "backups_reused": 297,
+        "pass_attempts": 594,
+        "argument_refused": 0,
+        "status_refused": 0,
+        "begin_refused": 0,
+        "checkpoint_refused": 0,
+        "last_failure": null
+      },
+      "stereo_stats": {
+        "id": 0,
+        "ok": true,
+        "attempts": 4581,
+        "pairs": 297,
+        "refused": 0,
+        "failed": 0,
+        "shed": 4284,
+        "status": 0,
+        "last_pair_id": 4560,
+        "last_guest_cycle": 17795410046,
+        "eye_cycles": [
+          17795410046,
+          17795410046
+        ],
+        "eye_hashes": [
+          "f7877922f5afa31a",
+          "f7877922f5afa31a"
+        ],
+        "eye_view": [
+          [
+            8,
+            0,
+            0
+          ],
+          [
+            -8,
+            0,
+            0
+          ]
+        ],
+        "last_eye": -1,
+        "last_failure": "",
+        "last_failed_attempt": 0,
+        "last_failed_eye": 0,
+        "last_failed_reason": "",
+        "retained_pair_id": 0,
+        "last_pair_ms": 40.463,
+        "avg_pair_ms": 38.484,
+        "published": {
+          "valid": 1,
+          "pair_id": 4560,
+          "guest_cycle": 17795410046,
+          "width": 512,
+          "height": 240,
+          "staged_mask": 3,
+          "mode": 1,
+          "presents": 9187
+        }
+      }
+    },
+    "release": {
+      "synthetic": true,
+      "atomic_action_pad_queries": false,
+      "controls": {
+        "native_tables": {
+          "required_hex": "400000001000000020000000010000008000000080000000000800000002000002000000",
+          "forbidden_hex": "000000000000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "weapon-cycle": {
+          "fields": {
+            "right_buttons": 2
+          },
+          "interval": {
+            "first": 407,
+            "last": 420
+          },
+          "pad": {
+            "buttons": "0xDFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "equipped_hex": "000c2600",
+          "synthetic": 1,
+          "focused": 1,
+          "writers": [
+            {
+              "frame": 437,
+              "pc": "0x8007A960",
+              "addr": "0x000EEC80",
+              "old": "0x00000001",
+              "new": "0x00000000",
+              "w": 1
+            },
+            {
+              "frame": 437,
+              "pc": "0x8007DDFC",
+              "addr": "0x000EEC81",
+              "old": "0x00000003",
+              "new": "0x0000000C",
+              "w": 1
+            }
+          ]
+        },
+        "fire": {
+          "fields": {
+            "right_trigger": 1000
+          },
+          "interval": {
+            "first": 490,
+            "last": 504
+          },
+          "pad": {
+            "buttons": "0xBFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "clip_before": 8,
+          "clip_after": 7,
+          "synthetic": 1,
+          "focused": 1,
+          "writers": [
+            {
+              "frame": 493,
+              "pc": "0x8007DC24",
+              "addr": "0x000EEC92",
+              "old": "0x00000008",
+              "new": "0x00000007",
+              "w": 2
+            }
+          ]
+        },
+        "reload": {
+          "fields": {
+            "left_buttons": 1
+          },
+          "interval": {
+            "first": 544,
+            "last": 556
+          },
+          "pad": {
+            "buttons": "0x7FFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "clip_before": 7,
+          "clip_after": 8,
+          "reserve_before": 38,
+          "reserve_after": 37,
+          "synthetic": 1,
+          "focused": 1,
+          "writers": [
+            {
+              "frame": 547,
+              "pc": "0x80046184",
+              "addr": "0x000EEC92",
+              "old": "0x00000007",
+              "new": "0x00000008",
+              "w": 2
+            },
+            {
+              "frame": 547,
+              "pc": "0x800461A8",
+              "addr": "0x000EEC82",
+              "old": "0x00000026",
+              "new": "0x00000025",
+              "w": 2
+            }
+          ]
+        },
+        "crouch": {
+          "fields": {
+            "left_buttons": 8
+          },
+          "interval": {
+            "first": 753,
+            "last": 767
+          },
+          "pad": {
+            "buttons": "0xFEFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1,
+          "writers": [
+            {
+              "frame": 756,
+              "pc": "0x8007ACD8",
+              "addr": "0x000EEC2C",
+              "old": "0x00080000",
+              "new": "0x00080002",
+              "w": 4
+            }
+          ]
+        },
+        "crouch-second-press": {
+          "fields": {
+            "left_buttons": 8
+          },
+          "interval": {
+            "first": 777,
+            "last": 791
+          },
+          "pad": {
+            "buttons": "0xFEFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "jump": {
+          "fields": {
+            "left_buttons": 2
+          },
+          "interval": {
+            "first": 865,
+            "last": 878
+          },
+          "pad": {
+            "buttons": "0xEFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "use": {
+          "fields": {
+            "right_buttons": 1
+          },
+          "interval": {
+            "first": 885,
+            "last": 897
+          },
+          "pad": {
+            "buttons": "0x7FFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "native-aim": {
+          "fields": {
+            "right_squeeze": 1000
+          },
+          "interval": {
+            "first": 905,
+            "last": 918
+          },
+          "pad": {
+            "buttons": "0xFDFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "combined": {
+          "fields": {
+            "right_trigger": 1000,
+            "lx": 707,
+            "ly": 707,
+            "rx": 1000
+          },
+          "interval": {
+            "first": 926,
+            "last": 938
+          },
+          "pad": {
+            "buttons": "0xBFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              241,
+              7,
+              243,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "unfocused": {
+          "fields": {
+            "right_trigger": 1000,
+            "right_buttons": 3,
+            "left_buttons": 15,
+            "right_squeeze": 1000,
+            "focused": 0
+          },
+          "interval": {
+            "first": 938,
+            "last": 952
+          },
+          "pad": {
+            "buttons": "0xFFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 0
+        },
+        "inactive": {
+          "fields": {
+            "right_trigger": 1000,
+            "right_buttons": 3,
+            "left_buttons": 15,
+            "right_squeeze": 1000,
+            "right_trigger_active": 0,
+            "right_squeeze_active": 0,
+            "left_buttons_active": 0,
+            "right_buttons_active": 0
+          },
+          "interval": {
+            "first": 953,
+            "last": 965
+          },
+          "pad": {
+            "buttons": "0xFFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "buttons-with-inactive-sticks": {
+          "fields": {
+            "right_trigger": 1000,
+            "left_active": 0,
+            "right_active": 0
+          },
+          "interval": {
+            "first": 975,
+            "last": 988
+          },
+          "pad": {
+            "buttons": "0xBFFF",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "pause": {
+          "fields": {
+            "left_buttons": 4
+          },
+          "interval": {
+            "first": 1059,
+            "last": 1072
+          },
+          "pad": {
+            "buttons": "0xFFF7",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        },
+        "resume": {
+          "fields": {
+            "left_buttons": 4
+          },
+          "interval": {
+            "first": 1095,
+            "last": 1109
+          },
+          "pad": {
+            "buttons": "0xFFF7",
+            "connected": true,
+            "analog": true,
+            "sticks": [
+              128,
+              128,
+              128,
+              128
+            ]
+          },
+          "synthetic": 1,
+          "focused": 1
+        }
+      },
+      "render_pass_stats": {
+        "id": 0,
+        "ok": true,
+        "plans": 0,
+        "planned": 0,
+        "wanted": 0,
+        "refused": 0,
+        "passes": 328,
+        "aborted": 0,
+        "discarded": 0,
+        "watchdog": 0,
+        "vram_leaks": 0,
+        "nesting_repairs": 0,
+        "verify_checks": 328,
+        "verify_mismatch": 0,
+        "dropped": {
+          "spu": 0,
+          "cd": 0,
+          "timer": 0,
+          "dma": 0,
+          "gpu": 0,
+          "other": 0
+        },
+        "last_pass_ms": 9.247,
+        "avg_pass_ms": 19.342,
+        "avg_begin_ms": 7.018,
+        "avg_guest_ms": 5.167,
+        "avg_end_ms": 6.828,
+        "avg_restore_ms": 0.109,
+        "guest_cycles_last": 676842,
+        "disabled": 0,
+        "promotions": 0,
+        "pass_presents": 0,
+        "blended_presents": 0,
+        "expired": 0,
+        "late_presents": 0,
+        "unmatched_flips": 0,
+        "early_presents": 0,
+        "cost_us": 0,
+        "cost_rewarms": 0,
+        "frame_images": 0,
+        "journaled": 166,
+        "image_textures": 0,
+        "image_bytes": 0,
+        "status": 1,
+        "backups_reused": 164,
+        "pass_attempts": 328,
+        "argument_refused": 0,
+        "status_refused": 0,
+        "begin_refused": 0,
+        "checkpoint_refused": 0,
+        "last_failure": null
+      },
+      "stereo_stats": {
+        "id": 0,
+        "ok": true,
+        "attempts": 558,
+        "pairs": 164,
+        "refused": 0,
+        "failed": 0,
+        "shed": 394,
+        "status": 0,
+        "last_pair_id": 541,
+        "last_guest_cycle": 17804442144,
+        "eye_cycles": [
+          17804442144,
+          17804442144
+        ],
+        "eye_hashes": [
+          "a9ff3ad79bb5520b",
+          "a9ff3ad79bb5520b"
+        ],
+        "eye_view": [
+          [
+            8,
+            0,
+            0
+          ],
+          [
+            -8,
+            0,
+            0
+          ]
+        ],
+        "last_eye": -1,
+        "last_failure": "",
+        "last_failed_attempt": 0,
+        "last_failed_eye": 0,
+        "last_failed_reason": "",
+        "retained_pair_id": 0,
+        "last_pair_ms": 33.498,
+        "avg_pair_ms": 37.981,
+        "published": {
+          "valid": 1,
+          "pair_id": 541,
+          "guest_cycle": 17804442144,
+          "width": 2560,
+          "height": 1200,
+          "staged_mask": 3,
+          "mode": 1,
+          "presents": 980
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Hardware button/focus/reconnect tests pending",
+    "Body/game aim unchanged; rendered head tracking is not shot-direction proof",
+    "Menu navigation/visibility in headset pending",
+    "Action/pad queries separate; actual ammo/stance writer evidence establishes gameplay effects"
+  ],
+  "correction": "Preliminary Circle=reload label was wrong. Producer-bound weapon id switches 3 to12 with Circle; Square reload transfers clip7->8 and reserve38->37.",
+  "final_source_sha256": {
+    "vr/moh_vr_input.c": "1f2473e1d38243c26e2e4fc493d9707ce2f387036fdbe629d216b5264ab22dff",
+    "vr/psx_vr_stereo.c": "f01b90950b87c84bcdc7f9186824ae79609eac5611b8deffc3c0bd17178e1842",
+    "vr/check_combat.py": "eb6b4159d23b0f686c7146770b8f3dc79bf4ecca451a26ab25073683f2ec7a1c",
+    "psxrecomp/runtime/src/psx_openxr.c": "9a151b3fc92ca9901f2f1948242a1964665de8fa77cce2efa1ddc9ca9a25a556",
+    "psxrecomp/runtime/include/mod_plugins.h": "f3824473ea73b2110acbcde839beadbbfafbedc11f48ca3a0bbc2e47ab43179d"
+  },
+  "provenance_note": "Desktop controls used external framework checkout with then-uncommitted combat changes, subsequently committed as ac6f84ba. Final source digests describe delivery sources, not each earlier binary. Debug controls predate the added action-table guard; Release controls include it. Final submodule build/capture has independent provenance.",
+  "final_pinned_capture": {
+    "build_provenance": {
+      "executable": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\build-release\\Medal_of_Honor__Recompiled.exe",
+      "sha256": "5451506606fdd6c6bb453ed52facbb64c57cd388ffa29df26e44a9012ff16cd1",
+      "framework_root": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\psxrecomp",
+      "framework_revision": "ac6f84ba039b1d27bb1e93d3b6d05390dfa42ff9",
+      "framework_tracked_changes": []
+    },
+    "launch_config": {
+      "environment": {
+        "PSX_OPENXR": "0",
+        "PSX_RENDER_PASS_VERIFY": "0",
+        "PSX_VR_AUTHORED_FOCAL": "1",
+        "PSX_VR_DESKTOP_FOV": "0",
+        "PSX_VR_DRAW_MASK": "15",
+        "PSX_VR_HEAD_POSITION": "0,0,0",
+        "PSX_VR_HEAD_YAW": "0",
+        "PSX_VR_HUD_ICON": "1",
+        "PSX_VR_INTERP": "0",
+        "PSX_VR_IPD_MM": "67",
+        "PSX_VR_MOVEMENT": "1",
+        "PSX_VR_MOVE_DEADZONE": "0.2",
+        "PSX_VR_OFFSET": "0",
+        "PSX_VR_OPENXR": "0",
+        "PSX_VR_PASS_DRAW": "1",
+        "PSX_VR_PASS_PROBE": "0",
+        "PSX_VR_PASS_WATCHDOG": "0",
+        "PSX_VR_PROBE": "0",
+        "PSX_VR_RECT_ALT": "0",
+        "PSX_VR_STEREO": "1",
+        "PSX_VR_STEREO_FAULT": "0",
+        "PSX_VR_STEREO_FAULT_HOLD": "0",
+        "PSX_VR_TEXT": "1",
+        "PSX_VR_TURN_GAIN": "0.65",
+        "PSX_VR_UNITS_PER_METER": "716.417910447761",
+        "PSX_VR_WORLD_SCALE": "3"
+      },
+      "game_revision": "245059933dd826acefa8c4bed043e22e73816c66",
+      "framework_pin": "ac6f84ba039b1d27bb1e93d3b6d05390dfa42ff9",
+      "note": "Environment inherited by capture client; launch must use the same environment."
+    },
+    "save_provenance": {
+      "slot": 3,
+      "file": "saves\\openbios\\state_8001DFD4_slot03.pst",
+      "size": 1904338,
+      "mtime_ns": 1790900405927447400,
+      "sha256": "582aa0b34485bc013e84fe296781f496d51e60ac279a9557cc6d9837399ed455"
+    },
+    "stereo_stats": {
+      "id": 0,
+      "ok": true,
+      "attempts": 52,
+      "pairs": 51,
+      "refused": 0,
+      "failed": 0,
+      "shed": 0,
+      "status": 6,
+      "last_pair_id": 51,
+      "last_guest_cycle": 17811431015,
+      "eye_cycles": [
+        17812611760,
+        0
+      ],
+      "eye_hashes": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "eye_view": [
+        [
+          8,
+          0,
+          0
+        ],
+        [
+          -8,
+          0,
+          0
+        ]
+      ],
+      "last_eye": 0,
+      "last_failure": "",
+      "last_failed_attempt": 0,
+      "last_failed_eye": 0,
+      "last_failed_reason": "",
+      "retained_pair_id": 0,
+      "last_pair_ms": 11.229,
+      "avg_pair_ms": 11.754,
+      "published": {
+        "valid": 1,
+        "pair_id": 51,
+        "guest_cycle": 17811431015,
+        "width": 2560,
+        "height": 1200,
+        "staged_mask": 0,
+        "mode": 1,
+        "presents": 102
+      }
+    },
+    "openxr_input": {
+      "id": 0,
+      "ok": true,
+      "sequence": 212,
+      "synthetic": 0,
+      "focused": 0,
+      "active": [
+        0,
+        0
+      ],
+      "stick": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "trigger": [
+        0.0,
+        0.0
+      ],
+      "squeeze": [
+        0.0,
+        0.0
+      ],
+      "trigger_active": [
+        0,
+        0
+      ],
+      "squeeze_active": [
+        0,
+        0
+      ],
+      "buttons": [
+        0,
+        0
+      ],
+      "buttons_active": [
+        0,
+        0
+      ],
+      "p1_source": 1
+    },
+    "pad_status": {
+      "id": 0,
+      "ok": true,
+      "pad": "0xFFFF",
+      "slot0": {
+        "buttons": "0xFFFF",
+        "connected": true,
+        "analog": true,
+        "sticks": [
+          128,
+          128,
+          128,
+          128
+        ]
+      },
+      "slot1": {
+        "buttons": "0xFFFF",
+        "connected": false,
+        "analog": false,
+        "sticks": [
+          128,
+          128,
+          128,
+          128
+        ]
+      },
+      "override": -1,
+      "override_frames": 0,
+      "override_axes": [
+        128,
+        128,
+        128,
+        128
+      ],
+      "override_axes_valid": false
+    },
+    "restoration_verification_enabled": false
+  }
+}

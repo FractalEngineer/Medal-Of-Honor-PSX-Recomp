@@ -126,7 +126,7 @@ separate from physical calibration or an enemy-size conclusion.
 
 The compass ring/disc still needs a coherent HUD policy. Flat text/icon can be
 hidden; held weapon geometry is not removed by the icon switch. Wrist placement
-and controller poses/buttons are later work. Locomotion is now prioritized over
+and controller poses/aiming are later work. Locomotion is now prioritized over
 further HUD work. The current XR loop
 runs at the game's draw boundary, approximately 30Hz here. An independent headset
 cadence, culling coverage for large head turns, frame-time tails and comfort remain
@@ -137,3 +137,33 @@ not distinguish it visually; the accepted default remains 3. On 2026-10-02 the
 user confirmed movement "fully consistent" after the native-curve correction.
 Producer-bound heading writes and response controls are retained in
 VR_MOVEMENT_RECEIPT.json; full traces and images stay ignored.
+
+## Combat controls (desktop checked; headset test pending)
+
+The normal headset launcher enables movement and combat through the same offline
+source. NoMovement disables that source. The game must use the measured default
+scheme; other action/axis tables decline to neutral. Head tracking remains a
+rendered view change; firing still follows native game aim.
+
+| Quest control | Native game control |
+|---|---|
+| Right trigger | Cross: fire / menu confirm |
+| Right A | Square: use / reload context |
+| Right B | Circle: next weapon / menu back |
+| Left X | Square: reload / use context |
+| Left Y | Triangle: jump |
+| Left stick click | L2: crouch toggle |
+| Right grip | R2: native aim mode |
+| Left Menu | Start: pause / resume |
+
+Trigger/grip activate at 0.55. Native weapon logic keeps press/hold/release;
+the slot-3 grenade throws on release. Pause/resume was observed on desktop;
+headset menus/navigation and physical focus/reconnect are still untested.
+
+Desktop synthetic checks: `python vr/check_combat.py analysis/vr-proof/<fresh-dir>`
+against a windowed Desktop MovementDiagnostic run. They establish weapon-id,
+clip/reserve and stance writers, plus neutral-release and combined movement.
+TCP `openxr_input` now reports trigger/squeeze and separate click activity/value
+masks. Synthetic example: `openxr_input_override right_trigger=1000` or
+`openxr_input_override left_buttons=1`; clear=1 releases. These values always
+say synthetic=1. See VR_COMBAT_PLAN.md and VR_COMBAT_RECEIPT.json.

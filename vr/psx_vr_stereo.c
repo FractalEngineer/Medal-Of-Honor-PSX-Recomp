@@ -581,6 +581,10 @@ static int vr_controller_source(PSXModControllerState *pad) {
     PSXModOpenXRInput input;
     memset(&input,0,sizeof input);input.struct_size=sizeof input;
     if (!psx_mod_openxr_input(&input)) return 0;
+    const uint32_t action_masks[9] = {0x40,0x10,0x20,1,0x80,0x80,0x800,0x200,2};
+    for (unsigned i = 0; i < 9; ++i)
+        if (psx_mod_read_word(0x800b7790u + i*4) != action_masks[i] ||
+            psx_mod_read_word(0x800b77e0u + i*4)) return 0;
     MOHVRAnalogResponse response;
     const unsigned entry[3] = {3, 0, 1};
     const unsigned native_axis[3] = {2, 3, 0};

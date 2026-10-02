@@ -798,3 +798,71 @@ manifests; VERIFY off is not restore proof. Build hashes and actual framework
 root/revision are in VR_MOVEMENT_RECEIPT.json. Full traces/images remain ignored.
 Real focus-loss/reconnection, other input schemes, controller buttons/poses/aiming,
 head-relative movement and physical sensitivity calibration remain untested.
+
+## 2026-10-02 - Touch combat actions and native gameplay controls
+
+Framework ac6f84ba is pushed and pinned. It adds trigger/grip float actions and
+Touch click actions to the existing opt-in offline source. Activity is independent
+per action; stale/unfocused/failed samples release values. New TCP fields and
+synthetic controls are in the existing OpenXR input handlers, with no diagnostic
+printf path. UPSTREAM_PENDING.md inventories the exact framework changes.
+
+Native slot-3 action table: required masks at 800B7790 are
+[40,10,20,1,80,80,800,200,2] hexadecimal; forbidden masks at 800B77E0 are zero.
+func_8007570C tests held input; func_80075778 additionally compares prior input
+for a press edge. Their game button word at 80093B7C swaps native pad byte order.
+The game-owned source now validates this table as well as the analog mapping;
+other schemes decline to a neutral sample. Movement's curve/deadzone is unchanged.
+
+Current controls: right trigger Cross/fire (also native menu confirm), right A
+Square/use, right B Circle/next weapon (native back), left X Square/reload/use,
+left Y Triangle/jump, left stick click L2/crouch toggle, right grip R2/native aim,
+left Menu Start/pause. Analog actions press at 0.55; native edges/hold/release are
+retained. Slot-3 weapon id3 is the visible grenade and fires on Cross release.
+No controller pose or head-to-shot aiming is implemented.
+
+**Correction recorded:** preliminary commentary and ignored native control labels
+called Circle reload. That label was inferred too early from state/animation
+changes and is retracted. Producer-bound controls switch equipped index1/id3 to
+index0/id12 with Circle: SB writers 8007A960 at 800EEC80 and 8007DDFC at 800EEC81.
+With the resulting visible firearm, Cross decrements clip8->7 at 800EEC92 through
+SH pc8007DC24. Square reload restores clip7->8 through pc80046184 and decreases
+reserve38->37 at 800EEC82 through pc800461A8. The partial-grenade reload control
+could not establish this. Do not reuse the old ignored label as a finding.
+
+Desktop synthetic controls in both Debug and Release pass weapon selection,
+fire/reload writer assertions, crouch bit2 at SW pc8007ACD8, release, independent
+action inactivity, synthetic focus loss, combined move/fire/turn and pause/resume.
+Combined pad axes remain [241,7,243,128]. Source pause PNG shows PAUSED/objectives;
+resume PNG shows the level again. Jump/use/native aim have verified pad routing;
+an actual interaction target and a measured jump trajectory are separate tests.
+These are synthetic controls, not new hardware measurements. Adjacent action/pad
+queries are not atomic; actual guest writer records support gameplay claims.
+Eye restore verification remains clean; counts and run provenance are in
+VR_COMBAT_RECEIPT.json. Raw traces/screenshots stay in ignored analysis/vr-proof.
+
+Compiled-out XR input and game mapping C tests, existing controller/render guard
+checks, debug-less syntax and TCP index pass. OpenXR-enabled Debug/Release builds
+pass. Rebuilt consumers are required for the enlarged sized input struct. Neither
+this change nor its tests establish actual Touch binding acceptance, hardware
+focus-loss/reconnect or headset menu visibility; these remain pending.
+
+Aim investigation started with live disassembly: func_8007B350's event calls
+8007D5C8 at 8007B488; id12's live jump-table entry at 8003D270 is 8007D770, which
+calls 80045A78 at 8007D7C0, then 8004532C. Spawn code contains orientation logic,
+but it must be tied to actual projectile/damage evidence before an aim hook is
+selected. A muzzle/particle spawn is not damage-ray proof. No shot-direction
+conclusion follows merely from changing the displayed camera.
+
+Desktop verify-enabled sessions had 594 (Debug) and 328 (Release) restore checks,
+zero mismatches/leaks/dropped stores. They also shed 4284 and 394 pairs respectively;
+these verified runs are not a headset throughput benchmark. Initial functional
+controls used the edited external framework checkout; the final pinned build is
+separately recorded. Debug controls preceded the action-table guard, while
+Release controls include that guard. No hardware action proof is inferred from
+successful synthetic input or build completion.
+
+Final Release launch uses clean submodule ac6f84ba, verified slot 3 and two complete
+paired captures with source enabled. VERIFY is off for this smoke capture; the
+earlier verify-enabled writer controls provide restore evidence. Launch/build/save
+provenance is included in VR_COMBAT_RECEIPT.json. All owned games closed.

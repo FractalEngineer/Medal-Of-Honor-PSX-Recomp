@@ -11,6 +11,25 @@ static double scalar_deadzone(double v, double deadzone) {
     if (fabs(v) <= deadzone) return 0;
     return copysign((fabs(v) - deadzone) / (1 - deadzone), v);
 }
+static uint32_t combat_buttons(const PSXModOpenXRInput *input) {
+    uint32_t left = input->buttons[0] & input->buttons_active[0];
+    uint32_t right = input->buttons[1] & input->buttons_active[1];
+    uint32_t pressed = 0;
+    /* Slot-3 default scheme, confirmed against the configured action masks.
+     * Feed ordinary PSX buttons so native press/hold/release logic owns combat.
+     * Square's reload/interaction context is still the game's decision. */
+    if (input->trigger_active[1] && isfinite(input->trigger[1]) &&
+        input->trigger[1] >= .55f && input->trigger[1] <= 1) pressed |= 0x4000; /* Cross: fire/confirm */
+    if (right & PSX_MOD_XR_PRIMARY) pressed |= 0x8000; /* A: Square/use */
+    if (right & PSX_MOD_XR_SECONDARY) pressed |= 0x2000; /* B: Circle/next weapon/back */
+    if (left & PSX_MOD_XR_PRIMARY) pressed |= 0x8000; /* X: Square/reload/use context */
+    if (left & PSX_MOD_XR_SECONDARY) pressed |= 0x1000; /* Y: Triangle/jump */
+    if (left & PSX_MOD_XR_STICK) pressed |= 0x0100; /* left click: L2/crouch toggle */
+    if (left & PSX_MOD_XR_MENU) pressed |= 0x0008; /* Menu: Start */
+    if (input->squeeze_active[1] && isfinite(input->squeeze[1]) &&
+        input->squeeze[1] >= .55f && input->squeeze[1] <= 1) pressed |= 0x0200; /* right grip: R2/native aim */
+    return 0xffffu ^ pressed;
+}
 int32_t moh_vr_analog_response(const MOHVRAnalogResponse *response,
                              unsigned axis, uint32_t byte) {
     if (!response || axis >= 3 || byte > 255) return 0;
@@ -80,6 +99,7 @@ int moh_vr_input_map(const PSXModOpenXRInput *input, double deadzone,
     pad->buttons = 0xffff;
     pad->lx = pad->ly = pad->rx = pad->ry = 128; pad->analog = 1;
     if (!input || input->struct_size != sizeof *input || !input->focused) return 1;
+    pad->buttons = combat_buttons(input);
     if (!isfinite(deadzone) || deadzone < 0 || deadzone >= 1 ||
         !isfinite(turn_gain) || turn_gain < 0 || turn_gain > 2 ||
         !valid_response(response)) return 0;
