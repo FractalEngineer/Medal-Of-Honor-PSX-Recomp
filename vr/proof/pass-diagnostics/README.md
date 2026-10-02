@@ -1,5 +1,12 @@
 # Render-pass refusal and no-op capture evidence
 
+## Retention update: 2026-10-02
+
+The no-op PNG generations and gameplay screenshot were removed. The refusal, no-op stats and pixel-comparison receipts remain. The image verification command below requires restored historical images or a fresh capture.
+
+The complete pre-cleanup image bundle is in game commit `231650447bdc219629559a16f0dd7d229ee1ce49`.
+See [the proof index](../README.md). The run descriptions below record the original measurements.
+
 Recorded 2026-10-02 on Windows, game SLUS-00974, OpenGL Debug build.
 Framework: `257a88b0`. Game base: `b2ac246`; the successful run includes the
 `PSX_VR_PASS_PROBE` plugin change committed with this evidence. Original game

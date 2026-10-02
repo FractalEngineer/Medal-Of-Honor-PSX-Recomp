@@ -570,3 +570,19 @@ all 96 recorded fingerprint columns and guest cycles against Release stereo.
 Evidence: vr/proof/stereo-pairs/release_matching_timeline_comparison.json. Two
 Release image pairs retain 5/13 display-pixel correspondences on a documented
 scale-5 grid sample. All measurement instances have been closed.
+
+# 2026-10-02: Proof retention cleanup
+
+After user confirmation, removed 57 redundant, exploratory or large Release PNGs
+from the current checkout: 118.86 MiB becomes 6.51 MiB. Thirteen representative
+images and all 170 JSON receipts remain. Both Debug zero-offset and offset-24
+eye pairs can still be checked directly, along with one composed SBS screenshot.
+Measurements, limitations and recorded corrections are unchanged. Historical
+image recomputation for removed captures requires game commit
+`231650447bdc219629559a16f0dd7d229ee1ce49` or a fresh measured run.
+
+New sessions should start with VR_EXECUTION_PLAN.md and the relevant status
+section, then consult targeted proof files only as needed. The proof index and
+evidence READMEs state the retention boundaries. Future bulk captures go to the
+already ignored analysis/vr-proof/ directory. See VR_PROOF_CLEANUP_PLAN.md.
+No framework changes or new game measurements were needed for this cleanup.

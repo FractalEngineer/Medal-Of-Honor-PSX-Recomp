@@ -1,5 +1,12 @@
 # Same-checkpoint stereo, including animated enemies
 
+## Retention update: 2026-10-02
+
+Both Debug zero-offset and offset-24 left/right image pairs remain, as does slot3-offset24/presented.png. Duplicate SBS composites, other presentation screenshots, fault-run images and large Release textures were removed. All pair manifests, raw TCP responses, provenance, fingerprints and comparison receipts remain. Debug eye equality/parallax and timeline checks can still be recomputed. Release image and fault-image checks require the historical images or fresh captures.
+
+The complete pre-cleanup image bundle is in game commit `231650447bdc219629559a16f0dd7d229ee1ce49`.
+See [the proof index](../README.md). The run descriptions below record the original measurements.
+
 2026-10-02. Framework `0a955971`, game base `6e4ce84` plus the paired plugin and
 measurement scripts committed with this evidence. NTSC-U SLUS-00974, windowed
 OpenGL Debug, `--no-launcher --game game.toml --disc
@@ -61,9 +68,9 @@ pre-divide translation stage, including level, object and held-weapon paths.
 After launching a process with the selected environment:
 
 ```powershell
-python vr/capture_stereo.py vr/proof/stereo-pairs/<new-run> --slot 3
+python vr/capture_stereo.py analysis/vr-proof/<new-run> --slot 3
 # Use --pairs 0 for OFF, --pairs 1 for the held watchdog control.
-python vr/verify_stereo_pairs.py vr/proof/stereo-pairs/<new-run> --expect different --output <receipt.json>
+python vr/verify_stereo_pairs.py analysis/vr-proof/<new-run> --expect different --output <receipt.json>
 # Use --expect equal for zero separation.
 python vr/compare_frame_fingerprints.py <off>/fingerprint.json <candidate>/fingerprint.json --output <comparison.json>
 ```

@@ -1,5 +1,12 @@
 # Bounded guest scene replay
 
+## Retention update: 2026-10-02
+
+The draw, clear-only and level-only PNGs were removed. Raw stats, timeline fingerprints, image-comparison receipts and reproduction controls remain. Commands below that inspect PNGs require the historical images or a fresh capture; fingerprint comparisons still use retained JSON.
+
+The complete pre-cleanup image bundle is in game commit `231650447bdc219629559a16f0dd7d229ee1ce49`.
+See [the proof index](../README.md). The run descriptions below record the original measurements.
+
 2026-10-02, SLUS-00974 slot 1, OpenGL Debug, framework runtime `04b39513`,
 game base `93be7f2` plus the draw/coverage changes committed with this bundle.
 All launches use `--no-launcher --game game.toml --disc

@@ -1,5 +1,12 @@
 # Exploratory replay captures: scene identity correction
 
+## Retention update: 2026-10-02
+
+The exploratory and confirmed temporal PNGs were removed. Their raw receipts, comparisons and this scene-identity correction remain. Any visual reinspection requires historical images or a fresh measured capture.
+
+The complete pre-cleanup image bundle is in game commit `231650447bdc219629559a16f0dd7d229ee1ce49`.
+See [the proof index](../README.md). The run descriptions below record the original measurements.
+
 These files predate the verified paired-eye bundle in `../stereo-pairs/`.
 After the user corrected the scene/slot selection, TCP slot 3 was explicitly
 reloaded and completed status was saved. The earlier `draw/`, gameplay images
