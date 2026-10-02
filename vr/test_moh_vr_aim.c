@@ -28,6 +28,13 @@ int main(void) {
     h.focused=1;v->flags=1;assert(!moh_vr_aim_shot(&h,inv,tr,100,p,a));
     v->flags=15;v->active=0;assert(!moh_vr_aim_shot(&h,inv,tr,100,p,a));
     v->active=1;v->position_m[0]=NAN;assert(!moh_vr_aim_shot(&h,inv,tr,100,p,a));
+    const double identity[9]={1,0,0,0,1,0,0,0,1},translation[3]={40,50,60},pivot[3]={8,9,10};
+    double wr[9],wt[3];assert(moh_vr_weapon_transform(inv,identity,translation,.25,pivot,wr,wt));
+    /* The selected mesh pivot projects to the hand in camera space, even
+     * with the native scaled projection matrix. */
+    double mapped[3];
+    for(int i=0;i<3;i++){mapped[i]=wt[i];for(int j=0;j<3;j++)mapped[i]+=wr[i*3+j]*pivot[j];}
+    for(int i=0;i<3;i++){double x=0;for(int j=0;j<3;j++)x+=c[i*3+j]*mapped[j];assert(fabs(x-translation[i])<1e-9);}
     const double singular[9]={0};assert(!moh_vr_matrix_inverse(singular,inv));
     puts("PASS: scaled camera inverse, world aim axes/origin and invalid snapshot rejection");
 }

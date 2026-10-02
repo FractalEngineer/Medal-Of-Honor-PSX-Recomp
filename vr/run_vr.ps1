@@ -6,6 +6,9 @@ param(
     [switch]$MovementDiagnostic,
     [switch]$NoMovement,
     [switch]$WeaponAimDiagnostic,
+    [switch]$WeaponPoseDiagnostic,
+    [switch]$DesktopFov,
+    [ValidateRange(0,3)][int]$StereoFaultDiagnostic = 0,
     [double]$MoveDeadzone = 0.2,
     [double]$TurnGain = 0.65,
     [switch]$HideHud,
@@ -25,17 +28,19 @@ $vrVariables = @{
     PSX_VR_OPENXR = [string][int](-not $Desktop);
     PSX_VR_STEREO = '1'; PSX_VR_PROBE = '0'; PSX_VR_INTERP = '0';
     PSX_VR_MOVEMENT = [string][int]((-not $NoMovement) -and ((-not $Desktop) -or $MovementDiagnostic));
-    PSX_VR_WEAPON_AIM = [string][int]$WeaponAimDiagnostic.IsPresent;
+    PSX_VR_WEAPON_AIM = [string][int]($WeaponAimDiagnostic -or $WeaponPoseDiagnostic);
+    PSX_VR_WEAPON_POSE = [string][int]$WeaponPoseDiagnostic.IsPresent;
+    PSX_VR_WEAPON_MODEL_UNITS_PER_METER = '850'; PSX_VR_WEAPON_PIVOT = '80,150,100';
     PSX_VR_MOVE_DEADZONE = $MoveDeadzone.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_TURN_GAIN = $TurnGain.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_PASS_PROBE = '0'; PSX_VR_PASS_WATCHDOG = '0'; PSX_VR_PASS_DRAW = '1';
     PSX_VR_OFFSET = '0'; PSX_VR_RECT = $null; PSX_VR_RECT_ALT = '0';
-    PSX_VR_STEREO_FAULT = '0'; PSX_VR_STEREO_FAULT_HOLD = '0';
+    PSX_VR_STEREO_FAULT = [string]$StereoFaultDiagnostic; PSX_VR_STEREO_FAULT_HOLD = '0';
     PSX_VR_WORLD_SCALE = $WorldScale.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_IPD_MM = $IPDmm.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_UNITS_PER_METER = $UnitsPerMeter.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_EYE_OFFSET = $null; PSX_VR_HEAD_YAW = '0'; PSX_VR_HEAD_POSITION = '0,0,0';
-    PSX_VR_DRAW_MASK = '15'; PSX_VR_DESKTOP_FOV = '0'; PSX_VR_AUTHORED_FOCAL = '1';
+    PSX_VR_DRAW_MASK = '15'; PSX_VR_DESKTOP_FOV = [string][int]$DesktopFov.IsPresent; PSX_VR_AUTHORED_FOCAL = '1';
     PSX_VR_TEXT = [string][int](-not $HideHud); PSX_VR_HUD_ICON = [string][int](-not $HideHud);
     PSX_RENDER_PASS_VERIFY = [string][int]$Verify.IsPresent
 }

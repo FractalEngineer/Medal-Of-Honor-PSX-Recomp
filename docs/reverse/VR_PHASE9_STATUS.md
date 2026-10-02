@@ -961,3 +961,40 @@ native, and actual Quest hand alignment is untested. Inspecting the held model
 uses the existing fn_filter/fn_entry_dump commands: arm fn_filter first; a zero
 reply while inactive is not proof of no function calls. The root node path in
 rifle slot 0 is 80084718 -> 80013AE4, RA 800847BC, render entity 800EEF3C.
+
+## 2026-10-03: tracked rifle mesh and nested rollback correction
+
+The opt-in -WeaponPoseDiagnostic now enables the render-only held-rifle mesh
+and the existing guarded native shot override. Native animation vertices are
+mapped after the node walk and before RTPS; inverse scaled weapon matrix W
+and object-scoped H=133 compensation are required. Grip position and aim
+orientation drive the rifle+arms. Provisional model units/meter 850 and pivot
+(80,150,100) still need actual headset calibration; shots originate at aim
+space, not a calibrated muzzle. Other weapons remain native.
+
+Corrections recorded explicitly:
+- Initial visual captures stayed native because registering an observer and
+  filter separately for the same plugin/address rejects the second hook. One
+  filter per address now calls the existing observer. Those first captures
+  are excluded from tracked mesh evidence.
+- Earlier asynchronous captures did not await a new complete pair and PNGs;
+  they cannot prove a pose-specific image. check_weapon_pose.py now waits for
+  newer manifests and complete decoding while holding the pose.
+- A nested weapon watchdog initially passed guest restore and later pair
+  recovery, but mod callback depth remained elevated and the next save load
+  stayed pending. That was not complete rollback. Framework 6d44e21d fixes
+  depth/plugin-owner checkpointing; docs-cleanup head 35b209d4 is pinned. Live
+  repair reports mod entries +2 and a slot-5 generation 1 -> 2 reload. Tests
+  also cover changed owner and nonzero outer context. UPSTREAM_PENDING updated.
+
+Fresh final controls establish mesh translation/rotation/focus fallback, with
+producer vertices and complete paired PNGs. A selected left-eye world region
+has zero changed pixels out of 90,000; the rotated right-eye weapon overlaps
+that rectangle, so its 14,336 differences do not isolate world geometry. Slot-5
+mesh+shot test damages enemy 800B7B08 from 6 to 3.5 at SW8004ACC0. Eight aim
+regressions pass; the final run has 192 restore checks/zero mismatch, one
+intentional right-eye watchdog, one nesting repair and no dropped stores/leaks.
+Subsequent slot load and pairs recover. Both SDK Debug/Release builds pass.
+Compact evidence in VR_WEAPON_POSE_RECEIPT.json; raw files remain ignored.
+Owned desktop game closed. Real Quest alignment/pose validity, muzzle offset,
+range, weapon sizes and native animation acceptance remain open.

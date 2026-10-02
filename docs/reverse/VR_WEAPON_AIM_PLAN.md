@@ -67,3 +67,57 @@ Field input+64 is a countdown whose expiry restores saved actor flags+20; the
 measured consumer does not itself destroy the shot. Calling it a proven lifetime
 would be premature. Range, native transition policy after auto-aim bypass,
 other weapons, actual Quest alignment and the held weapon visual remain open.
+
+## Held-rifle prototype (2026-10-03)
+
+Step 5 now has a render-only prototype, gated to the measured rifle render
+entity at player input+784 and native H=133/TR=0. The geometry filter wraps
+80080DD4; its nested 80084718 filter calls the native node walk, then maps
+packed XYZ/padding vertices in 800AB148..DAT8009EABC before RTPS at RA80080F2C.
+The native weapon projection matrix W is scaled; use its full inverse. For
+hand rotation R, grip translation t, model scale s and provisional pivot p:
+A=inverse(W)*R*s; b=inverse(W)*t-A*p. Scoped authored focal reference 133
+replaces 400 for this object, then restores the eye view. Original animation
+vertices remain the input; arms move with the rifle. Writes are inside each
+eye transaction and roll back. The world render is untouched by this mapping.
+
+Grip position and aim orientation require focus, activity, both validity flags
+and <=150ms age. Rifle model units/meter=850 and pivot=(80,150,100) are guesses
+for physical calibration, not measured headset grip locations. Shots still
+start at aim-space origin, not the model barrel tip. Mesh size, grip/barrel
+alignment, arms separation, recoil/reload acceptance, actual Quest action-space
+validity, body turn/recenter and long-range/other-weapon behavior remain open.
+
+Desktop: five fresh paired slot-0 captures prove native/straight/translated/
+rotated/focus-loss response; every manifest is newer than the capture marker
+and both PNGs finish decoding while the pose is held. Producer V0 changes
+[72,82,389] -> [9,4,88] -> [17,4,88] -> [-1,4,76] -> [72,82,389]. A selected
+90,000-pixel left-eye world region is exactly equal throughout. The right-eye
+rotated rifle overlaps that region; its differing pixels are retained without
+a world-isolation claim. Focus loss restores native lower-frame weapon pixels.
+
+With mesh+shot override enabled in slot 5, a synthetic aim toward a provisional
+torso point produces a native enemy damage write at 8004ACC0: 6 -> 3.5. Complete
+producer-filtered slices retain player pose stores and first native movement.
+Eight aiming regressions pass; final verified run has 192 checks, zero mismatch,
+zero dropped stores/leaks and one deliberately injected right-eye watchdog.
+The fault retains the previous pair, later pairs recover, and slot 5 reloads
+afterward. Framework 35b209d4 fixes omitted mod callback host context across
+longjmp; UPSTREAM_PENDING.md inventories it. Both pinned SDK builds pass.
+See VR_WEAPON_POSE_RECEIPT.json. Bulk captures remain ignored; no frame-rate
+or actual headset aiming acceptance is claimed. Owned test games are closed.
+
+Reproduce mesh controls with Pillow installed:
+
+```powershell
+./vr/run_vr.ps1 -Desktop -DesktopFov -MovementDiagnostic -WeaponPoseDiagnostic -Verify -StereoFaultDiagnostic 3 -Slot 5 -Seconds 180
+# Separate terminal while the owned test is running:
+python vr/check_weapon_pose.py analysis/vr-proof/<fresh-dir> --slot 0
+```
+
+Next: short Quest check using `./vr/run_vr.ps1 -WeaponPoseDiagnostic -Slot 5
+-Seconds 180`. No synthetic pose overrides and no injected faults. Inspect
+right-hand grip/aim activity/validity, move/rotate the rifle with body still,
+then turn/recenter and fire at the enemy. Tune pivot/scale/muzzle offset from
+those observations. Ordinary launches retain native weapon handling until
+tracked aiming is accepted; temporary right-grip native aim remains.

@@ -28,7 +28,10 @@
  *   PSX_VR_UNITS_PER_METER=N provisional metric mapping (default 48/.067)
  *   PSX_VR_WORLD_SCALE=N divisor on units/meter (default 1; Quest profile 3)
  *   PSX_VR_OPENXR=1      headset mode; compile PSX_OPENXR and set host PSX_OPENXR=1
- *   PSX_VR_WEAPON_AIM=1 experimental player rifle shot override (visual pending)
+ *   PSX_VR_WEAPON_AIM=1 experimental player rifle shot override
+ *   PSX_VR_WEAPON_POSE=1 tracked rifle mesh prototype, render-only
+ *   PSX_VR_WEAPON_MODEL_UNITS_PER_METER=N / PSX_VR_WEAPON_PIVOT=x,y,z
+ *                        provisional rifle scale/pivot (defaults 850 / 80,150,100)
  *   PSX_VR_MOVEMENT=0|1  Quest movement source (default on for XR, off otherwise)
  *   PSX_VR_MOVE_DEADZONE=N radial move/scalar turn deadzone (default .2)
  *   PSX_VR_TURN_GAIN=N   decoded turn response gain (default .65; native game rate)
@@ -38,6 +41,7 @@
  *   PSX_VR_DESKTOP_FOV=1 deterministic Quest-FOV projection control
  *   PSX_VR_STEREO_FAULT=1 decline one right eye after a successful pair
  *                     =2 watchdog inside right-eye level dispatch
+ *                     =3 watchdog inside wrapped tracked weapon draw
  *   PSX_VR_STEREO_FAULT_HOLD=1 stop pair requests after the injected fault
  *
  * The offset is applied as patch-then-restore: the entity's original value is
@@ -281,6 +285,11 @@ static void vr_render_entry(CPUState* cpu, uint32_t address) {
  * shift. Logged once so we can see what TR actually holds here. */
 static int g_in_pass; /* Native camera snapshots never update during replay. */
 static int g_weapon_aim; /* Experimental shot override, explicitly opt-in. */
+static int g_weapon_pose, g_weapon_outer, g_weapon_inner;
+static double g_weapon_model_units_per_meter=850;
+static double g_weapon_pivot[3]={80,150,100}; /* Provisional native grip pivot. */
+static double g_weapon_draw_rotation[9],g_weapon_draw_translation[3];
+static uint32_t g_weapon_render_entity;
 static double g_camera_inverse[9], g_camera_tr[3];
 static uint64_t g_camera_cycle;
 static uint32_t g_camera_owner;
@@ -461,6 +470,7 @@ static int vr_pass_fn(CPUState* cpu, void* user, uint32_t alpha_q16) {
 }
 
 static int vr_stereo_fn(CPUState* cpu, void* user, uint32_t eye) {
+    g_weapon_outer=g_weapon_inner=0;
     g_stereo_eye = eye;
     if (g_stereo_success && eye == PSX_MOD_EYE_RIGHT &&
         g_stereo_fault == 1 && !g_stereo_fault_done) {
@@ -581,6 +591,7 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
         if (rendered) g_stereo_success++;
         if (g_openxr) (void)psx_mod_openxr_end(rendered);
         g_in_pass = 0;
+        g_weapon_outer=g_weapon_inner=0; /* also after nested watchdog rollback */
         g_stereo_eye = 0;
         return;
     }
@@ -648,6 +659,72 @@ static void vr_shot_basis_entry(CPUState *cpu,uint32_t address) {
      * Speed, damage, ammo, owner, collision and the transition countdown stay native. */
 }
 
+/* The measured held-rifle render object is embedded at player input+784.
+ * Wrap its geometry draw so authored H compensation can be scoped to this
+ * object, restoring the eye view before any subsequent world/HUD draw. */
+static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
+    if(!g_weapon_outer)vr_geo_entry(cpu,address);
+    if(!g_weapon_pose || !g_in_pass || g_weapon_outer)return 0;
+    uint32_t player=psx_mod_read_word(0x8009d654u);
+    if(player<0x80000000u || player>=0x801ff000u || psx_mod_read_word(player+8)!=1)return 0;
+    uint32_t input=psx_mod_read_word(player+904);
+    if(input<0x80000000u || input>=0x801ff000u || cpu->gpr[4]!=input+784u ||
+       psx_mod_read_byte(input+84u)!=0 || /* measured rifle slot/index */
+       cpu->gte_ctrl[26]!=133u)return 0;
+    PSXModOpenXRHands h={0};h.struct_size=sizeof h;
+    if(!psx_mod_openxr_hands(&h) || !h.focused || !h.origin_valid || h.age_ms>150)return 0;
+    const PSXModTrackedPose *grip=&h.pose[1][PSX_MOD_XR_GRIP_POSE];
+    const PSXModTrackedPose *aim=&h.pose[1][PSX_MOD_XR_AIM_POSE];
+    if(!grip->active || !aim->active || (grip->flags&3)!=3 || (aim->flags&3)!=3)return 0;
+    double w[9],inverse[9],q[4],p[3],r[9],t[3];
+    for(int i=0;i<9;i++)w[i]=(int16_t)(cpu->gte_ctrl[i/2] >> ((i%2)*16))/4096.0;
+    for(int i=0;i<4;i++)q[i]=aim->orientation_xyzw[i];
+    for(int i=0;i<3;i++)p[i]=grip->position_m[i];
+    if(!moh_vr_matrix_inverse(w,inverse) ||
+       !vr_pose_to_transform(q,p,h.origin_orientation_xyzw,h.origin_position_m,
+                             g_units_per_meter,r,t) ||
+       !moh_vr_weapon_transform(inverse,r,t,g_units_per_meter/g_weapon_model_units_per_meter,
+                                g_weapon_pivot,g_weapon_draw_rotation,g_weapon_draw_translation))return 0;
+    /* Current measured weapon TR is zero; decline another transform contract. */
+    if(cpu->gte_ctrl[5] || cpu->gte_ctrl[6] || cpu->gte_ctrl[7])return 0;
+    g_weapon_render_entity=cpu->gpr[4];g_weapon_outer=1;
+    PSXModRenderView view=g_eye_view[g_stereo_eye];
+    if(g_authored_focal)view.projection_h_ref=133;
+    (void)psx_mod_render_view(&view);
+    uint32_t ra=cpu->gpr[31];psx_dispatch_call(cpu,address,ra);
+    (void)psx_mod_render_view(&g_eye_view[g_stereo_eye]);
+    g_weapon_outer=0;return 1;
+}
+static int vr_weapon_vertices_filter(CPUState *cpu,uint32_t address) {
+    if(!g_weapon_inner)vr_entity_entry(cpu,address);
+    if(!g_weapon_outer || g_weapon_inner || !g_in_pass ||
+       cpu->gpr[4]!=g_weapon_render_entity || cpu->gpr[31]!=0x80080f2cu)return 0;
+    g_weapon_inner=1;
+    uint32_t ra=cpu->gpr[31];psx_dispatch_call(cpu,address,ra);
+    if(g_stereo_success && g_stereo_eye==PSX_MOD_EYE_RIGHT &&
+       g_stereo_fault==3 && !g_stereo_fault_done) {
+        g_stereo_fault_done=1;vr_watchdog_inject(cpu);return 1;
+    }
+    /* 84718 sets cursor 8009EABC to 800AB148; 13AE4 advances it once per
+     * packed XYZ/padding vertex. Intercept before 80F2C restores W and RTPS. */
+    const uint32_t base=0x800ab148u;
+    uint32_t end=psx_mod_read_word(0x8009eabcu);
+    if(end>=base && end<=base+16384u && !((end-base)&7u)) {
+        for(uint32_t a=base;a<end;a+=8) {
+            double source[3],point[3];
+            for(int i=0;i<3;i++)source[i]=(int16_t)psx_mod_read_half(a+i*2);
+            int valid=1;
+            for(int i=0;i<3;i++) {
+                point[i]=g_weapon_draw_translation[i];
+                for(int j=0;j<3;j++)point[i]+=g_weapon_draw_rotation[i*3+j]*source[j];
+                if(!isfinite(point[i]) || fabs(point[i])>32767)valid=0;
+            }
+            if(valid)for(int i=0;i<3;i++)psx_mod_write_half(a+i*2,(uint16_t)(int16_t)lround(point[i]));
+        }
+    }
+    g_weapon_inner=0;return 1;
+}
+
 static uint32_t vr_controller_mode(const PSXModControllerInput *input) {
     (void)input;return PSX_MOD_CONTROLLER_ANALOG;
 }
@@ -691,6 +768,17 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_PASS_DRAW"))) g_pass_draw = atoi(e);
     if ((e = getenv("PSX_VR_STEREO"))) g_stereo = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_OPENXR"))) g_openxr = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_WEAPON_POSE"))) g_weapon_pose = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_WEAPON_MODEL_UNITS_PER_METER"))) g_weapon_model_units_per_meter=strtod(e,NULL);
+    if(!isfinite(g_weapon_model_units_per_meter) || g_weapon_model_units_per_meter<1 ||
+       g_weapon_model_units_per_meter>65536)g_weapon_model_units_per_meter=850;
+    if ((e = getenv("PSX_VR_WEAPON_PIVOT"))) {
+        double x,y,z;
+        if(sscanf(e,"%lf,%lf,%lf",&x,&y,&z)==3 && isfinite(x) && isfinite(y) && isfinite(z) &&
+           fabs(x)<32767 && fabs(y)<32767 && fabs(z)<32767) {
+            g_weapon_pivot[0]=x;g_weapon_pivot[1]=y;g_weapon_pivot[2]=z;
+        }
+    }
     if ((e = getenv("PSX_VR_WEAPON_AIM"))) g_weapon_aim = atoi(e) != 0;
     if ((e = getenv("PSX_VR_MOVEMENT"))) g_movement = atoi(e) != 0;
     if (g_movement < 0) g_movement = g_openxr;
@@ -725,7 +813,7 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_TEXT"))) g_text_visible = atoi(e) != 0;
     if ((e = getenv("PSX_VR_STEREO_FAULT"))) g_stereo_fault = atoi(e);
     if ((e = getenv("PSX_VR_STEREO_FAULT_HOLD"))) g_stereo_fault_hold = atoi(e) != 0;
-    if (g_stereo_fault < 0 || g_stereo_fault > 2) g_stereo_fault = 0;
+    if (g_stereo_fault < 0 || g_stereo_fault > 3) g_stereo_fault = 0;
     if (g_eye_offset < 0 || g_eye_offset > 4096) g_eye_offset = 24;
     if (g_stereo) {
         g_pass_draw = 1;
@@ -747,12 +835,12 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     fprintf(stdout, "vr-probe: registering moh.vr.stereo for %08X\n",
             FUN_80084718);
     fflush(stdout);
-    (void)psx_mod_register_function_entry_plugin("moh.vr.stereo", FUN_80084718,
-                                                 vr_entity_entry);
+    (void)psx_mod_register_function_filter_plugin("moh.vr.stereo", FUN_80084718,
+                                                  vr_weapon_vertices_filter);
     (void)psx_mod_register_function_entry_plugin("moh.vr.stereo", GEO_800814C4,
                                                  vr_geo_entry);
-    (void)psx_mod_register_function_entry_plugin("moh.vr.stereo", GEO_80080DD4,
-                                                 vr_geo_entry);
+    (void)psx_mod_register_function_filter_plugin("moh.vr.stereo", GEO_80080DD4,
+                                                  vr_weapon_geometry_filter);
     (void)psx_mod_register_function_entry_plugin("moh.vr.stereo",
                                                  RENDER_800824D0,
                                                  vr_render_entry);

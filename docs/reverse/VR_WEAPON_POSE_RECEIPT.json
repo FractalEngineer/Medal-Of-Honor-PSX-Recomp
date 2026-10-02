@@ -1,0 +1,1307 @@
+{
+  "date": "2026-10-03",
+  "synthetic": true,
+  "headset_validation": false,
+  "build": {
+    "executable": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\build-release\\Medal_of_Honor__Recompiled.exe",
+    "sha256": "c3837259925b4df66569bf3e887af160c6f9d9335d35705c11a8b14ad6f2af3d",
+    "framework_root": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\psxrecomp",
+    "framework_revision": "35b209d406c168e14f51bb8bbd549742473c7388",
+    "framework_tracked_changes": [],
+    "game_base_revision": "c06a78bbf17c073b9bcbb203575b8940fbceb67c",
+    "game_source_worktree": true,
+    "source_sha256": {
+      "vr/psx_vr_stereo.c": "167b9d5ba0591b9cc829891ab8378b1708852fc2108c593ddf94a641116f4b29",
+      "vr/moh_vr_aim.c": "37b67803d69a06d14ea0837ed3a56abeab5eb54bb86f632923e5e38fb8e24bde",
+      "vr/moh_vr_aim.h": "11af2b99128df477ff766c44a797cadb20320123d5d532715040a4a90ab51b5c",
+      "vr/test_moh_vr_aim.c": "0e14e94037c9c456106ae100eb53b52fd0ddb9ee709de1727fba91fce3deff37",
+      "vr/run_vr.ps1": "ad25e0c08872a17741fbd89b6aac527056a497817abf28cd55ee1580650695d5"
+    },
+    "debug_build_sha256": "f22ec33021c69cdd77095e970d417266f4a49bba066d6526d7d99ccd4d0ae0e8"
+  },
+  "launch": {
+    "environment": {
+      "PSX_OPENXR": "0",
+      "PSX_RENDER_PASS_VERIFY": "1",
+      "PSX_VR_AUTHORED_FOCAL": "1",
+      "PSX_VR_DESKTOP_FOV": "1",
+      "PSX_VR_DRAW_MASK": "15",
+      "PSX_VR_HEAD_POSITION": "0,0,0",
+      "PSX_VR_HEAD_YAW": "0",
+      "PSX_VR_HUD_ICON": "1",
+      "PSX_VR_INTERP": "0",
+      "PSX_VR_IPD_MM": "67",
+      "PSX_VR_MOVEMENT": "1",
+      "PSX_VR_MOVE_DEADZONE": "0.2",
+      "PSX_VR_OFFSET": "0",
+      "PSX_VR_OPENXR": "0",
+      "PSX_VR_PASS_DRAW": "1",
+      "PSX_VR_PASS_PROBE": "0",
+      "PSX_VR_PASS_WATCHDOG": "0",
+      "PSX_VR_PROBE": "0",
+      "PSX_VR_RECT_ALT": "0",
+      "PSX_VR_STEREO": "1",
+      "PSX_VR_STEREO_FAULT": "3",
+      "PSX_VR_STEREO_FAULT_HOLD": "0",
+      "PSX_VR_TEXT": "1",
+      "PSX_VR_TURN_GAIN": "0.65",
+      "PSX_VR_UNITS_PER_METER": "716.417910447761",
+      "PSX_VR_WEAPON_AIM": "1",
+      "PSX_VR_WEAPON_MODEL_UNITS_PER_METER": "850",
+      "PSX_VR_WEAPON_PIVOT": "80,150,100",
+      "PSX_VR_WEAPON_POSE": "1",
+      "PSX_VR_WORLD_SCALE": "3"
+    }
+  },
+  "save5": {
+    "slot": 5,
+    "file": "saves\\openbios\\state_8001DFD4_slot05.pst",
+    "size": 1883709,
+    "mtime_ns": 1790955117367172900,
+    "sha256": "a97a3ba8d1287132c5e2f239f9eb9d66aa23d069baac7b18809425cf4ede5db8"
+  },
+  "visual_controls": {
+    "synthetic": true,
+    "slot": 0,
+    "complete": true,
+    "controls": [
+      {
+        "case": "native",
+        "request": null,
+        "before_pair": 181,
+        "manifest": {
+          "pair_id": 211,
+          "guest_cycle": 1327540497,
+          "width": 2560,
+          "height": 1200,
+          "left_eye": 0,
+          "right_eye": 1,
+          "view_offset": [
+            [
+              8,
+              0,
+              0
+            ],
+            [
+              -8,
+              0,
+              0
+            ]
+          ]
+        },
+        "hands": {
+          "focused": 0,
+          "synthetic": 0,
+          "sequence": 847,
+          "age_ms": 4294967295,
+          "origin_valid": 0,
+          "right_hand": [
+            {
+              "active": 0,
+              "flags": 0,
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "active": 0,
+              "flags": 0,
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        "producer": {
+          "seq": 662158,
+          "frame": 424,
+          "ra": "0x80080F2C",
+          "V0": [
+            72,
+            82,
+            389
+          ],
+          "RT": [
+            24610,
+            8,
+            -1005,
+            -2,
+            15391,
+            13,
+            333,
+            -6,
+            8187
+          ],
+          "TR": [
+            0,
+            0,
+            0
+          ],
+          "H": 133,
+          "S2": [
+            229,
+            111
+          ]
+        }
+      },
+      {
+        "case": "straight",
+        "request": {},
+        "before_pair": 211,
+        "manifest": {
+          "pair_id": 271,
+          "guest_cycle": 1395267628,
+          "width": 2560,
+          "height": 1200,
+          "left_eye": 0,
+          "right_eye": 1,
+          "view_offset": [
+            [
+              8,
+              0,
+              0
+            ],
+            [
+              -8,
+              0,
+              0
+            ]
+          ]
+        },
+        "hands": {
+          "focused": 1,
+          "synthetic": 1,
+          "sequence": 930,
+          "age_ms": 0,
+          "origin_valid": 1,
+          "right_hand": [
+            {
+              "active": 1,
+              "flags": 15,
+              "position_m": [
+                0.150000006,
+                -0.150000006,
+                -0.400000006
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            },
+            {
+              "active": 1,
+              "flags": 15,
+              "position_m": [
+                0.150000006,
+                -0.150000006,
+                -0.400000006
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          ]
+        },
+        "producer": {
+          "seq": 740259,
+          "frame": 544,
+          "ra": "0x80080F2C",
+          "V0": [
+            9,
+            4,
+            88
+          ],
+          "RT": [
+            24610,
+            8,
+            -1005,
+            -2,
+            15391,
+            13,
+            333,
+            -6,
+            8187
+          ],
+          "TR": [
+            0,
+            0,
+            0
+          ],
+          "H": 133,
+          "S2": [
+            229,
+            106
+          ]
+        }
+      },
+      {
+        "case": "right",
+        "request": {
+          "px_mm": 350
+        },
+        "before_pair": 271,
+        "manifest": {
+          "pair_id": 301,
+          "guest_cycle": 1429136675,
+          "width": 2560,
+          "height": 1200,
+          "left_eye": 0,
+          "right_eye": 1,
+          "view_offset": [
+            [
+              8,
+              0,
+              0
+            ],
+            [
+              -8,
+              0,
+              0
+            ]
+          ]
+        },
+        "hands": {
+          "focused": 1,
+          "synthetic": 1,
+          "sequence": 1183,
+          "age_ms": 0,
+          "origin_valid": 1,
+          "right_hand": [
+            {
+              "active": 1,
+              "flags": 15,
+              "position_m": [
+                0.349999994,
+                -0.150000006,
+                -0.400000006
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            },
+            {
+              "active": 1,
+              "flags": 15,
+              "position_m": [
+                0.150000006,
+                -0.150000006,
+                -0.400000006
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          ]
+        },
+        "producer": {
+          "seq": 778529,
+          "frame": 604,
+          "ra": "0x80080F2C",
+          "V0": [
+            17,
+            4,
+            88
+          ],
+          "RT": [
+            24610,
+            8,
+            -1005,
+            -2,
+            15391,
+            13,
+            333,
+            -6,
+            8187
+          ],
+          "TR": [
+            0,
+            0,
+            0
+          ],
+          "H": 133,
+          "S2": [
+            298,
+            106
+          ]
+        }
+      },
+      {
+        "case": "left45",
+        "request": {
+          "qy": 382683,
+          "qw": 923880
+        },
+        "before_pair": 301,
+        "manifest": {
+          "pair_id": 331,
+          "guest_cycle": 1463005288,
+          "width": 2560,
+          "height": 1200,
+          "left_eye": 0,
+          "right_eye": 1,
+          "view_offset": [
+            [
+              8,
+              0,
+              0
+            ],
+            [
+              -8,
+              0,
+              0
+            ]
+          ]
+        },
+        "hands": {
+          "focused": 1,
+          "synthetic": 1,
+          "sequence": 1294,
+          "age_ms": 0,
+          "origin_valid": 1,
+          "right_hand": [
+            {
+              "active": 1,
+              "flags": 15,
+              "position_m": [
+                0.150000006,
+                -0.150000006,
+                -0.400000006
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            },
+            {
+              "active": 1,
+              "flags": 15,
+              "position_m": [
+                0.150000006,
+                -0.150000006,
+                -0.400000006
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.382683009,
+                0.0,
+                0.923879981
+              ]
+            }
+          ]
+        },
+        "producer": {
+          "seq": 816799,
+          "frame": 664,
+          "ra": "0x80080F2C",
+          "V0": [
+            -1,
+            4,
+            76
+          ],
+          "RT": [
+            24610,
+            8,
+            -1005,
+            -2,
+            15391,
+            13,
+            333,
+            -6,
+            8187
+          ],
+          "TR": [
+            0,
+            0,
+            0
+          ],
+          "H": 133,
+          "S2": [
+            137,
+            107
+          ]
+        }
+      },
+      {
+        "case": "unfocused",
+        "request": {
+          "focused": 0
+        },
+        "before_pair": 331,
+        "manifest": {
+          "pair_id": 361,
+          "guest_cycle": 1496874710,
+          "width": 2560,
+          "height": 1200,
+          "left_eye": 0,
+          "right_eye": 1,
+          "view_offset": [
+            [
+              8,
+              0,
+              0
+            ],
+            [
+              -8,
+              0,
+              0
+            ]
+          ]
+        },
+        "hands": {
+          "focused": 0,
+          "synthetic": 1,
+          "sequence": 1437,
+          "age_ms": 0,
+          "origin_valid": 1,
+          "right_hand": [
+            {
+              "active": 0,
+              "flags": 0,
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "active": 0,
+              "flags": 0,
+              "position_m": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "orientation_xyzw": [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        "producer": {
+          "seq": 855069,
+          "frame": 724,
+          "ra": "0x80080F2C",
+          "V0": [
+            72,
+            82,
+            389
+          ],
+          "RT": [
+            24610,
+            8,
+            -1005,
+            -2,
+            15391,
+            13,
+            333,
+            -6,
+            8187
+          ],
+          "TR": [
+            0,
+            0,
+            0
+          ],
+          "H": 133,
+          "S2": [
+            229,
+            111
+          ]
+        }
+      }
+    ],
+    "stereo": {
+      "attempts": 382,
+      "pairs": 12,
+      "failed": 1,
+      "shed": 369,
+      "last_pair_id": 361,
+      "eye_cycles": [
+        1496874710,
+        1496874710
+      ],
+      "eye_hashes": [
+        "a1353284183a6c54",
+        "a1353284183a6c54"
+      ],
+      "last_failed_attempt": 241,
+      "last_failed_eye": 1,
+      "last_failed_reason": "eye_abort",
+      "retained_pair_id": 211
+    },
+    "restore": {
+      "passes": 25,
+      "aborted": 1,
+      "watchdog": 1,
+      "nesting_repairs": 1,
+      "verify_checks": 26,
+      "verify_mismatch": 0,
+      "dropped": {
+        "spu": 0,
+        "cd": 0,
+        "timer": 0,
+        "dma": 0,
+        "gpu": 0,
+        "other": 0
+      },
+      "vram_leaks": 0,
+      "disabled": 0,
+      "last_abort_detail": "mod entries +2"
+    }
+  },
+  "decoded_image_controls": {
+    "world_roi": [
+      350,
+      400,
+      850,
+      580
+    ],
+    "world_pixels_per_eye": 90000,
+    "comparison": "native vs each pose, exact decoded RGB pixels",
+    "eyes": {
+      "left": {
+        "native": {
+          "bbox": null,
+          "world_changed_pixels": 0,
+          "sha256": "c2fe81d99e6f13a7d9b1147959aa61d08ca380ac93c5081399160803df8fed3c"
+        },
+        "straight": {
+          "bbox": [
+            328,
+            35,
+            2534,
+            1200
+          ],
+          "world_changed_pixels": 0,
+          "sha256": "3da188b5ea1a83f4675b19f8adfa448b2c18464005fc2192fd970fe00bb8a388"
+        },
+        "right": {
+          "bbox": [
+            328,
+            35,
+            2560,
+            1200
+          ],
+          "world_changed_pixels": 0,
+          "sha256": "303e0ea1df85659343483b6d28791661cac986a6998c5ce601df8bb374f01c2e"
+        },
+        "left45": {
+          "bbox": [
+            136,
+            35,
+            2560,
+            1200
+          ],
+          "world_changed_pixels": 0,
+          "sha256": "d5f9ad7be7c3ac6dece8ebd2b00a36293686a2915f7eececfc4ec3cb96f9782f"
+        },
+        "unfocused": {
+          "bbox": [
+            3,
+            35,
+            2260,
+            385
+          ],
+          "world_changed_pixels": 0,
+          "sha256": "6dd54e2a6cddca0316f8eb704756c8c8af0a93272bee1dafbd09f84ad452e60c"
+        }
+      },
+      "right": {
+        "native": {
+          "bbox": null,
+          "world_changed_pixels": 0,
+          "sha256": "cb198bb3d7b9e3fa2fe41b0fb704dc7adbe8ce40efc4ef1821e05c4a49721d2f"
+        },
+        "straight": {
+          "bbox": [
+            0,
+            35,
+            1879,
+            1200
+          ],
+          "world_changed_pixels": 0,
+          "sha256": "b045101812abaeb179d8263e07bb78cd52290a331c8d3ee77ef813db8e3ac922"
+        },
+        "right": {
+          "bbox": [
+            0,
+            35,
+            2130,
+            1200
+          ],
+          "world_changed_pixels": 0,
+          "sha256": "a0fb1a9feba90450fb65ff7ffbcbfc2991934185ae40787723029f10514109f1"
+        },
+        "left45": {
+          "bbox": [
+            0,
+            35,
+            2065,
+            1200
+          ],
+          "world_changed_pixels": 14336,
+          "sha256": "dc1291010a2ed45b863cefc40bf6b2db704aeaf89cb8e469020e69fe8a705f17"
+        },
+        "unfocused": {
+          "bbox": [
+            305,
+            35,
+            2130,
+            372
+          ],
+          "world_changed_pixels": 0,
+          "sha256": "a57b19b64260fdd58dd4ec1f7b2dc51bac10d068f693c6ffc577e28cf5aa5817"
+        }
+      }
+    },
+    "note": "The selected region is clear world geometry in the left eye. Right-eye left45 includes the rotated weapon; its differing pixels are recorded without claiming world isolation there."
+  },
+  "combined_slot5": {
+    "synthetic": true,
+    "slot": 5,
+    "target_point_world": [
+      -6492.0,
+      256.0,
+      15596.0
+    ],
+    "target_note": "actor position with Y minus 100, provisional torso point",
+    "producer": {
+      "seq": 2710184,
+      "frame": 3521,
+      "ra": "0x8008BF84",
+      "RT": [
+        -872,
+        -2,
+        -8196,
+        -50,
+        5136,
+        4,
+        8166,
+        82,
+        -868
+      ],
+      "TR": [
+        29852,
+        -238,
+        17752
+      ],
+      "H": 400
+    },
+    "pose": {
+      "px_mm": 150,
+      "py_mm": -150,
+      "pz_mm": -400,
+      "qx": -49910,
+      "qy": 3203,
+      "qz": 0,
+      "qw": 998749
+    },
+    "hands": {
+      "id": 0,
+      "ok": true,
+      "sequence": 7134,
+      "synthetic": 1,
+      "focused": 1,
+      "origin_valid": 1,
+      "predicted_time": 0,
+      "age_ms": 0,
+      "origin_position_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "origin_orientation_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "pose": [
+        [
+          {
+            "active": 0,
+            "flags": 0,
+            "position_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "orientation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          {
+            "active": 0,
+            "flags": 0,
+            "position_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "orientation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        [
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              0.150000006,
+              -0.150000006,
+              -0.400000006
+            ],
+            "orientation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              0.150000006,
+              -0.150000006,
+              -0.400000006
+            ],
+            "orientation_xyzw": [
+              -0.049910001,
+              0.003203,
+              0.0,
+              0.998749018
+            ]
+          }
+        ]
+      ]
+    },
+    "interval": {
+      "first": 3571,
+      "last": 3596
+    },
+    "seam": [
+      {
+        "frame": 3572,
+        "pc": "0x80045514",
+        "addr": "0x000E9B94",
+        "old": "0x00000001",
+        "new": "0x00000000",
+        "s0": "0x800E9910",
+        "s1": "0x800E9CDC",
+        "s2": "0x800EE860"
+      },
+      {
+        "frame": 3572,
+        "pc": "0x80045520",
+        "addr": "0x000E9D20",
+        "old": "0x00000000",
+        "new": "0x00000000",
+        "s0": "0x800E9910",
+        "s1": "0x800E9CDC",
+        "s2": "0x800EE860"
+      },
+      {
+        "frame": 3572,
+        "pc": "0x80045520",
+        "addr": "0x000E9B1C",
+        "old": "0xE6750000",
+        "new": "0xE3B89D7D",
+        "s0": "0x800E9910",
+        "s1": "0x800E9CDC",
+        "s2": "0x800EE860"
+      },
+      {
+        "frame": 3572,
+        "pc": "0x80045520",
+        "addr": "0x000E9B20",
+        "old": "0x00990000",
+        "new": "0x00854C6B",
+        "s0": "0x800E9910",
+        "s1": "0x800E9CDC",
+        "s2": "0x800EE860"
+      },
+      {
+        "frame": 3572,
+        "pc": "0x80045520",
+        "addr": "0x000E9B24",
+        "old": "0x3D040000",
+        "new": "0x3D3900B4",
+        "s0": "0x800E9910",
+        "s1": "0x800E9CDC",
+        "s2": "0x800EE860"
+      },
+      {
+        "frame": 3572,
+        "pc": "0x80045520",
+        "addr": "0x000E9B38",
+        "old": "0x001A0000",
+        "new": "0xFF92135D",
+        "s0": "0x800E9910",
+        "s1": "0x800E9CDC",
+        "s2": "0x800EE860"
+      },
+      {
+        "frame": 3572,
+        "pc": "0x80045520",
+        "addr": "0x000E9B3C",
+        "old": "0x040D0000",
+        "new": "0x0440F0F4",
+        "s0": "0x800E9910",
+        "s1": "0x800E9CDC",
+        "s2": "0x800EE860"
+      },
+      {
+        "frame": 3572,
+        "pc": "0x80045520",
+        "addr": "0x000E9B40",
+        "old": "0x00000000",
+        "new": "0x00000000",
+        "s0": "0x800E9910",
+        "s1": "0x800E9CDC",
+        "s2": "0x800EE860"
+      }
+    ],
+    "motion": [
+      {
+        "frame": 3574,
+        "pc": "0x8006CC10",
+        "addr": "0x000E9B1C",
+        "old": "0xE3B89D7D",
+        "new": "0xE62D5D7D",
+        "s0": "0x800E9910",
+        "s1": "0x00000000",
+        "s2": "0x800E9910"
+      },
+      {
+        "frame": 3574,
+        "pc": "0x8006CC2C",
+        "addr": "0x000E9B20",
+        "old": "0x00854C6B",
+        "new": "0x00F0EC6B",
+        "s0": "0x800E9910",
+        "s1": "0x00000000",
+        "s2": "0x800E9910"
+      },
+      {
+        "frame": 3574,
+        "pc": "0x8006CC48",
+        "addr": "0x000E9B24",
+        "old": "0x3D3900B4",
+        "new": "0x3CFB00B4",
+        "s0": "0x800E9910",
+        "s1": "0x00000000",
+        "s2": "0x800E9910"
+      }
+    ],
+    "damage": [
+      {
+        "frame": 3576,
+        "pc": "0x8004ACC0",
+        "addr": "0x000B7BFC",
+        "old": "0x00060000",
+        "new": "0x00038000",
+        "s0": "0x800B7B08",
+        "s1": "0x800E9910",
+        "s2": "0x00000000"
+      }
+    ],
+    "stereo": {
+      "attempts": 1805,
+      "pairs": 60,
+      "failed": 1,
+      "shed": 1744,
+      "last_pair_id": 1801,
+      "eye_cycles": [
+        2039445155,
+        2039445155
+      ],
+      "eye_hashes": [
+        "6ff3b41d1bb3eead",
+        "6ff3b41d1bb3eead"
+      ],
+      "last_failed_attempt": 241,
+      "last_failed_eye": 1,
+      "last_failed_reason": "eye_abort",
+      "retained_pair_id": 211
+    },
+    "restore": {
+      "passes": 121,
+      "aborted": 1,
+      "watchdog": 1,
+      "nesting_repairs": 1,
+      "verify_checks": 122,
+      "verify_mismatch": 0,
+      "dropped": {
+        "spu": 0,
+        "cd": 0,
+        "timer": 0,
+        "dma": 0,
+        "gpu": 0,
+        "other": 0
+      },
+      "vram_leaks": 0,
+      "disabled": 0,
+      "last_abort_detail": "mod entries +2"
+    }
+  },
+  "load_after_nested_abort": {
+    "before": {
+      "id": 0,
+      "ok": true,
+      "generation": 2,
+      "pending": 0,
+      "last_ok": 1,
+      "last_op": "load",
+      "last_slot": 0
+    },
+    "after": {
+      "id": 0,
+      "ok": true,
+      "generation": 3,
+      "pending": 0,
+      "last_ok": 1,
+      "last_op": "load",
+      "last_slot": 5
+    }
+  },
+  "aim_regression": {
+    "complete": true,
+    "controls": [
+      {
+        "case": "native",
+        "request": null,
+        "body_turn": 0,
+        "unit_direction": [
+          0.9942435351955291,
+          0.052187749492093725,
+          -0.09357473764241714
+        ],
+        "damage": [
+          {
+            "frame": 4936,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00060000",
+            "new": "0x00038000"
+          },
+          {
+            "frame": 4936,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00038000",
+            "new": "0x00000000"
+          }
+        ],
+        "npc_constructors_observed": 1,
+        "pose_store_count": 0,
+        "first_motion_pc": [
+          "0x8006CC10",
+          "0x8006CC2C",
+          "0x8006CC48"
+        ]
+      },
+      {
+        "case": "straight",
+        "request": {},
+        "body_turn": 0,
+        "unit_direction": [
+          0.994331099890016,
+          0.01070303538564938,
+          -0.10578803724923092
+        ],
+        "damage": [
+          {
+            "frame": 5042,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00060000",
+            "new": "0x00038000"
+          },
+          {
+            "frame": 5042,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00038000",
+            "new": "0x00000000"
+          }
+        ],
+        "npc_constructors_observed": 1,
+        "pose_store_count": 6,
+        "first_motion_pc": [
+          "0x8006CC10",
+          "0x8006CC2C",
+          "0x8006CC48"
+        ]
+      },
+      {
+        "case": "left45",
+        "request": {
+          "qy": 382683,
+          "qw": 923880
+        },
+        "body_turn": 0,
+        "unit_direction": [
+          0.7788471306296835,
+          0.007550487583721315,
+          0.6271683484098641
+        ],
+        "damage": [
+          {
+            "frame": 5157,
+            "pc": "0x8004ACC0",
+            "addr": "0x000EE954",
+            "old": "0x006E0000",
+            "new": "0x00680000"
+          }
+        ],
+        "npc_constructors_observed": 2,
+        "pose_store_count": 6,
+        "first_motion_pc": [
+          "0x8006CC10",
+          "0x8006CC2C",
+          "0x8006CC48"
+        ]
+      },
+      {
+        "case": "right45",
+        "request": {
+          "qy": -382683,
+          "qw": 923880
+        },
+        "body_turn": 0,
+        "unit_direction": [
+          0.6308379839026019,
+          0.0075038573936597585,
+          -0.7758782959910118
+        ],
+        "damage": [
+          {
+            "frame": 5264,
+            "pc": "0x8004ACC0",
+            "addr": "0x000EE954",
+            "old": "0x006E0000",
+            "new": "0x00680000"
+          }
+        ],
+        "npc_constructors_observed": 2,
+        "pose_store_count": 6,
+        "first_motion_pc": [
+          "0x8006CC10",
+          "0x8006CC2C",
+          "0x8006CC48"
+        ]
+      },
+      {
+        "case": "translated",
+        "request": {
+          "px_mm": 200,
+          "py_mm": -100,
+          "pz_mm": -300
+        },
+        "body_turn": 0,
+        "unit_direction": [
+          0.9943325474096905,
+          0.0106906425029058,
+          -0.10577568399509682
+        ],
+        "damage": [
+          {
+            "frame": 5363,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00060000",
+            "new": "0x00038000"
+          }
+        ],
+        "npc_constructors_observed": 1,
+        "pose_store_count": 6,
+        "first_motion_pc": [
+          "0x8006CC10",
+          "0x8006CC2C",
+          "0x8006CC48"
+        ]
+      },
+      {
+        "case": "partial",
+        "request": {
+          "flags": 1
+        },
+        "body_turn": 0,
+        "unit_direction": [
+          0.9942434807567029,
+          0.05222579756223814,
+          -0.09355408618432423
+        ],
+        "damage": [
+          {
+            "frame": 5472,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00060000",
+            "new": "0x00038000"
+          },
+          {
+            "frame": 5472,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00038000",
+            "new": "0x00000000"
+          }
+        ],
+        "npc_constructors_observed": 1,
+        "pose_store_count": 0,
+        "first_motion_pc": [
+          "0x8006CC10",
+          "0x8006CC2C",
+          "0x8006CC48"
+        ]
+      },
+      {
+        "case": "unfocused",
+        "request": {
+          "focused": 0
+        },
+        "body_turn": 0,
+        "unit_direction": [
+          0.9942434807567029,
+          0.05222579756223814,
+          -0.09355408618432423
+        ],
+        "damage": [
+          {
+            "frame": 5580,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00060000",
+            "new": "0x00038000"
+          },
+          {
+            "frame": 5580,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00038000",
+            "new": "0x00000000"
+          }
+        ],
+        "npc_constructors_observed": 1,
+        "pose_store_count": 0,
+        "first_motion_pc": [
+          "0x8006CC10",
+          "0x8006CC2C",
+          "0x8006CC48"
+        ]
+      },
+      {
+        "case": "body-turn",
+        "request": {},
+        "body_turn": 1000,
+        "unit_direction": [
+          0.7758024118447713,
+          0.010670585963282811,
+          -0.6308856920005684
+        ],
+        "damage": [],
+        "npc_constructors_observed": 1,
+        "pose_store_count": 6,
+        "first_motion_pc": [
+          "0x8006CC10",
+          "0x8006CC2C",
+          "0x8006CC48"
+        ]
+      }
+    ],
+    "restore": {
+      "passes": 191,
+      "aborted": 1,
+      "watchdog": 1,
+      "nesting_repairs": 1,
+      "verify_checks": 192,
+      "verify_mismatch": 0,
+      "dropped": {
+        "spu": 0,
+        "cd": 0,
+        "timer": 0,
+        "dma": 0,
+        "gpu": 0,
+        "other": 0
+      },
+      "vram_leaks": 0,
+      "disabled": 0,
+      "last_abort_detail": "mod entries +2"
+    },
+    "stereo": {
+      "attempts": 2868,
+      "pairs": 95,
+      "failed": 1,
+      "shed": 2772,
+      "last_pair_id": 2851,
+      "eye_cycles": [
+        2006674493,
+        2006674493
+      ],
+      "eye_hashes": [
+        "b7a3dc8fe154269b",
+        "b7a3dc8fe154269b"
+      ],
+      "last_failed_attempt": 241,
+      "last_failed_eye": 1,
+      "last_failed_reason": "eye_abort",
+      "retained_pair_id": 211
+    }
+  },
+  "limitations": [
+    "Native grip pivot (80,150,100) and model units/meter 850 are provisional.",
+    "Grip position and aim orientation drive rifle+arms mesh; arms are not independently tracked.",
+    "Shots start at aim-space origin, not calibrated barrel tip.",
+    "Real Quest action-space validity, recenter/body-turn alignment, sight/barrel alignment and long-range behavior remain untested.",
+    "Other weapons retain native handling.",
+    "VERIFY cost sheds many pairs; no headset-rate cadence claim."
+  ],
+  "owned_game_closed": true
+}

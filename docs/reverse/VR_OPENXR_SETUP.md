@@ -177,3 +177,16 @@ failed after bounded shutdown; do not treat it as a complete button trace or
 whole-test performance sample. The utility now preserves failed trailing queries
 in capture_status.json and returns a partial-capture exit status. Owned games
 are closed after tests.
+
+## Experimental tracked rifle (desktop verified; Quest alignment pending)
+
+`./vr/run_vr.ps1 -WeaponPoseDiagnostic -Slot 5 -Seconds 180` enables the rifle
+mesh and native shot pose override for a bounded headset alignment test.
+Ordinary launches retain native aiming. Fresh valid right grip position and
+aim orientation drive the mesh; the aim pose drives player rifle shots.
+Unusable tracking falls back to native handling. WorldScale remains 3.
+The arms move with the rifle, physical mesh scale/pivot are provisional, and
+shot origin is not yet a calibrated barrel tip. Right-grip native aim is still
+temporary. See VR_WEAPON_AIM_PLAN.md and VR_WEAPON_POSE_RECEIPT.json for desktop
+producer evidence and remaining hardware checks. Pause/wrist HUD and independent
+headset cadence remain deferred. The launcher closes its owned game afterward.

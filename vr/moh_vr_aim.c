@@ -43,3 +43,21 @@ int moh_vr_aim_shot(const PSXModOpenXRHands *h,const double inv[9],
     int32_t a[2]={(int32_t)llround(pitch*65536),(int32_t)llround(yaw*65536)};
     memcpy(position,result,sizeof result);memcpy(angles,a,sizeof a);return 1;
 }
+int moh_vr_weapon_transform(const double inv[9],const double r[9],const double t[3],
+                            double scale,const double pivot[3],double out_r[9],double out_t[3]) {
+    if(!inv || !r || !t || !pivot || !out_r || !out_t || !isfinite(scale) || scale<=0 || scale>64)return 0;
+    double result_r[9]={0},result_t[3]={0};
+    for(int i=0;i<3;i++) {
+        for(int k=0;k<3;k++) {
+            if(!isfinite(inv[i*3+k]) || !isfinite(t[k]))return 0;
+            result_t[i]+=inv[i*3+k]*t[k];
+            for(int j=0;j<3;j++) {
+                if(!isfinite(r[k*3+j]) || !isfinite(pivot[j]))return 0;
+                result_r[i*3+j]+=inv[i*3+k]*r[k*3+j]*scale;
+            }
+        }
+        for(int j=0;j<3;j++)result_t[i]-=result_r[i*3+j]*pivot[j];
+        if(!isfinite(result_t[i]) || fabs(result_t[i])>65536)return 0;
+    }
+    memcpy(out_r,result_r,sizeof result_r);memcpy(out_t,result_t,sizeof result_t);return 1;
+}
