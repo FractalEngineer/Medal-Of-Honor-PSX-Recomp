@@ -1,0 +1,707 @@
+{
+  "date": "2026-10-03",
+  "scope": "First actual Quest tracked-rifle delivery test; physical acceptance pending",
+  "launch": {
+    "environment": {
+      "PSX_OPENXR": "1",
+      "PSX_RENDER_PASS_VERIFY": "0",
+      "PSX_VR_AUTHORED_FOCAL": "1",
+      "PSX_VR_DESKTOP_FOV": "0",
+      "PSX_VR_DRAW_MASK": "15",
+      "PSX_VR_HEAD_POSITION": "0,0,0",
+      "PSX_VR_HEAD_YAW": "0",
+      "PSX_VR_HUD_ICON": "1",
+      "PSX_VR_INTERP": "0",
+      "PSX_VR_IPD_MM": "67",
+      "PSX_VR_MOVEMENT": "1",
+      "PSX_VR_MOVE_DEADZONE": "0.2",
+      "PSX_VR_OFFSET": "0",
+      "PSX_VR_OPENXR": "1",
+      "PSX_VR_PASS_DRAW": "1",
+      "PSX_VR_PASS_PROBE": "0",
+      "PSX_VR_PASS_WATCHDOG": "0",
+      "PSX_VR_PROBE": "0",
+      "PSX_VR_RECT_ALT": "0",
+      "PSX_VR_STEREO": "1",
+      "PSX_VR_STEREO_FAULT": "0",
+      "PSX_VR_STEREO_FAULT_HOLD": "0",
+      "PSX_VR_TEXT": "1",
+      "PSX_VR_TURN_GAIN": "0.65",
+      "PSX_VR_UNITS_PER_METER": "716.417910447761",
+      "PSX_VR_WEAPON_AIM": "1",
+      "PSX_VR_WEAPON_MODEL_UNITS_PER_METER": "850",
+      "PSX_VR_WEAPON_PIVOT": "80,150,100",
+      "PSX_VR_WEAPON_POSE": "1",
+      "PSX_VR_WORLD_SCALE": "3"
+    },
+    "game_revision": "a62b29e4997beb044cf4c5357aaa1affc9349919",
+    "framework_pin": "35b209d406c168e14f51bb8bbd549742473c7388",
+    "note": "Environment inherited by capture client; launch must use the same environment."
+  },
+  "build": {
+    "executable": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\build-release\\Medal_of_Honor__Recompiled.exe",
+    "sha256": "c3837259925b4df66569bf3e887af160c6f9d9335d35705c11a8b14ad6f2af3d",
+    "framework_root": "C:\\Users\\titan\\Desktop\\Github_Projects\\Mine\\Medal-Of-Honor-PSX-Recomp\\psxrecomp",
+    "framework_revision": "35b209d406c168e14f51bb8bbd549742473c7388",
+    "framework_tracked_changes": []
+  },
+  "save": {
+    "slot": 5,
+    "file": "saves\\openbios\\state_8001DFD4_slot05.pst",
+    "size": 1883709,
+    "mtime_ns": 1790955117367172900,
+    "sha256": "a97a3ba8d1287132c5e2f239f9eb9d66aa23d069baac7b18809425cf4ede5db8"
+  },
+  "capture": {
+    "atomic": false,
+    "samples": 242,
+    "valid_right_grip_aim": 242,
+    "requested_seconds": 30.0,
+    "elapsed_seconds": 30.072680399985984,
+    "age_ms_range": [
+      0,
+      29
+    ],
+    "right_grip_position_bounds_m": [
+      [
+        -0.126052007,
+        0.251664817
+      ],
+      [
+        -0.431726933,
+        -0.082395315
+      ],
+      [
+        -0.501460075,
+        -0.343410164
+      ]
+    ],
+    "right_trigger_peak": 1.0,
+    "errors": [],
+    "status": {
+      "complete": true,
+      "diagnostic_errors": {}
+    },
+    "first_hands": {
+      "id": 0,
+      "ok": true,
+      "sequence": 855,
+      "synthetic": 0,
+      "focused": 1,
+      "origin_valid": 1,
+      "predicted_time": 207866293114499,
+      "age_ms": 4,
+      "origin_position_m": [
+        -0.00016737,
+        0.001243353,
+        0.000494242
+      ],
+      "origin_orientation_xyzw": [
+        -0.003898627,
+        0.000340849,
+        0.019405758,
+        0.99980396
+      ],
+      "pose": [
+        [
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              -0.148405433,
+              -0.431761742,
+              -0.230256677
+            ],
+            "orientation_xyzw": [
+              -0.486528903,
+              -0.07846351,
+              -0.119790964,
+              -0.861848831
+            ]
+          },
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              -0.15815419,
+              -0.405013502,
+              -0.325726569
+            ],
+            "orientation_xyzw": [
+              0.009578034,
+              -0.008055878,
+              -0.142973781,
+              -0.989647448
+            ]
+          }
+        ],
+        [
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              0.037165899,
+              -0.385652065,
+              -0.343877971
+            ],
+            "orientation_xyzw": [
+              -0.473411947,
+              0.024659133,
+              0.044706278,
+              -0.879360259
+            ]
+          },
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              0.039744239,
+              -0.361483514,
+              -0.440491855
+            ],
+            "orientation_xyzw": [
+              0.029693408,
+              -0.000997732,
+              0.051046357,
+              -0.998254299
+            ]
+          }
+        ]
+      ]
+    },
+    "last_hands": {
+      "id": 0,
+      "ok": true,
+      "sequence": 1752,
+      "synthetic": 0,
+      "focused": 1,
+      "origin_valid": 1,
+      "predicted_time": 207896236057199,
+      "age_ms": 10,
+      "origin_position_m": [
+        0.000116587,
+        0.001075864,
+        -0.000415325
+      ],
+      "origin_orientation_xyzw": [
+        0.092716403,
+        -0.003375351,
+        0.027975814,
+        0.995293736
+      ],
+      "pose": [
+        [
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              -0.129429966,
+              -0.4640311,
+              -0.230028808
+            ],
+            "orientation_xyzw": [
+              -0.446203917,
+              -0.121739022,
+              -0.210209131,
+              -0.861332595
+            ]
+          },
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              -0.141572237,
+              -0.445849717,
+              -0.327224553
+            ],
+            "orientation_xyzw": [
+              0.044242367,
+              -0.000324484,
+              -0.242915988,
+              -0.96903789
+            ]
+          }
+        ],
+        [
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              -0.126052007,
+              -0.094610095,
+              -0.388063341
+            ],
+            "orientation_xyzw": [
+              -0.624909163,
+              -0.200050592,
+              0.048440639,
+              -0.753074944
+            ]
+          },
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              -0.165471673,
+              -0.038440824,
+              -0.460285932
+            ],
+            "orientation_xyzw": [
+              -0.164649695,
+              -0.197469234,
+              -0.058074452,
+              -0.964636624
+            ]
+          }
+        ]
+      ]
+    }
+  },
+  "eye_capture": {
+    "fresh_complete_decoded_pair": {
+      "marker": 4133,
+      "pair_id": 4134,
+      "poses_atomic_with_pair": false
+    },
+    "manifest": {
+      "pair_id": 4134,
+      "guest_cycle": 6618354248,
+      "width": 2560,
+      "height": 1200,
+      "left_eye": 0,
+      "right_eye": 1,
+      "view_offset": [
+        [
+          12,
+          1,
+          2
+        ],
+        [
+          -4,
+          1,
+          2
+        ]
+      ]
+    },
+    "files": {
+      "left": {
+        "sha256": "d7c93b0e59ce229360b2294cca33f7e1662c0f74add0dd96e085d187001bda9a"
+      },
+      "right": {
+        "sha256": "018094028e7e15c4218ad61300af174acb7b68cbf3c0c79bdcb9463b9e5557ed"
+      }
+    },
+    "inspection": "Rifle visible; large black polygon visible along lower edge. Cause and physical alignment not established. Images remain ignored."
+  },
+  "held_producer": {
+    "atomic_with_hands": false,
+    "latest_by_seq": {
+      "seq": 18208488,
+      "frame": 5510,
+      "ra": "0x80080F2C",
+      "cmd": "0x00180001",
+      "V0": [
+        4,
+        8,
+        80
+      ],
+      "V1": [
+        1048,
+        88,
+        -3570
+      ],
+      "V2": [
+        1058,
+        98,
+        -3571
+      ],
+      "RT": [
+        24680,
+        2,
+        -1422,
+        -10,
+        15420,
+        -120,
+        473,
+        69,
+        8192
+      ],
+      "TR": [
+        0,
+        0,
+        0
+      ],
+      "H": 133,
+      "OFX": 16777216,
+      "OFY": 7864320,
+      "render_view": 1,
+      "S0": [
+        187,
+        115
+      ],
+      "S1": [
+        187,
+        115
+      ],
+      "S2": [
+        187,
+        113
+      ],
+      "SZ": [
+        166,
+        166,
+        164
+      ],
+      "FLAG": "0x00001000"
+    }
+  },
+  "late_enemy_health": {
+    "before": {
+      "id": 0,
+      "ok": true,
+      "addr": "0x800B7BFC",
+      "len": 4,
+      "hex": "00000000"
+    },
+    "after": {
+      "id": 0,
+      "ok": true,
+      "addr": "0x800B7BFC",
+      "len": 4,
+      "hex": "00000000"
+    },
+    "trace": {
+      "id": 0,
+      "ok": true,
+      "total": 89,
+      "available": 89,
+      "pc_lo": "0x8004ACC0",
+      "pc_hi": "0x8004ACC4",
+      "entries": [],
+      "emitted": 0
+    },
+    "conclusion": "Health already zero at start; no controlled shot/damage inference."
+  },
+  "final": {
+    "openxr_stats": {
+      "id": 0,
+      "ok": true,
+      "compiled": 1,
+      "enabled": 1,
+      "initialized": 1,
+      "running": 1,
+      "state": 5,
+      "tracking": 1,
+      "frame_open": 0,
+      "result": 0,
+      "stage": "submitted",
+      "runtime": "VirtualDesktopXR",
+      "last_failure": "",
+      "last_failure_result": 0,
+      "view_flags": 15,
+      "waits": 6805,
+      "submitted": 6805,
+      "empty": 0,
+      "failures": 0,
+      "predicted_time": 208066698860903,
+      "ipd_m": 0.06678,
+      "units_per_meter": 238.80597,
+      "gl_version": 1125925676646400,
+      "min_gl_version": 1125899906842624,
+      "max_gl_version": 1407374883553280
+    },
+    "openxr_hands": {
+      "id": 0,
+      "ok": true,
+      "sequence": 6821,
+      "synthetic": 0,
+      "focused": 1,
+      "origin_valid": 1,
+      "predicted_time": 208066735523911,
+      "age_ms": 23,
+      "origin_position_m": [
+        0.000116587,
+        0.001075864,
+        -0.000415325
+      ],
+      "origin_orientation_xyzw": [
+        0.092716403,
+        -0.003375351,
+        0.027975814,
+        0.995293736
+      ],
+      "pose": [
+        [
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              -0.12449795,
+              -0.464745343,
+              -0.253089696
+            ],
+            "orientation_xyzw": [
+              -0.555576861,
+              -0.19044888,
+              -0.226586685,
+              -0.77699554
+            ]
+          },
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              -0.155293912,
+              -0.426481962,
+              -0.339764535
+            ],
+            "orientation_xyzw": [
+              -0.092645936,
+              -0.051640168,
+              -0.291454285,
+              -0.950686276
+            ]
+          }
+        ],
+        [
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              0.138874143,
+              -0.436576128,
+              -0.294908464
+            ],
+            "orientation_xyzw": [
+              -0.596600592,
+              0.062394049,
+              0.01731481,
+              -0.799921811
+            ]
+          },
+          {
+            "active": 1,
+            "flags": 15,
+            "position_m": [
+              0.150871888,
+              -0.385943115,
+              -0.379863441
+            ],
+            "orientation_xyzw": [
+              -0.116710335,
+              0.045377396,
+              0.046192106,
+              -0.991052866
+            ]
+          }
+        ]
+      ]
+    },
+    "openxr_views": {
+      "id": 0,
+      "ok": true,
+      "predicted_time": 208066735523911,
+      "submitted_pair_id": 6806,
+      "submitted_guest_cycle": 9651980913,
+      "submitted_predicted_time": 208066735523911,
+      "eyes": [
+        {
+          "eye": 0,
+          "position_m": [
+            -0.030862,
+            0.001929,
+            0.004445
+          ],
+          "orientation_xyzw": [
+            0.108169,
+            -0.047894,
+            0.014363,
+            0.992874
+          ],
+          "fov_lrud": [
+            -0.890127,
+            0.645328,
+            0.716254,
+            -0.910357
+          ],
+          "rotation_q12": [
+            4078,
+            82,
+            -375,
+            -72,
+            4094,
+            121,
+            378,
+            -114,
+            4077
+          ],
+          "translation": [
+            7,
+            1,
+            2
+          ],
+          "projection_q16": [
+            16880361,
+            7289275,
+            4068688,
+            -1519288
+          ]
+        },
+        {
+          "eye": 1,
+          "position_m": [
+            0.035584,
+            0.003142,
+            0.011004
+          ],
+          "orientation_xyzw": [
+            0.108169,
+            -0.047894,
+            0.014363,
+            0.992874
+          ],
+          "fov_lrud": [
+            -0.645328,
+            0.890127,
+            0.716254,
+            -0.910357
+          ],
+          "rotation_q12": [
+            4078,
+            82,
+            -375,
+            -72,
+            4094,
+            121,
+            378,
+            -114,
+            4077
+          ],
+          "translation": [
+            -9,
+            1,
+            2
+          ],
+          "projection_q16": [
+            16880361,
+            7289275,
+            -4068688,
+            -1519288
+          ]
+        }
+      ]
+    },
+    "stereo_stats": {
+      "id": 0,
+      "ok": true,
+      "attempts": 6806,
+      "pairs": 6806,
+      "refused": 0,
+      "failed": 0,
+      "shed": 0,
+      "status": 0,
+      "last_pair_id": 6806,
+      "last_guest_cycle": 9651980913,
+      "eye_cycles": [
+        9651980913,
+        9651980913
+      ],
+      "eye_hashes": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "eye_view": [
+        [
+          7,
+          1,
+          2
+        ],
+        [
+          -9,
+          1,
+          2
+        ]
+      ],
+      "last_eye": 1,
+      "last_failure": "",
+      "last_failed_attempt": 0,
+      "last_failed_eye": 0,
+      "last_failed_reason": "",
+      "retained_pair_id": 0,
+      "last_pair_ms": 8.241,
+      "avg_pair_ms": 8.389,
+      "published": {
+        "valid": 1,
+        "pair_id": 6806,
+        "guest_cycle": 9651980913,
+        "width": 2560,
+        "height": 1200,
+        "staged_mask": 3,
+        "mode": 1,
+        "presents": 13641
+      }
+    },
+    "render_pass_stats": {
+      "id": 0,
+      "ok": true,
+      "plans": 0,
+      "planned": 0,
+      "wanted": 0,
+      "refused": 0,
+      "passes": 13612,
+      "aborted": 0,
+      "discarded": 0,
+      "watchdog": 0,
+      "vram_leaks": 0,
+      "nesting_repairs": 0,
+      "verify_checks": 0,
+      "verify_mismatch": 0,
+      "dropped": {
+        "spu": 0,
+        "cd": 0,
+        "timer": 0,
+        "dma": 0,
+        "gpu": 0,
+        "other": 0
+      },
+      "last_pass_ms": 4.037,
+      "avg_pass_ms": 4.195,
+      "avg_begin_ms": 0.128,
+      "avg_guest_ms": 3.7,
+      "avg_end_ms": 0.25,
+      "avg_restore_ms": 0.116,
+      "guest_cycles_last": 436204,
+      "disabled": 0,
+      "promotions": 0,
+      "pass_presents": 0,
+      "blended_presents": 0,
+      "expired": 0,
+      "late_presents": 0,
+      "unmatched_flips": 0,
+      "early_presents": 0,
+      "cost_us": 0,
+      "cost_rewarms": 0,
+      "frame_images": 0,
+      "journaled": 6806,
+      "image_textures": 0,
+      "image_bytes": 0,
+      "status": 1,
+      "backups_reused": 6806,
+      "pass_attempts": 13612,
+      "argument_refused": 0,
+      "status_refused": 0,
+      "begin_refused": 0,
+      "checkpoint_refused": 0,
+      "last_failure": null,
+      "last_abort_detail": ""
+    }
+  },
+  "limitations": [
+    "No user grip/size/barrel alignment acceptance received before checkpoint.",
+    "No shot-direction or damage control in this actual-device run.",
+    "Adjacent pose/producer/eye queries are not atomic.",
+    "Verify off: zero checks is not a restore proof.",
+    "No independent headset cadence or comfort conclusion."
+  ],
+  "game_closed": true
+}

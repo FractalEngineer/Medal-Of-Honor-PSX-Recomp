@@ -1015,3 +1015,28 @@ Documentation clarification: older OpenXR overview sentences said controller
 aiming was unimplemented. The prototype is implemented and desktop verified;
 ordinary launches retain native aim, while Quest alignment remains untested.
 Updated that overview explicitly. No framework source changes this checkpoint.
+
+
+## 2026-10-03: first Quest tracked-rifle delivery check
+
+User confirmed Virtual Desktop stream active. Launched the unchanged Release
+binary with WeaponPoseDiagnostic, slot 5, WorldScale 3 and a 240-second bound;
+no synthetic controls or injected faults. VDXR reported live submissions.
+A 30-second capture retained 242 adjacent samples: every right grip/aim was
+non-synthetic, focused, origin-valid, active and position/orientation-valid,
+with age 0..29ms. Trigger reached 1.0. Native held-rifle RTPS RA80080F2C was
+observed; a fresh complete paired capture shows the rifle. A large black
+polygon is visible along the lower edge; cause/alignment remains unestablished.
+
+Final snapshots: 6,805 XR submissions, zero XR failures; zero failed stereo
+pairs, watchdogs or reported leaks. Verify was off (zero checks), so this is
+not a new restore proof. Adjacent hand/producer/image requests do not prove
+pose-to-mesh or pose-to-shot alignment. The enemy-health trace was armed after
+health was already zero; its empty damage slice proves no controlled firing
+result. No attribution of that earlier death is made.
+
+The owned game is closed. Physical grip/pivot, size, barrel direction and
+muzzle calibration still await user feedback. Compact receipt:
+VR_WEAPON_QUEST_RECEIPT.json; full samples and paired PNGs remain ignored.
+Framework runtime unchanged at 35b209d4; upstream inventory records actual
+pose delivery separately from outstanding weapon alignment.

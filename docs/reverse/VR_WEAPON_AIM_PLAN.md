@@ -144,3 +144,22 @@ See VR_WEAPON_CALIBRATION_CHECK.json; raw captures remain ignored.
 
 Quest availability was requested; alignment remains pending. Next hardware run
 uses the same bounded command above, no synthetic controls or injected faults.
+
+
+## Actual Quest delivery checkpoint (2026-10-03)
+
+The first bounded WeaponPoseDiagnostic slot-5 test ran on Quest 3/VDXR.
+All 242 captured right grip/aim samples were fresh, valid and non-synthetic
+(age 0..29ms); the trigger reached 1.0. A fresh decoded pair contains the
+rifle and a large black polygon along the lower edge. Final XR counters show
+6,805 submissions and zero failures; verification was off. The late health
+trace started at zero and supplies no shot/damage control. Owned game closed.
+See VR_WEAPON_QUEST_RECEIPT.json and the status log for limits.
+
+Actual action-space delivery is now measured. Physical grip/barrel alignment,
+weapon size and user acceptance remain pending; the current pivot/850 units
+are provisional. Retest any requested calibration change with body still,
+controller translation/rotation, then body turn/recenter and a freshly loaded
+visible enemy with tracing armed before firing. Diagnose the captured black
+polygon separately before accepting the visual mesh. Keep ordinary launches
+native and temporary grip aim until tracked aiming is accepted.
