@@ -1,0 +1,648 @@
+﻿{
+  "id": 0,
+  "ok": true,
+  "addr": "0x800505F8",
+  "count": 128,
+  "lines": [
+    {
+      "addr": "0x800505F8",
+      "word": "0x3C058009",
+      "text": "LUI      $a1, 0x8009"
+    },
+    {
+      "addr": "0x800505FC",
+      "word": "0x3C11800A",
+      "text": "LUI      $s1, 0x800A"
+    },
+    {
+      "addr": "0x80050600",
+      "word": "0x3C128009",
+      "text": "LUI      $s2, 0x8009"
+    },
+    {
+      "addr": "0x80050604",
+      "word": "0x8E248958",
+      "text": "LW       $a0, -30376($s1)"
+    },
+    {
+      "addr": "0x80050608",
+      "word": "0x8E437FC4",
+      "text": "LW       $v1, 32708($s2)"
+    },
+    {
+      "addr": "0x8005060C",
+      "word": "0x8CA27FD8",
+      "text": "LW       $v0, 32728($a1)"
+    },
+    {
+      "addr": "0x80050610",
+      "word": "0x00832023",
+      "text": "SUBU     $a0, $a0, $v1"
+    },
+    {
+      "addr": "0x80050614",
+      "word": "0x0044102A",
+      "text": "SLT      $v0, $v0, $a0"
+    },
+    {
+      "addr": "0x80050618",
+      "word": "0x10400002",
+      "text": "BEQ      $v0, $zero, 0x80050624"
+    },
+    {
+      "addr": "0x8005061C",
+      "word": "0x00000000",
+      "text": "NOP      $zero, $zero, $zero"
+    },
+    {
+      "addr": "0x80050620",
+      "word": "0xACA47FD8",
+      "text": "SW       $a0, 32728($a1)"
+    },
+    {
+      "addr": "0x80050624",
+      "word": "0x8E04221C",
+      "text": "LW       $a0, 8732($s0)"
+    },
+    {
+      "addr": "0x80050628",
+      "word": "0x00000000",
+      "text": "NOP      $zero, $zero, $zero"
+    },
+    {
+      "addr": "0x8005062C",
+      "word": "0x2C840001",
+      "text": "SLTIU    $a0, $a0, 1"
+    },
+    {
+      "addr": "0x80050630",
+      "word": "0x0C014EE3",
+      "text": "JAL      0x80053B8C"
+    },
+    {
+      "addr": "0x80050634",
+      "word": "0xAE04221C",
+      "text": "SW       $a0, 8732($s0)"
+    },
+    {
+      "addr": "0x80050638",
+      "word": "0x8E228958",
+      "text": "LW       $v0, -30376($s1)"
+    },
+    {
+      "addr": "0x8005063C",
+      "word": "0x8FBF001C",
+      "text": "LW       $ra, 28($sp)"
+    },
+    {
+      "addr": "0x80050640",
+      "word": "0x8FB10014",
+      "text": "LW       $s1, 20($sp)"
+    },
+    {
+      "addr": "0x80050644",
+      "word": "0x8FB00010",
+      "text": "LW       $s0, 16($sp)"
+    },
+    {
+      "addr": "0x80050648",
+      "word": "0xAE427FC4",
+      "text": "SW       $v0, 32708($s2)"
+    },
+    {
+      "addr": "0x8005064C",
+      "word": "0x8FB20018",
+      "text": "LW       $s2, 24($sp)"
+    },
+    {
+      "addr": "0x80050650",
+      "word": "0x03E00008",
+      "text": "JR       $ra"
+    },
+    {
+      "addr": "0x80050654",
+      "word": "0x27BD0020",
+      "text": "ADDIU    $sp, $sp, 32"
+    },
+    {
+      "addr": "0x80050658",
+      "word": "0x8CA6020C",
+      "text": "LW       $a2, 524($a1)"
+    },
+    {
+      "addr": "0x8005065C",
+      "word": "0x8C82020C",
+      "text": "LW       $v0, 524($a0)"
+    },
+    {
+      "addr": "0x80050660",
+      "word": "0x8CA30214",
+      "text": "LW       $v1, 532($a1)"
+    },
+    {
+      "addr": "0x80050664",
+      "word": "0x00C23023",
+      "text": "SUBU     $a2, $a2, $v0"
+    },
+    {
+      "addr": "0x80050668",
+      "word": "0x8C820214",
+      "text": "LW       $v0, 532($a0)"
+    },
+    {
+      "addr": "0x8005066C",
+      "word": "0x04C10002",
+      "text": "BGEZ     $a2, $at, 0x80050678"
+    },
+    {
+      "addr": "0x80050670",
+      "word": "0x00000000",
+      "text": "NOP      $zero, $zero, $zero"
+    },
+    {
+      "addr": "0x80050674",
+      "word": "0x00063023",
+      "text": "SUBU     $a2, $zero, $a2"
+    },
+    {
+      "addr": "0x80050678",
+      "word": "0x00621823",
+      "text": "SUBU     $v1, $v1, $v0"
+    },
+    {
+      "addr": "0x8005067C",
+      "word": "0x04610003",
+      "text": "BGEZ     $v1, $at, 0x8005068C"
+    },
+    {
+      "addr": "0x80050680",
+      "word": "0x0066102A",
+      "text": "SLT      $v0, $v1, $a2"
+    },
+    {
+      "addr": "0x80050684",
+      "word": "0x00031823",
+      "text": "SUBU     $v1, $zero, $v1"
+    },
+    {
+      "addr": "0x80050688",
+      "word": "0x0066102A",
+      "text": "SLT      $v0, $v1, $a2"
+    },
+    {
+      "addr": "0x8005068C",
+      "word": "0x14400002",
+      "text": "BNE      $v0, $zero, 0x80050698"
+    },
+    {
+      "addr": "0x80050690",
+      "word": "0x00602021",
+      "text": "ADDU     $a0, $v1, $zero"
+    },
+    {
+      "addr": "0x80050694",
+      "word": "0x00C02021",
+      "text": "ADDU     $a0, $a2, $zero"
+    },
+    {
+      "addr": "0x80050698",
+      "word": "0x00061403",
+      "text": "SRA      $v0, $a2, 16"
+    },
+    {
+      "addr": "0x8005069C",
+      "word": "0x00031C03",
+      "text": "SRA      $v1, $v1, 16"
+    },
+    {
+      "addr": "0x800506A0",
+      "word": "0x00431021",
+      "text": "ADDU     $v0, $v0, $v1"
+    },
+    {
+      "addr": "0x800506A4",
+      "word": "0x00041C43",
+      "text": "SRA      $v1, $a0, 17"
+    },
+    {
+      "addr": "0x800506A8",
+      "word": "0x03E00008",
+      "text": "JR       $ra"
+    },
+    {
+      "addr": "0x800506AC",
+      "word": "0x00431023",
+      "text": "SUBU     $v0, $v0, $v1"
+    },
+    {
+      "addr": "0x800506B0",
+      "word": "0x27BDFFE0",
+      "text": "ADDIU    $sp, $sp, -32"
+    },
+    {
+      "addr": "0x800506B4",
+      "word": "0xAFBF001C",
+      "text": "SW       $ra, 28($sp)"
+    },
+    {
+      "addr": "0x800506B8",
+      "word": "0xAFB20018",
+      "text": "SW       $s2, 24($sp)"
+    },
+    {
+      "addr": "0x800506BC",
+      "word": "0xAFB10014",
+      "text": "SW       $s1, 20($sp)"
+    },
+    {
+      "addr": "0x800506C0",
+      "word": "0xAFB00010",
+      "text": "SW       $s0, 16($sp)"
+    },
+    {
+      "addr": "0x800506C4",
+      "word": "0x8C820388",
+      "text": "LW       $v0, 904($a0)"
+    },
+    {
+      "addr": "0x800506C8",
+      "word": "0x00008021",
+      "text": "ADDU     $s0, $zero, $zero"
+    },
+    {
+      "addr": "0x800506CC",
+      "word": "0x2451001C",
+      "text": "ADDIU    $s1, $v0, 28"
+    },
+    {
+      "addr": "0x800506D0",
+      "word": "0x8C430018",
+      "text": "LW       $v1, 24($v0)"
+    },
+    {
+      "addr": "0x800506D4",
+      "word": "0x00000000",
+      "text": "NOP      $zero, $zero, $zero"
+    },
+    {
+      "addr": "0x800506D8",
+      "word": "0x1860000B",
+      "text": "BLEZ     $v1, $zero, 0x80050708"
+    },
+    {
+      "addr": "0x800506DC",
+      "word": "0x24520018",
+      "text": "ADDIU    $s2, $v0, 24"
+    },
+    {
+      "addr": "0x800506E0",
+      "word": "0x26240094",
+      "text": "ADDIU    $a0, $s1, 148"
+    },
+    {
+      "addr": "0x800506E4",
+      "word": "0x00002821",
+      "text": "ADDU     $a1, $zero, $zero"
+    },
+    {
+      "addr": "0x800506E8",
+      "word": "0x0C01AC8D",
+      "text": "JAL      0x8006B234"
+    },
+    {
+      "addr": "0x800506EC",
+      "word": "0x24060002",
+      "text": "ADDIU    $a2, $zero, 2"
+    },
+    {
+      "addr": "0x800506F0",
+      "word": "0x26100001",
+      "text": "ADDIU    $s0, $s0, 1"
+    },
+    {
+      "addr": "0x800506F4",
+      "word": "0x8E420000",
+      "text": "LW       $v0, 0($s2)"
+    },
+    {
+      "addr": "0x800506F8",
+      "word": "0x00000000",
+      "text": "NOP      $zero, $zero, $zero"
+    },
+    {
+      "addr": "0x800506FC",
+      "word": "0x0202102A",
+      "text": "SLT      $v0, $s0, $v0"
+    },
+    {
+      "addr": "0x80050700",
+      "word": "0x1440FFF7",
+      "text": "BNE      $v0, $zero, 0x800506E0"
+    },
+    {
+      "addr": "0x80050704",
+      "word": "0x26310144",
+      "text": "ADDIU    $s1, $s1, 324"
+    },
+    {
+      "addr": "0x80050708",
+      "word": "0x8FBF001C",
+      "text": "LW       $ra, 28($sp)"
+    },
+    {
+      "addr": "0x8005070C",
+      "word": "0x8FB20018",
+      "text": "LW       $s2, 24($sp)"
+    },
+    {
+      "addr": "0x80050710",
+      "word": "0x8FB10014",
+      "text": "LW       $s1, 20($sp)"
+    },
+    {
+      "addr": "0x80050714",
+      "word": "0x8FB00010",
+      "text": "LW       $s0, 16($sp)"
+    },
+    {
+      "addr": "0x80050718",
+      "word": "0x03E00008",
+      "text": "JR       $ra"
+    },
+    {
+      "addr": "0x8005071C",
+      "word": "0x27BD0020",
+      "text": "ADDIU    $sp, $sp, 32"
+    },
+    {
+      "addr": "0x80050720",
+      "word": "0x27BDFFD0",
+      "text": "ADDIU    $sp, $sp, -48"
+    },
+    {
+      "addr": "0x80050724",
+      "word": "0xAFB3001C",
+      "text": "SW       $s3, 28($sp)"
+    },
+    {
+      "addr": "0x80050728",
+      "word": "0x00809821",
+      "text": "ADDU     $s3, $a0, $zero"
+    },
+    {
+      "addr": "0x8005072C",
+      "word": "0xAFB40020",
+      "text": "SW       $s4, 32($sp)"
+    },
+    {
+      "addr": "0x80050730",
+      "word": "0x0000A021",
+      "text": "ADDU     $s4, $zero, $zero"
+    },
+    {
+      "addr": "0x80050734",
+      "word": "0xAFBF0028",
+      "text": "SW       $ra, 40($sp)"
+    },
+    {
+      "addr": "0x80050738",
+      "word": "0xAFB50024",
+      "text": "SW       $s5, 36($sp)"
+    },
+    {
+      "addr": "0x8005073C",
+      "word": "0xAFB20018",
+      "text": "SW       $s2, 24($sp)"
+    },
+    {
+      "addr": "0x80050740",
+      "word": "0xAFB10014",
+      "text": "SW       $s1, 20($sp)"
+    },
+    {
+      "addr": "0x80050744",
+      "word": "0xAFB00010",
+      "text": "SW       $s0, 16($sp)"
+    },
+    {
+      "addr": "0x80050748",
+      "word": "0x8E620388",
+      "text": "LW       $v0, 904($s3)"
+    },
+    {
+      "addr": "0x8005074C",
+      "word": "0x00A09021",
+      "text": "ADDU     $s2, $a1, $zero"
+    },
+    {
+      "addr": "0x80050750",
+      "word": "0x24550018",
+      "text": "ADDIU    $s5, $v0, 24"
+    },
+    {
+      "addr": "0x80050754",
+      "word": "0x2451001C",
+      "text": "ADDIU    $s1, $v0, 28"
+    },
+    {
+      "addr": "0x80050758",
+      "word": "0x24500024",
+      "text": "ADDIU    $s0, $v0, 36"
+    },
+    {
+      "addr": "0x8005075C",
+      "word": "0xAC400018",
+      "text": "SW       $zero, 24($v0)"
+    },
+    {
+      "addr": "0x80050760",
+      "word": "0x8E420000",
+      "text": "LW       $v0, 0($s2)"
+    },
+    {
+      "addr": "0x80050764",
+      "word": "0x00000000",
+      "text": "NOP      $zero, $zero, $zero"
+    },
+    {
+      "addr": "0x80050768",
+      "word": "0x10400022",
+      "text": "BEQ      $v0, $zero, 0x800507F4"
+    },
+    {
+      "addr": "0x8005076C",
+      "word": "0x24020003",
+      "text": "ADDIU    $v0, $zero, 3"
+    },
+    {
+      "addr": "0x80050770",
+      "word": "0x12820021",
+      "text": "BEQ      $s4, $v0, 0x800507F8"
+    },
+    {
+      "addr": "0x80050774",
+      "word": "0x00001021",
+      "text": "ADDU     $v0, $zero, $zero"
+    },
+    {
+      "addr": "0x80050778",
+      "word": "0x8EA20000",
+      "text": "LW       $v0, 0($s5)"
+    },
+    {
+      "addr": "0x8005077C",
+      "word": "0x00000000",
+      "text": "NOP      $zero, $zero, $zero"
+    },
+    {
+      "addr": "0x80050780",
+      "word": "0x24420001",
+      "text": "ADDIU    $v0, $v0, 1"
+    },
+    {
+      "addr": "0x80050784",
+      "word": "0xAEA20000",
+      "text": "SW       $v0, 0($s5)"
+    },
+    {
+      "addr": "0x80050788",
+      "word": "0x8E450000",
+      "text": "LW       $a1, 0($s2)"
+    },
+    {
+      "addr": "0x8005078C",
+      "word": "0x2402FFFF",
+      "text": "ADDIU    $v0, $zero, -1"
+    },
+    {
+      "addr": "0x80050790",
+      "word": "0x10A20004",
+      "text": "BEQ      $a1, $v0, 0x800507A4"
+    },
+    {
+      "addr": "0x80050794",
+      "word": "0x26240094",
+      "text": "ADDIU    $a0, $s1, 148"
+    },
+    {
+      "addr": "0x80050798",
+      "word": "0x24060157",
+      "text": "ADDIU    $a2, $zero, 343"
+    },
+    {
+      "addr": "0x8005079C",
+      "word": "0x0C01AC71",
+      "text": "JAL      0x8006B1C4"
+    },
+    {
+      "addr": "0x800507A0",
+      "word": "0x00003821",
+      "text": "ADDU     $a3, $zero, $zero"
+    },
+    {
+      "addr": "0x800507A4",
+      "word": "0x262400E8",
+      "text": "ADDIU    $a0, $s1, 232"
+    },
+    {
+      "addr": "0x800507A8",
+      "word": "0x0C01B613",
+      "text": "JAL      0x8006D84C"
+    },
+    {
+      "addr": "0x800507AC",
+      "word": "0x02602821",
+      "text": "ADDU     $a1, $s3, $zero"
+    },
+    {
+      "addr": "0x800507B0",
+      "word": "0x8E620100",
+      "text": "LW       $v0, 256($s3)"
+    },
+    {
+      "addr": "0x800507B4",
+      "word": "0x00000000",
+      "text": "NOP      $zero, $zero, $zero"
+    },
+    {
+      "addr": "0x800507B8",
+      "word": "0xAE0200E4",
+      "text": "SW       $v0, 228($s0)"
+    },
+    {
+      "addr": "0x800507BC",
+      "word": "0x8E620270",
+      "text": "LW       $v0, 624($s3)"
+    },
+    {
+      "addr": "0x800507C0",
+      "word": "0x00000000",
+      "text": "NOP      $zero, $zero, $zero"
+    },
+    {
+      "addr": "0x800507C4",
+      "word": "0xAE02001C",
+      "text": "SW       $v0, 28($s0)"
+    },
+    {
+      "addr": "0x800507C8",
+      "word": "0x8E620274",
+      "text": "LW       $v0, 628($s3)"
+    },
+    {
+      "addr": "0x800507CC",
+      "word": "0x26520004",
+      "text": "ADDIU    $s2, $s2, 4"
+    },
+    {
+      "addr": "0x800507D0",
+      "word": "0xAE020020",
+      "text": "SW       $v0, 32($s0)"
+    },
+    {
+      "addr": "0x800507D4",
+      "word": "0x8E620278",
+      "text": "LW       $v0, 632($s3)"
+    },
+    {
+      "addr": "0x800507D8",
+      "word": "0x26940001",
+      "text": "ADDIU    $s4, $s4, 1"
+    },
+    {
+      "addr": "0x800507DC",
+      "word": "0xAE000000",
+      "text": "SW       $zero, 0($s0)"
+    },
+    {
+      "addr": "0x800507E0",
+      "word": "0xAE020024",
+      "text": "SW       $v0, 36($s0)"
+    },
+    {
+      "addr": "0x800507E4",
+      "word": "0x26100144",
+      "text": "ADDIU    $s0, $s0, 324"
+    },
+    {
+      "addr": "0x800507E8",
+      "word": "0xAE200000",
+      "text": "SW       $zero, 0($s1)"
+    },
+    {
+      "addr": "0x800507EC",
+      "word": "0x080141D8",
+      "text": "J        0x80050760"
+    },
+    {
+      "addr": "0x800507F0",
+      "word": "0x26310144",
+      "text": "ADDIU    $s1, $s1, 324"
+    },
+    {
+      "addr": "0x800507F4",
+      "word": "0x24020001",
+      "text": "ADDIU    $v0, $zero, 1"
+    }
+  ]
+}

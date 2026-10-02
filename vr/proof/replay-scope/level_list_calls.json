@@ -1,0 +1,23 @@
+﻿{
+  "id": 0,
+  "ok": true,
+  "total": 553464,
+  "available": 65536,
+  "target_lo": "0x80053C20",
+  "target_hi": "0x80053C24",
+  "entries": [
+    {
+      "seq": 537168,
+      "pc": "0x8006C744",
+      "target": "0x80053C20",
+      "ra": "0x8006C74C",
+      "a0": "0x801693E0",
+      "a1": "0x8009A620",
+      "a2": "0x000009BB",
+      "a3": "0x800ECEA0",
+      "sp": "0x801FFF00",
+      "frame": 565
+    }
+  ],
+  "emitted": 1
+}

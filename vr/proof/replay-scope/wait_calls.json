@@ -1,0 +1,23 @@
+﻿{
+  "id": 0,
+  "ok": true,
+  "total": 497172,
+  "available": 65536,
+  "target_lo": "0x80090B80",
+  "target_hi": "0x80090B84",
+  "entries": [
+    {
+      "seq": 450976,
+      "pc": "0x800504E0",
+      "target": "0x80090B80",
+      "ra": "0x800504E8",
+      "a0": "0x00000001",
+      "a1": "0x00FFFFFF",
+      "a2": "0xFF000000",
+      "a3": "0x8009A7C8",
+      "sp": "0x801FFEF0",
+      "frame": 438
+    }
+  ],
+  "emitted": 1
+}

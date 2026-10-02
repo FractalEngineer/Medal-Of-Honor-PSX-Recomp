@@ -1,0 +1,102 @@
+﻿{
+  "id": 0,
+  "ok": true,
+  "display_x": 0,
+  "display_y": 240,
+  "width": 512,
+  "height": 240,
+  "screen_offset_y": 0,
+  "depth": 15,
+  "depth24": 0,
+  "disabled": 0,
+  "h_display": [
+    615,
+    3175
+  ],
+  "v_display": [
+    16,
+    256
+  ],
+  "hres1": 2,
+  "hres2": 0,
+  "gpustat": "0xD604022F",
+  "gp0_writes": 8910284,
+  "gp0_nop": 112420,
+  "gp0_fill": 1764,
+  "gp0_draw": 1071186,
+  "gp0_env": 12364,
+  "gp0_copy": 1766,
+  "draw_area": [
+    0,
+    0,
+    511,
+    239
+  ],
+  "draw_offset": [
+    0,
+    0
+  ],
+  "vertical_split": {
+    "active": 0,
+    "left_age": 255,
+    "right_age": 255
+  },
+  "ws": {
+    "configured": 0,
+    "active": 0,
+    "game_mode": 0,
+    "present_native_43": 0,
+    "x_margin": 0,
+    "activation_margin": 0,
+    "squash": [
+      1,
+      1
+    ],
+    "mode": 0,
+    "nw_extra": 0,
+    "view_anchor": 0,
+    "view_left": 0,
+    "view_right": 0,
+    "view_shift": 0,
+    "view_padding": [
+      0,
+      0
+    ],
+    "bg2d_generations": 0,
+    "cur_frame": 4065,
+    "last_tag_frame": 4294966849,
+    "last_3d_frame": 4065,
+    "gte_verts": 0,
+    "last_world3d_frame": 4294966849,
+    "ovh_prims": 0,
+    "last_ovh_frame": 4294966849,
+    "auto_ui": {
+      "configured": 0,
+      "dense": 0,
+      "ot_rank": 4294967295,
+      "candidates": 0,
+      "transforms": 0
+    },
+    "aspect_cone": {
+      "calls": 0,
+      "identity_43": 0,
+      "vanilla_keep": 0,
+      "visible_keep": 0,
+      "guard_keep": 0,
+      "hysteresis_keep": 0,
+      "outside_reject": 0,
+      "queue_reject": 0,
+      "queue_highwater": [
+        0,
+        0,
+        0
+      ]
+    },
+    "terrain_angle": {
+      "calls": 0,
+      "identity_43": 0,
+      "max_vanilla": 0,
+      "max_widened": 0
+    }
+  }
+}

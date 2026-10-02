@@ -30,7 +30,7 @@ Do not infer the reason from a later status or sampled display dimensions.
 
 ## 2. Prove a no-op capture and restore
 
-Fix the measured cause in the framework. Build with
+Fix the measured cause at its owner (the game hook or framework). Build with
 `cmake --build build-debug --target psx-runtime`, using the updated pinned framework.
 Launch windowed with `--no-launcher`, `PSX_VR_PROBE=1`, `PSX_VR_INTERP=1` and
 `PSX_RENDER_PASS_VERIFY=1`. Headless cannot exercise the GL transaction.
@@ -103,10 +103,13 @@ projection/convergence and world scale after the paired-image proof.
 - [x] Failure-site TCP diagnostics implemented and tested (framework `257a88b0`).
 - [x] Live refusing branch measured: startup requested 512x240, history 256x240.
 - [x] No-op capture/restore proved: two matching PNG pairs; 727 checks, zero mismatches.
-- [ ] Live fingerprint comparison and watchdog rollback before redraw safety claims.
+- [x] Live no-op fingerprint comparison and synthetic watchdog rollback (96 frames).
 - [ ] Replayable complete draw slice established.
 - [ ] Same-state eye pair captured and measured.
 - [ ] Paired-eye API and side-by-side presentation implemented.
 
 Evidence: [pass-diagnostics README](../../vr/proof/pass-diagnostics/README.md).
 The no-op cost includes verification; it is not a redraw or stereo cost estimate.
+The watchdog injection changes CPU/GTE/RAM/scratchpad and advances frozen cycles;
+it does not yet test an abort from nested guest draw dispatch. Draw replay must
+repeat the timeline/rollback checks with nonzero guest work.

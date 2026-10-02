@@ -18,6 +18,7 @@
  *   PSX_VR_OFFSET=N       signed delta added to that axis (0 = disabled)
  *   PSX_VR_PASS_PROBE=1   no-op capture at gameplay's render-wait entry
  *                        (also set PSX_VR_INTERP=1; inspect render_pass_stats)
+ *   PSX_VR_PASS_WATCHDOG=1 one-shot rollback fault injection inside that probe
  *
  * The offset is applied as patch-then-restore: the entity's original value is
  * written back at the start of its NEXT call before re-patching, so the stored
@@ -25,6 +26,7 @@
  */
 #include "mod_plugins.h"
 #include "cpu_state.h"
+#include "psx_cycles.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -281,6 +283,8 @@ static uint32_t g_vsync_other;
 static uint32_t g_vsync_last_status = 0xFFFFFFFFu;
 static int g_interp;          /* PSX_VR_INTERP: enable interpolation + FLIP src */
 static int g_pass_probe;      /* PSX_VR_PASS_PROBE: no-op before render wait */
+static int g_pass_watchdog;   /* opt-in synthetic abort, not a guest draw */
+static int g_pass_watchdog_done;
 static int g_in_pass;         /* cleared after API return, including watchdog abort */
 static uint32_t g_interp_hz;  /* PSX_VR_INTERP_HZ: 0 = follow display refresh */
 /* The pass rect. RENDER_PASSES.md wants "the display rect the next flip shows
@@ -301,6 +305,21 @@ static int vr_pass_fn(CPUState* cpu, void* user, uint32_t alpha_q16) {
     (void)cpu;
     (void)user;
     g_pass_runs++;
+    if (g_pass_probe && g_pass_watchdog && !g_pass_watchdog_done) {
+        /* Host selector survives rollback. Set it before the watchdog longjmp,
+         * so later passes prove the entry guard recovered and can run again.
+         * Deliberately change checkpointed CPU, GTE, RAM and scratchpad state;
+         * PSX_RENDER_PASS_VERIFY checks restoration after the abort. */
+        g_pass_watchdog_done = 1;
+        cpu->gpr[4] ^= 0x13579bdfu;
+        cpu->gte_ctrl[5] ^= 0x2468ace0u;
+        psx_mod_write_word(0x800a0100u, 0x12345678u);
+        psx_mod_write_word(0x1f8003f0u, 0x89abcdefu);
+        /* The default watchdog is 8M cycles; it can only be lowered by env.
+         * Keep the injection bounded even if that contract changes. */
+        for (uint32_t i = 0; i < 256u; ++i) psx_advance_cycles(65536u);
+        return 0; /* Unexpected survival: discard rather than publish. */
+    }
     if (g_probe && g_pass_runs <= 4u) {
         fprintf(stdout, "vr-pass-run: run=%u alpha=%u\n", g_pass_runs, alpha_q16);
         fflush(stdout);
@@ -416,6 +435,7 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_OFFSET"))) g_offset = (int32_t)strtol(e, NULL, 0);
     if ((e = getenv("PSX_VR_INTERP"))) g_interp = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_PASS_PROBE"))) g_pass_probe = (e[0] && e[0] != '0');
+    if ((e = getenv("PSX_VR_PASS_WATCHDOG"))) g_pass_watchdog = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_INTERP_HZ"))) g_interp_hz = (uint32_t)strtoul(e, NULL, 0);
     if ((e = getenv("PSX_VR_RECT"))) {
         int rx, ry, rw, rh;

@@ -1,0 +1,96 @@
+{
+  "comparisons": [
+    {
+      "baseline": "vr\\proof\\replay-scope\\fingerprint_off_1.json",
+      "candidate": "vr\\proof\\replay-scope\\fingerprint_off_2.json",
+      "frames": 96,
+      "baseline_first_label": 15,
+      "candidate_first_label": 1425,
+      "judge_columns": [
+        "wc",
+        "ws",
+        "mmio",
+        "mc",
+        "sp",
+        "sc",
+        "qc",
+        "cyc"
+      ],
+      "locator_columns": [
+        "wr",
+        "pc"
+      ],
+      "equal": true,
+      "differences": []
+    },
+    {
+      "baseline": "vr\\proof\\replay-scope\\fingerprint_off_1.json",
+      "candidate": "vr\\proof\\replay-scope\\fingerprint_on_1.json",
+      "frames": 96,
+      "baseline_first_label": 15,
+      "candidate_first_label": 427,
+      "judge_columns": [
+        "wc",
+        "ws",
+        "mmio",
+        "mc",
+        "sp",
+        "sc",
+        "qc",
+        "cyc"
+      ],
+      "locator_columns": [
+        "wr",
+        "pc"
+      ],
+      "equal": true,
+      "differences": []
+    },
+    {
+      "baseline": "vr\\proof\\replay-scope\\fingerprint_off_1.json",
+      "candidate": "vr\\proof\\replay-scope\\fingerprint_on_2.json",
+      "frames": 96,
+      "baseline_first_label": 15,
+      "candidate_first_label": 2560,
+      "judge_columns": [
+        "wc",
+        "ws",
+        "mmio",
+        "mc",
+        "sp",
+        "sc",
+        "qc",
+        "cyc"
+      ],
+      "locator_columns": [
+        "wr",
+        "pc"
+      ],
+      "equal": true,
+      "differences": []
+    },
+    {
+      "baseline": "vr\\proof\\replay-scope\\fingerprint_off_1.json",
+      "candidate": "vr\\proof\\replay-scope\\fingerprint_watchdog.json",
+      "frames": 96,
+      "baseline_first_label": 15,
+      "candidate_first_label": 554,
+      "judge_columns": [
+        "wc",
+        "ws",
+        "mmio",
+        "mc",
+        "sp",
+        "sc",
+        "qc",
+        "cyc"
+      ],
+      "locator_columns": [
+        "wr",
+        "pc"
+      ],
+      "equal": true,
+      "differences": []
+    }
+  ]
+}

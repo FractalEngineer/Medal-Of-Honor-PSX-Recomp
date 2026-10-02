@@ -439,3 +439,43 @@ complete replayable draw slice, paired per-eye capture, dynamic/weapon/HUD
 coverage, eye calibration and stereo presentation. No redraw-safety or stereo
 performance conclusion follows from the no-op proof.
 
+# 2026-10-02: no-op timeline comparison and bounded watchdog injection
+
+Five slot-1 loads were measured: two no-op probe-disabled control loads, two
+probe-enabled loads, and one probe-enabled load with a one-shot synthetic abort.
+All kept interpolation enabled and `PSX_RENDER_PASS_VERIFY=1`; existing geometry
+offset/probe controls were unset or zero. `frame_fingerprint reset_on_load=1`
+was armed before each load. The first 96 consecutive guest frames match exactly
+in cycles, RAM write counts/sums, MMIO hashes/counts, scratchpad hashes/counts,
+quiet counts and ordered RAM/PC locator hashes. Only host frame labels differ.
+The two control loads also match each other. This establishes repeatability and
+no-op timeline equivalence for this bounded scene window, not arbitrary redraws.
+
+`PSX_VR_PASS_WATCHDOG=1` injects one deliberate CPU/GTE/RAM/scratchpad change and
+advances frozen cycles in bounded chunks until the existing watchdog aborts.
+TCP receipt: 488 attempts/checks, 1 watchdog/abort, 487 subsequent successful
+passes, zero verification mismatches, zero leaks, disabled=0. The host one-shot
+selector is set before the longjmp; `g_in_pass` is cleared after API return.
+This tests synthetic callback rollback/recovery; nested guest dispatch remains
+to be checked when the draw slice is exercised. Evidence and comparison script:
+`vr/proof/replay-scope/` and `vr/compare_frame_fingerprints.py`.
+
+## Correction: DrawOTag and PutDrawEnv addresses
+
+Earlier notes and the peer brief identified `0x800172D8` as PutDrawEnv. Live
+disassembly ties its debug-string producer to `0x800148FC`, which reads
+`DrawOTag(%08x)...`. `0x80017348` refers to `0x80014910`, containing
+`PutDrawEnv(%08x)...`, and builds a drawing-environment packet. The corrected
+mapping is **DrawOTag=0x800172D8, PutDrawEnv=0x80017348**. This matters: the call
+at `0x8005052C` submits the completed ordering table, after the wait returns.
+The historical notes are retained; use this corrected mapping for replay.
+Raw disassembly and the referenced RAM strings are preserved in replay-scope.
+
+The live render-wait caller is `0x800504E0` (return `0x800504E8`). Source inspection
+shows `FUN_800503D4` constructs the frame then calls `FUN_800504F8`, which waits,
+flips and submits. Do not replay that enclosing function under frozen time.
+The level list renderer is `0x80053C20`, called indirectly at `0x8006C744` from
+the scene entity traversal with observed a0=0x801693E0, a1=0x8009A620. It iterates
+level groups and calls `0x8008BF00`, which invokes `0x8008B3E8` and primitive
+construction. These observations locate a candidate slice; no complete redraw
+has yet been claimed.
