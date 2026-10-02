@@ -931,3 +931,33 @@ time/recenter origin and age/validity, inverse pose math, synthetic TCP controls
 and post-hoc producer-PC filtering. Tests and live synthetic controls pass;
 no actual Quest poses or controller-to-shot override are established yet.
 The game test is closed. Continue VR_WEAPON_AIM_PLAN.md.
+
+## 2026-10-03: experimental controller-to-shot aiming
+
+A guarded hook at native basis builder 8006A76C redirects player-owned id5110
+shots from a fresh valid right aim pose. Native ammo/speed/collision/damage remain
+game-owned. Full camera matrix inverse is required: the native level RT carries
+scale, so transpose-as-inverse is invalid. Native entry snapshots are excluded
+from eye replay and expire after four NTSC VBlanks; hand poses require <=150ms,
+focus/activity and both valid bits. Invalid poses fall back to native aim.
+
+Eight Debug synthetic controls passed: native, straight, +/-45deg aim, translated
+origin, partial validity, unfocused and body turn. Rotation changes measured
+native first-movement direction; origin translation changes constructor position;
+NPC constructors have no pose override. Straight/translated controls damage the
+near enemy while +/-45deg controls miss it (NPC return fire is recorded separately).
+134 frozen-eye verify checks have zero restore mismatches/aborts/dropped stores.
+Both pinned Debug and Release builds pass. See weapon plan/receipt.
+
+Correction/refinement: input+64 was provisionally called a shot lifetime. Its
+producer 80045124 computes distance/speed+1, but consumer 800444C8/D8 decrements
+it and 800444F0 restores saved actor flags+20; it is a transition countdown,
+not a proven destruction timer. That policy and long-range behavior remain open.
+A too-narrow initial EC000..EF000 shot arena query missed variable allocations;
+complete B0000..EF000 controls resolve the producer without absence claims.
+
+This remains opt-in via -WeaponAimDiagnostic. The held rifle is still visually
+native, and actual Quest hand alignment is untested. Inspecting the held model
+uses the existing fn_filter/fn_entry_dump commands: arm fn_filter first; a zero
+reply while inactive is not proof of no function calls. The root node path in
+rifle slot 0 is 80084718 -> 80013AE4, RA 800847BC, render entity 800EEF3C.

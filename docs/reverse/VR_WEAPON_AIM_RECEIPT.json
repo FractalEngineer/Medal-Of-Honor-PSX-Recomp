@@ -121,5 +121,703 @@
     "Live frame polling is not exact deterministic replay.",
     "Native rifle damage is verified; controller-to-shot aiming and tracked weapon rendering are not implemented.",
     "Health interpretation is supported by SUBU a1 at 8004ACB8 and SW to actor+244 at 8004ACC0."
-  ]
+  ],
+  "experimental_aim": {
+    "date": "2026-10-03",
+    "framework": "734977c9",
+    "enable": "run_vr.ps1 -WeaponAimDiagnostic",
+    "real_headset": false,
+    "controls_complete": true,
+    "controls": [
+      {
+        "case": "native",
+        "request": null,
+        "body_turn": 0,
+        "shot": "0x800ec340",
+        "unit_direction": [
+          0.9942435351955291,
+          0.052187749492093725,
+          -0.09357473764241714
+        ],
+        "damage": [
+          {
+            "frame": 3316,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00060000",
+            "new": "0x00038000",
+            "s0": "0x800B7B08",
+            "s1": "0x800EC340"
+          },
+          {
+            "frame": 3316,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00038000",
+            "new": "0x00000000",
+            "s0": "0x800B7B08",
+            "s1": "0x800EC340"
+          }
+        ],
+        "npc_constructors_observed": 1,
+        "pose_store_pc": "0x80045520 (hook inherits last native store PC; distinguished by field address)",
+        "pose_store_frame": null,
+        "pose_fields": {},
+        "first_motion_frame": 3314,
+        "first_motion_fields": {
+          "524": {
+            "pc": "0x8006CC10",
+            "old": "0xE3BA8480",
+            "new": "0xE644A480"
+          },
+          "528": {
+            "pc": "0x8006CC2C",
+            "old": "0x006B0000",
+            "new": "0x008D2000"
+          },
+          "532": {
+            "pc": "0x8006CC48",
+            "old": "0x3D49F1A0",
+            "new": "0x3D0CC1A0"
+          }
+        },
+        "trace_completeness": {
+          "seam": [
+            97569,
+            97569,
+            4
+          ],
+          "motion": [
+            97569,
+            97569,
+            306
+          ],
+          "damage": [
+            97569,
+            97569,
+            2
+          ]
+        }
+      },
+      {
+        "case": "straight",
+        "request": {},
+        "body_turn": 0,
+        "shot": "0x800ec340",
+        "unit_direction": [
+          0.9943325474096905,
+          0.0106906425029058,
+          -0.10577568399509682
+        ],
+        "damage": [
+          {
+            "frame": 3423,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00060000",
+            "new": "0x00038000",
+            "s0": "0x800B7B08",
+            "s1": "0x800EC340"
+          },
+          {
+            "frame": 3423,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00038000",
+            "new": "0x00000000",
+            "s0": "0x800B7B08",
+            "s1": "0x800EC340"
+          }
+        ],
+        "npc_constructors_observed": 1,
+        "pose_store_pc": "0x80045520 (hook inherits last native store PC; distinguished by field address)",
+        "pose_store_frame": 3419,
+        "pose_fields": {
+          "524": {
+            "old": "0xE3BA8480",
+            "new": "0xE3BA49C0"
+          },
+          "528": {
+            "old": "0x006B0000",
+            "new": "0x006B20AC"
+          },
+          "532": {
+            "old": "0x3D49F1A0",
+            "new": "0x3D48BBDD"
+          },
+          "552": {
+            "old": "0xFFDE0000",
+            "new": "0xFFF9A2C0"
+          },
+          "556": {
+            "old": "0x043D0000",
+            "new": "0x0445196C"
+          },
+          "560": {
+            "old": "0x00000000",
+            "new": "0x00000000"
+          }
+        },
+        "first_motion_frame": 3421,
+        "first_motion_fields": {
+          "524": {
+            "pc": "0x8006CC10",
+            "old": "0xE3BA49C0",
+            "new": "0xE616D9C0"
+          },
+          "528": {
+            "pc": "0x8006CC2C",
+            "old": "0x006B20AC",
+            "new": "0x0071A0AC"
+          },
+          "532": {
+            "pc": "0x8006CC48",
+            "old": "0x3D48BBDD",
+            "new": "0x3D086BDD"
+          }
+        },
+        "trace_completeness": {
+          "seam": [
+            94749,
+            94749,
+            10
+          ],
+          "motion": [
+            94749,
+            94749,
+            303
+          ],
+          "damage": [
+            94749,
+            94749,
+            2
+          ]
+        }
+      },
+      {
+        "case": "left45",
+        "request": {
+          "qy": 382683,
+          "qw": 923880
+        },
+        "body_turn": 0,
+        "shot": "0x800ec340",
+        "unit_direction": [
+          0.7788471306296835,
+          0.007550487583721315,
+          0.6271683484098641
+        ],
+        "damage": [
+          {
+            "frame": 3537,
+            "pc": "0x8004ACC0",
+            "addr": "0x000EE954",
+            "old": "0x006E0000",
+            "new": "0x00680000",
+            "s0": "0x800EE860",
+            "s1": "0x800EBE40"
+          }
+        ],
+        "npc_constructors_observed": 2,
+        "pose_store_pc": "0x80045520 (hook inherits last native store PC; distinguished by field address)",
+        "pose_store_frame": 3525,
+        "pose_fields": {
+          "524": {
+            "old": "0xE3BA8480",
+            "new": "0xE3BA49C0"
+          },
+          "528": {
+            "old": "0x006B0000",
+            "new": "0x006B20AC"
+          },
+          "532": {
+            "old": "0x3D49F1A0",
+            "new": "0x3D48BBDD"
+          },
+          "552": {
+            "old": "0xFFDE0000",
+            "new": "0xFFFB5FD3"
+          },
+          "556": {
+            "old": "0x043D0000",
+            "new": "0x02463BCA"
+          },
+          "560": {
+            "old": "0x00000000",
+            "new": "0x00000000"
+          }
+        },
+        "first_motion_frame": 3527,
+        "first_motion_fields": {
+          "524": {
+            "pc": "0x8006CC10",
+            "old": "0xE3BA49C0",
+            "new": "0xE5B799C0"
+          },
+          "528": {
+            "pc": "0x8006CC2C",
+            "old": "0x006B20AC",
+            "new": "0x007010AC"
+          },
+          "532": {
+            "pc": "0x8006CC48",
+            "old": "0x3D48BBDD",
+            "new": "0x3EE2DBDD"
+          }
+        },
+        "trace_completeness": {
+          "seam": [
+            99160,
+            99160,
+            12
+          ],
+          "motion": [
+            99160,
+            99160,
+            366
+          ],
+          "damage": [
+            99160,
+            99160,
+            1
+          ]
+        }
+      },
+      {
+        "case": "right45",
+        "request": {
+          "qy": -382683,
+          "qw": 923880
+        },
+        "body_turn": 0,
+        "shot": "0x800ec340",
+        "unit_direction": [
+          0.6308092207735683,
+          0.007535949595096785,
+          -0.775901370311165
+        ],
+        "damage": [
+          {
+            "frame": 3645,
+            "pc": "0x8004ACC0",
+            "addr": "0x000EE954",
+            "old": "0x006E0000",
+            "new": "0x00680000",
+            "s0": "0x800EE860",
+            "s1": "0x800EBE40"
+          }
+        ],
+        "npc_constructors_observed": 2,
+        "pose_store_pc": "0x80045520 (hook inherits last native store PC; distinguished by field address)",
+        "pose_store_frame": 3631,
+        "pose_fields": {
+          "524": {
+            "old": "0xE3BA8480",
+            "new": "0xE3BA49C0"
+          },
+          "528": {
+            "old": "0x006B0000",
+            "new": "0x006B20AC"
+          },
+          "532": {
+            "old": "0x3D49F1A0",
+            "new": "0x3D48BBDD"
+          },
+          "552": {
+            "old": "0xFFDE0000",
+            "new": "0xFFFB9BE7"
+          },
+          "556": {
+            "old": "0x043D0000",
+            "new": "0x0643E5F6"
+          },
+          "560": {
+            "old": "0x00000000",
+            "new": "0x00000000"
+          }
+        },
+        "first_motion_frame": 3633,
+        "first_motion_fields": {
+          "524": {
+            "pc": "0x8006CC10",
+            "old": "0xE3BA49C0",
+            "new": "0xE542A9C0"
+          },
+          "528": {
+            "pc": "0x8006CC2C",
+            "old": "0x006B20AC",
+            "new": "0x006FD0AC"
+          },
+          "532": {
+            "pc": "0x8006CC48",
+            "old": "0x3D48BBDD",
+            "new": "0x3B661BDD"
+          }
+        },
+        "trace_completeness": {
+          "seam": [
+            101348,
+            101348,
+            12
+          ],
+          "motion": [
+            101348,
+            101348,
+            369
+          ],
+          "damage": [
+            101348,
+            101348,
+            1
+          ]
+        }
+      },
+      {
+        "case": "translated",
+        "request": {
+          "px_mm": 200,
+          "py_mm": -100,
+          "pz_mm": -300
+        },
+        "body_turn": 0,
+        "shot": "0x800ec340",
+        "unit_direction": [
+          0.994331099890016,
+          0.01070303538564938,
+          -0.10578803724923092
+        ],
+        "damage": [
+          {
+            "frame": 3744,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00060000",
+            "new": "0x00038000",
+            "s0": "0x800B7B08",
+            "s1": "0x800EC340"
+          }
+        ],
+        "npc_constructors_observed": 1,
+        "pose_store_pc": "0x80045520 (hook inherits last native store PC; distinguished by field address)",
+        "pose_store_frame": 3740,
+        "pose_fields": {
+          "524": {
+            "old": "0xE3BA8480",
+            "new": "0xE3DB1E94"
+          },
+          "528": {
+            "old": "0x006B0000",
+            "new": "0x007E8376"
+          },
+          "532": {
+            "old": "0x3D49F1A0",
+            "new": "0x3D2D5DFC"
+          },
+          "552": {
+            "old": "0xFFDE0000",
+            "new": "0xFFF9A2C0"
+          },
+          "556": {
+            "old": "0x043D0000",
+            "new": "0x0445196C"
+          },
+          "560": {
+            "old": "0x00000000",
+            "new": "0x00000000"
+          }
+        },
+        "first_motion_frame": 3742,
+        "first_motion_fields": {
+          "524": {
+            "pc": "0x8006CC10",
+            "old": "0xE3DB1E94",
+            "new": "0xE6656E94"
+          },
+          "528": {
+            "pc": "0x8006CC2C",
+            "old": "0x007E8376",
+            "new": "0x00858376"
+          },
+          "532": {
+            "pc": "0x8006CC48",
+            "old": "0x3D2D5DFC",
+            "new": "0x3CE82DFC"
+          }
+        },
+        "trace_completeness": {
+          "seam": [
+            97946,
+            97946,
+            10
+          ],
+          "motion": [
+            97946,
+            97946,
+            306
+          ],
+          "damage": [
+            97946,
+            97946,
+            1
+          ]
+        }
+      },
+      {
+        "case": "partial",
+        "request": {
+          "flags": 1
+        },
+        "body_turn": 0,
+        "shot": "0x800ec340",
+        "unit_direction": [
+          0.9942458940109165,
+          0.05215946820900289,
+          -0.09356544297221907
+        ],
+        "damage": [
+          {
+            "frame": 3848,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00060000",
+            "new": "0x00038000",
+            "s0": "0x800B7B08",
+            "s1": "0x800EC340"
+          }
+        ],
+        "npc_constructors_observed": 1,
+        "pose_store_pc": "0x80045520 (hook inherits last native store PC; distinguished by field address)",
+        "pose_store_frame": null,
+        "pose_fields": {},
+        "first_motion_frame": 3846,
+        "first_motion_fields": {
+          "524": {
+            "pc": "0x8006CC10",
+            "old": "0xE3BA8480",
+            "new": "0xE624D480"
+          },
+          "528": {
+            "pc": "0x8006CC2C",
+            "old": "0x006B0000",
+            "new": "0x008B7000"
+          },
+          "532": {
+            "pc": "0x8006CC48",
+            "old": "0x3D49F1A0",
+            "new": "0x3D0FC1A0"
+          }
+        },
+        "trace_completeness": {
+          "seam": [
+            95091,
+            95091,
+            4
+          ],
+          "motion": [
+            95091,
+            95091,
+            306
+          ],
+          "damage": [
+            95091,
+            95091,
+            1
+          ]
+        }
+      },
+      {
+        "case": "unfocused",
+        "request": {
+          "focused": 0
+        },
+        "body_turn": 0,
+        "shot": "0x800ec340",
+        "unit_direction": [
+          0.9942435351955291,
+          0.052187749492093725,
+          -0.09357473764241714
+        ],
+        "damage": [
+          {
+            "frame": 3953,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00060000",
+            "new": "0x00038000",
+            "s0": "0x800B7B08",
+            "s1": "0x800EC340"
+          },
+          {
+            "frame": 3953,
+            "pc": "0x8004ACC0",
+            "addr": "0x000B7BFC",
+            "old": "0x00038000",
+            "new": "0x00000000",
+            "s0": "0x800B7B08",
+            "s1": "0x800EC340"
+          }
+        ],
+        "npc_constructors_observed": 1,
+        "pose_store_pc": "0x80045520 (hook inherits last native store PC; distinguished by field address)",
+        "pose_store_frame": null,
+        "pose_fields": {},
+        "first_motion_frame": 3951,
+        "first_motion_fields": {
+          "524": {
+            "pc": "0x8006CC10",
+            "old": "0xE3BA8480",
+            "new": "0xE644A480"
+          },
+          "528": {
+            "pc": "0x8006CC2C",
+            "old": "0x006B0000",
+            "new": "0x008D2000"
+          },
+          "532": {
+            "pc": "0x8006CC48",
+            "old": "0x3D49F1A0",
+            "new": "0x3D0CC1A0"
+          }
+        },
+        "trace_completeness": {
+          "seam": [
+            100389,
+            100389,
+            4
+          ],
+          "motion": [
+            100389,
+            100389,
+            318
+          ],
+          "damage": [
+            100389,
+            100389,
+            2
+          ]
+        }
+      },
+      {
+        "case": "body-turn",
+        "request": {},
+        "body_turn": 1000,
+        "shot": "0x800ece90",
+        "unit_direction": [
+          0.6994441913480408,
+          0.010691892863852763,
+          -0.7146072394095047
+        ],
+        "damage": [],
+        "npc_constructors_observed": 1,
+        "pose_store_pc": "0x80045520 (hook inherits last native store PC; distinguished by field address)",
+        "pose_store_frame": 4084,
+        "pose_fields": {
+          "524": {
+            "old": "0xE5950000",
+            "new": "0xE3972738"
+          },
+          "528": {
+            "old": "0x00AB0000",
+            "new": "0x00685C5F"
+          },
+          "532": {
+            "old": "0x3B300000",
+            "new": "0x3D4DCB94"
+          },
+          "552": {
+            "old": "0x00020000",
+            "new": "0xFFF9B7AD"
+          },
+          "556": {
+            "old": "0x05F40000",
+            "new": "0x06071024"
+          },
+          "560": {
+            "old": "0x00000000",
+            "new": "0x00000000"
+          }
+        },
+        "first_motion_frame": 4086,
+        "first_motion_fields": {
+          "524": {
+            "pc": "0x8006CC10",
+            "old": "0xE3972738",
+            "new": "0xE558E738"
+          },
+          "528": {
+            "pc": "0x8006CC2C",
+            "old": "0x00685C5F",
+            "new": "0x006F3C5F"
+          },
+          "532": {
+            "pc": "0x8006CC48",
+            "old": "0x3D4DCB94",
+            "new": "0x3B824B94"
+          }
+        },
+        "trace_completeness": {
+          "seam": [
+            100688,
+            100688,
+            10
+          ],
+          "motion": [
+            100688,
+            100688,
+            339
+          ],
+          "damage": [
+            100688,
+            100688,
+            0
+          ]
+        }
+      }
+    ],
+    "restore": {
+      "verify_checks": 134,
+      "verify_mismatch": 0,
+      "aborted": 0,
+      "watchdog": 0,
+      "vram_leaks": 0,
+      "dropped": {
+        "spu": 0,
+        "cd": 0,
+        "timer": 0,
+        "dma": 0,
+        "gpu": 0,
+        "other": 0
+      }
+    },
+    "limits": [
+      "Synthetic controller poses, not hardware alignment.",
+      "24-VBlank holds may record multiple native damage writes; raw writers retained.",
+      "The visual held rifle still uses native pose; diagnostic aiming stays opt-in.",
+      "Native transition countdown and long-range behavior need additional controls."
+    ],
+    "trace_completeness_columns": [
+      "total",
+      "available",
+      "emitted"
+    ]
+  },
+  "builds": {
+    "build-debug": {
+      "executable": "build-debug\\Medal_of_Honor__Recompiled.exe",
+      "framework_pin": "734977c9",
+      "game_source": "84e2df6 plus aiming working tree; receipt committed with implementation",
+      "tested_sha256": "c03ef555c0d4f38391bd0b69590446085a00c1bed41029131d82cb9e84864345",
+      "final_build_sha256": "3de97110848a76746e33a3de36a66d6b69f4c62f724126a0f7e4bf33b4787ba5",
+      "final_build_note": "Rebuilt after a comment-only change to label the native countdown correctly; runtime code is identical."
+    },
+    "build-release": {
+      "executable": "build-release\\Medal_of_Honor__Recompiled.exe",
+      "framework_pin": "734977c9",
+      "game_source": "84e2df6 plus aiming working tree; receipt committed with implementation",
+      "tested_sha256": "49d618bd4499b12299340fd8a265896e75e1c2c4afaf2a05074cfc03feb2835a",
+      "final_build_sha256": "aa45a7ba84aa578ffd01b337f62b67c655ab00bd94ab3320e58d270bcff36aae",
+      "final_build_note": "Rebuilt after a comment-only change to label the native countdown correctly; runtime code is identical."
+    }
+  },
+  "owned_game_closed": true
 }

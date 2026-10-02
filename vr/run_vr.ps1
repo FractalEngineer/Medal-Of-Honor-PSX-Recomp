@@ -5,6 +5,7 @@ param(
     [switch]$Desktop,
     [switch]$MovementDiagnostic,
     [switch]$NoMovement,
+    [switch]$WeaponAimDiagnostic,
     [double]$MoveDeadzone = 0.2,
     [double]$TurnGain = 0.65,
     [switch]$HideHud,
@@ -24,6 +25,7 @@ $vrVariables = @{
     PSX_VR_OPENXR = [string][int](-not $Desktop);
     PSX_VR_STEREO = '1'; PSX_VR_PROBE = '0'; PSX_VR_INTERP = '0';
     PSX_VR_MOVEMENT = [string][int]((-not $NoMovement) -and ((-not $Desktop) -or $MovementDiagnostic));
+    PSX_VR_WEAPON_AIM = [string][int]$WeaponAimDiagnostic.IsPresent;
     PSX_VR_MOVE_DEADZONE = $MoveDeadzone.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_TURN_GAIN = $TurnGain.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_PASS_PROBE = '0'; PSX_VR_PASS_WATCHDOG = '0'; PSX_VR_PASS_DRAW = '1';
