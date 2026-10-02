@@ -6,6 +6,8 @@ not enable stereo, change offsets, or advance input. Requires the paired TCP API
 import argparse
 import hashlib
 import json
+import os
+import subprocess
 from pathlib import Path
 import sys
 import time
@@ -32,18 +34,51 @@ def main():
     parser.add_argument("directory", type=Path)
     parser.add_argument("--slot", type=int, default=3)
     parser.add_argument("--pairs", type=int, default=2)
+    parser.add_argument("--executable", type=Path, help="Record built binary and actual CMake framework root")
     args = parser.parse_args()
     directory = args.directory.resolve()
     directory.mkdir(parents=True, exist_ok=True)
     if any(p.stem[1:].isdigit() for p in directory.glob("p*.json")):
         raise FileExistsError("Use a fresh directory for each capture run")
+    save(directory, "launch_config.json", {
+        "environment": {k:v for k,v in os.environ.items()
+            if k.startswith("PSX_VR_") or k in ("PSX_OPENXR","PSX_RENDER_PASS_VERIFY")},
+        "game_revision": subprocess.check_output(["git","rev-parse","HEAD"], cwd=ROOT,text=True).strip(),
+        "framework_pin": subprocess.check_output(["git","rev-parse","HEAD"], cwd=ROOT/"psxrecomp",text=True).strip(),
+        "note": "Environment inherited by capture client; launch must use the same environment."
+    })
+    if args.executable:
+        executable = args.executable.resolve()
+        provenance = {"executable": str(executable),
+            "sha256": hashlib.sha256(executable.read_bytes()).hexdigest()}
+        cache = executable.parent / "CMakeCache.txt"
+        if cache.exists():
+            prefix = "PSXRECOMP_ROOT:PATH="
+            roots = [line[len(prefix):] for line in cache.read_text(encoding="utf-8-sig").splitlines()
+                     if line.startswith(prefix)]
+            if roots:
+                framework = Path(roots[0])
+                provenance["framework_root"] = str(framework)
+                provenance["framework_revision"] = subprocess.check_output(
+                    ["git","rev-parse","HEAD"],cwd=framework,text=True).strip()
+                provenance["framework_tracked_changes"] = subprocess.check_output(
+                    ["git","status","--porcelain","--untracked-files=no"],cwd=framework,text=True).splitlines()
+        save(directory,"build_provenance.json",provenance)
     save_file = ROOT / "saves" / "openbios" / f"state_8001DFD4_slot{args.slot:02d}.pst"
     if save_file.exists():
         save(directory, "save_provenance.json", {"slot": args.slot,
              "file": str(save_file.relative_to(ROOT)), "size": save_file.stat().st_size,
              "mtime_ns": save_file.stat().st_mtime_ns,
              "sha256": hashlib.sha256(save_file.read_bytes()).hexdigest()})
-    before = command("savestate_status")
+    # Fresh windowed processes may take seconds to finish startup/link caches.
+    deadline = time.monotonic() + 30
+    while True:
+        try:
+            before = command("savestate_status")
+            break
+        except (ConnectionError, OSError):
+            if time.monotonic() > deadline: raise
+            time.sleep(.2)
     save(directory, "fingerprint_arm.json", command("frame_fingerprint", reset_on_load=1))
     save(directory, "load_request.json", command("savestate", slot=args.slot, op="load"))
     deadline = time.monotonic() + 30
@@ -71,6 +106,9 @@ def main():
         time.sleep(.2)
     for cmd in ("stereo_stats", "render_pass_stats", "gl_interp", "video_info"):
         save(directory, cmd + ".json", command(cmd))
+    if os.environ.get("PSX_VR_OPENXR") == "1":
+        for cmd in ("openxr_stats", "openxr_views"):
+            save(directory, cmd + ".json", command(cmd))
     shot = command("present_shot_seq")
     save(directory, "present_arm.json", command("present_shot", path=(directory / "presented.png").as_posix()))
     deadline = time.monotonic() + 10

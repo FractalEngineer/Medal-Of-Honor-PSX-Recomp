@@ -137,8 +137,11 @@ Release/no-VERIFY warm sample: 1,719 complete pairs, zero shedding/failures,
 Its first 96 fingerprint rows match a Release OFF control at identical settings.
 This is a different build/settings sample, not a direct Debug speedup ratio.
 
-Next: calibrate scale/eye
-separation and HUD/weapon policy before adding head-pose/OpenXR submission.
+Head-pose/OpenXR follow-up is now implemented and measured on Quest 3/VDXR.
+See VR_HEADSET_PLAN.md and VR_OPENXR_SETUP.md for the accepted scale-3 profile,
+text/icon controls, authored weapon-focal correction and connected-headset scope.
+Physical reference calibration and wrist HUD remain deferred; independent headset
+cadence and large-head-turn culling coverage remain open.
 Debug verification cost exceeds the conservative cadence budget and sheds pairs;
 the first SBS implementation is not a headset performance result. Other scene
 modes remain unverified. Framework changes are listed in its UPSTREAM_PENDING.md.

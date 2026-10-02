@@ -23,7 +23,15 @@
  *   PSX_VR_PASS_DRAW=1    experimental bounded scene draw, excluding wait/flip
  *                    =2  clear-only control; =3 level-only coverage control
  *   PSX_VR_STEREO=1      paired-eye scene draw and side-by-side presentation
- *   PSX_VR_EYE_OFFSET=N  camera-space half-separation (default 24; 0 control)
+ *   PSX_VR_EYE_OFFSET=N  diagnostic camera-unit half separation override
+ *   PSX_VR_IPD_MM=N      desktop IPD (default 67; XR uses located eye poses)
+ *   PSX_VR_UNITS_PER_METER=N provisional metric mapping (default 48/.067)
+ *   PSX_VR_WORLD_SCALE=N divisor on units/meter (default 1; Quest profile 3)
+ *   PSX_VR_OPENXR=1      headset mode; compile PSX_OPENXR and set host PSX_OPENXR=1
+ *   PSX_VR_AUTHORED_FOCAL=0 disable guest H/400 ratio for XR projection control
+ *   PSX_VR_TEXT=0 / PSX_VR_HUD_ICON=0 omit measured text/icon draw calls
+ *   PSX_VR_HEAD_YAW=degrees / PSX_VR_HEAD_POSITION=x,y,z synthetic desktop pose
+ *   PSX_VR_DESKTOP_FOV=1 deterministic Quest-FOV projection control
  *   PSX_VR_STEREO_FAULT=1 decline one right eye after a successful pair
  *                     =2 watchdog inside right-eye level dispatch
  *   PSX_VR_STEREO_FAULT_HOLD=1 stop pair requests after the injected fault
@@ -35,11 +43,13 @@
 #include "mod_plugins.h"
 #include "cpu_state.h"
 #include "psx_cycles.h"
+#include "vr_pose_math.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #define FUN_80084718 0x80084718u
 /* Geometry pass: entity -> screen geometry. FUN_80082948 dispatches here on
@@ -299,6 +309,16 @@ static int g_pass_draw;
 static int g_in_pass;         /* cleared after API return, including watchdog abort */
 static int g_stereo;
 static int32_t g_eye_offset = 24;
+/* Provisional scale preserves legacy 48-unit separation at user IPD 67mm.
+ * It is a tuning starting point, not a measured physical scale. */
+static double g_ipd_mm = 67.0, g_units_per_meter = 48.0 / .067;
+static double g_world_scale = 1.0;
+static unsigned g_draw_mask = 15u; /* diagnostic call exclusion, not HUD labels */
+static int g_icon_visible = 1, g_text_visible = 1;
+static int g_openxr;
+static int g_authored_focal = 1, g_desktop_fov;
+static double g_head_yaw, g_head_position[3];
+static PSXModRenderView g_eye_view[2];
 static uint32_t g_stereo_eye;
 static uint32_t g_stereo_success;
 static int g_stereo_fault, g_stereo_fault_done, g_stereo_fault_hold;
@@ -381,15 +401,16 @@ static int vr_draw_scene(CPUState* cpu, const PSXModRenderPass* pass) {
                       psx_mod_read_word(ctx + 8728u) + 511u * 4u, 0, 0, ra);
         return 1;
     }
-    if (psx_mod_read_byte(world + 1423u))
+    if ((g_draw_mask & 1u) && psx_mod_read_byte(world + 1423u))
         vr_guest_call(cpu, 0x80088368u, ctx, 0, 0, ra);
-    if (psx_mod_read_word(world + 1420u) & 0x00ffffffu)
+    if ((g_draw_mask & 2u) && (psx_mod_read_word(world + 1420u) & 0x00ffffffu))
         vr_guest_call(cpu, 0x80089a0cu, ctx, 0, 0, ra);
     vr_guest_call(cpu, 0x80064550u, 0, 0, 0, ra);
-    vr_guest_call(cpu, 0x8005f86cu, psx_mod_read_word(ctx + 8728u),
+    if (g_text_visible && (g_draw_mask & 4u)) vr_guest_call(cpu, 0x8005f86cu, psx_mod_read_word(ctx + 8728u),
                   psx_mod_read_word(ctx + 8732u), 0, ra);
     vr_guest_call(cpu, 0x8006c714u, ctx, psx_mod_read_word(0x8009d64cu), 0, ra);
-    vr_guest_call(cpu, 0x8008019cu, camera, ctx, 0, ra);
+    if (g_icon_visible && (g_draw_mask & 8u))
+        vr_guest_call(cpu, 0x8008019cu, camera, ctx, 0, ra);
     /* ClearOTagR initializes 512 entries; DrawOTag starts from the final one.
      * 0x800172D8 is DrawOTag, confirmed by its own debug-string producer. */
     vr_guest_call(cpu, 0x800172d8u, psx_mod_read_word(ctx + 8728u) + 511u * 4u,
@@ -427,8 +448,7 @@ static int vr_stereo_fn(CPUState* cpu, void* user, uint32_t eye) {
     /* A camera to the left sees scene coordinates translated right. The host
      * seam replaces its value per eye, affects RTPS/RTPT before division, and
      * restores automatically after the eye (including longjmp rollback). */
-    if (!psx_mod_render_view_offset(eye == PSX_MOD_EYE_LEFT ? g_eye_offset :
-                                   -g_eye_offset, 0, 0)) return 0;
+    if (!psx_mod_render_view(&g_eye_view[eye])) return 0;
     return user ? vr_draw_scene(cpu, user) : 0;
 }
 
@@ -511,9 +531,33 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
         frame.struct_size = sizeof frame;
         frame.period_vblanks = MOH_FLIP_PERIOD_VBLANKS;
         frame.x = pass.x; frame.y = pass.y; frame.w = pass.w; frame.h = pass.h;
+        if (g_openxr) {
+            if (!psx_mod_openxr_begin(pass.w, pass.h, g_units_per_meter)) return;
+            if (!psx_mod_openxr_view(0, &g_eye_view[0]) ||
+                !psx_mod_openxr_view(1, &g_eye_view[1])) {
+                (void)psx_mod_openxr_end(0); return;
+            }
+            if (g_authored_focal) g_eye_view[0].projection_h_ref = g_eye_view[1].projection_h_ref = 400;
+        } else {
+            double angle = g_head_yaw * 3.141592653589793 / 180;
+            double q[4] = {0, sin(angle*.5), 0, cos(angle*.5)};
+            const double oq[4] = {0,0,0,1}, op[3] = {0,0,0};
+            const double fov[2][4] = {{-.890127,.645328,.716254,-.910357},
+                                        {-.645328,.890127,.716254,-.910357}};
+            for (int eye=0;eye<2;eye++) {
+                double x = (eye ? 1 : -1) * g_eye_offset / g_units_per_meter;
+                double p[3] = {g_head_position[0]+cos(angle)*x,
+                               g_head_position[1],g_head_position[2]-sin(angle)*x};
+                if (!vr_pose_to_view(q,p,oq,op,fov[eye],g_units_per_meter,pass.w,pass.h,
+                                     &g_eye_view[eye])) return;
+                g_eye_view[eye].projection = g_desktop_fov;
+                if (g_authored_focal) g_eye_view[eye].projection_h_ref = 400;
+            }
+        }
         g_in_pass = 1;
-        if (psx_mod_render_stereo(cpu, &frame, vr_stereo_fn, &pass))
-            g_stereo_success++;
+        int rendered = psx_mod_render_stereo(cpu, &frame, vr_stereo_fn, &pass);
+        if (rendered) g_stereo_success++;
+        if (g_openxr) (void)psx_mod_openxr_end(rendered);
         g_in_pass = 0;
         g_stereo_eye = 0;
         return;
@@ -529,6 +573,7 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
 
 static void vr_entity_activate(void) {
     if (g_stereo) (void)psx_mod_set_stereo_presentation(1);
+    if (g_openxr) (void)psx_mod_openxr_enable(1);
     fprintf(stdout,
             "vr-probe: moh.vr.stereo ACTIVATED (probe=%d target=%08X axis=%d offset=%d)\n",
             g_probe, g_target, g_axis, g_offset);
@@ -558,7 +603,32 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_PASS_WATCHDOG"))) g_pass_watchdog = atoi(e);
     if ((e = getenv("PSX_VR_PASS_DRAW"))) g_pass_draw = atoi(e);
     if ((e = getenv("PSX_VR_STEREO"))) g_stereo = (e[0] && e[0] != '0');
+    if ((e = getenv("PSX_VR_OPENXR"))) g_openxr = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_HEAD_YAW"))) g_head_yaw = strtod(e, NULL);
+    if (!isfinite(g_head_yaw) || fabs(g_head_yaw)>180) g_head_yaw=0;
+    if ((e = getenv("PSX_VR_HEAD_POSITION"))) {
+        if (sscanf(e,"%lf,%lf,%lf", &g_head_position[0], &g_head_position[1],
+                   &g_head_position[2]) != 3) memset(g_head_position,0,sizeof g_head_position);
+    }
+    if ((e = getenv("PSX_VR_AUTHORED_FOCAL"))) g_authored_focal = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_DESKTOP_FOV"))) g_desktop_fov = atoi(e) != 0;
+    if (g_openxr) g_stereo=1;
+    if ((e = getenv("PSX_VR_IPD_MM"))) g_ipd_mm = strtod(e, NULL);
+    if ((e = getenv("PSX_VR_UNITS_PER_METER"))) g_units_per_meter = strtod(e, NULL);
+    if (!isfinite(g_ipd_mm) || g_ipd_mm < 0 || g_ipd_mm > 100) g_ipd_mm = 67;
+    if (!isfinite(g_units_per_meter) || g_units_per_meter < 1 ||
+        g_units_per_meter > 65536) g_units_per_meter = 48.0 / .067;
+    if ((e = getenv("PSX_VR_WORLD_SCALE"))) g_world_scale = strtod(e, NULL);
+    if (!isfinite(g_world_scale) || g_world_scale < .05 || g_world_scale > 20) g_world_scale = 1;
+    g_units_per_meter /= g_world_scale; /* smaller apparent world => more units/meter */
+    if (g_units_per_meter < 1 || g_units_per_meter > 65536) {
+        g_units_per_meter = 48.0 / .067; g_world_scale = 1;
+    }
+    g_eye_offset = (int32_t)lround(g_ipd_mm * .0005 * g_units_per_meter);
     if ((e = getenv("PSX_VR_EYE_OFFSET"))) g_eye_offset = (int32_t)strtol(e, NULL, 0);
+    if ((e = getenv("PSX_VR_DRAW_MASK"))) g_draw_mask = (unsigned)strtoul(e, NULL, 0) & 15u;
+    if ((e = getenv("PSX_VR_HUD_ICON"))) g_icon_visible = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_TEXT"))) g_text_visible = atoi(e) != 0;
     if ((e = getenv("PSX_VR_STEREO_FAULT"))) g_stereo_fault = atoi(e);
     if ((e = getenv("PSX_VR_STEREO_FAULT_HOLD"))) g_stereo_fault_hold = atoi(e) != 0;
     if (g_stereo_fault < 0 || g_stereo_fault > 2) g_stereo_fault = 0;

@@ -1,4 +1,4 @@
-
+﻿
 ## Phase 9 step 2 status — hook wired, and headless passes confirmed impossible
 
 ### Main-EXE functions need a recompile-time hook (new, and it applies to any future hook)
@@ -586,3 +586,119 @@ section, then consult targeted proof files only as needed. The proof index and
 evidence READMEs state the retention boundaries. Future bulk captures go to the
 already ignored analysis/vr-proof/ directory. See VR_PROOF_CLEANUP_PLAN.md.
 No framework changes or new game measurements were needed for this cleanup.
+
+# 2026-10-02: metric controls, rigid views and measured HUD producers
+
+Added explicit IPD, base units/meter and WorldScale controls. The base mapping
+48/.067 preserves the previous 48-unit separation at user IPD 67mm; it is a
+provisional starting point, not a measured physical reference. The new calibration
+utility requires a coordinate span and an explicit physical-size assumption.
+
+Framework scoped views now include Q12 rigid rotation, translation and per-eye
+asymmetric focal/centre terms. RTPS/RTPT apply the camera transform before division;
+guest TR is untouched. Full host view state restores on ordinary return and nested
+watchdog abort. The identity/native-projection path retains the GTE oracle.
+Synthetic desktop yaw +10 degrees and position X +0.1m change 87,962 and 79,786
+pixels respectively against the identity left eye. All 96 recorded timeline rows
+match identity across judge and locator columns; no restore mismatches/leaks or
+dropped stores in these verified controls. Identity +/-24 reproduces the previous
+78,026/77,961 changed-pixel pairs and wall/ground 5/13px correspondences.
+
+At zero eye separation, excluding FUN_8005F86C changes 81 pixels at
+x=392..486,y=18..24; excluding FUN_8008019C changes 310 pixels at
+x=417..445,y=15..33. Combined controls change 391 pixels and leave the held
+grenade and measured world unchanged. Correction: the earlier weapon label for
+FUN_8008019C was too broad; this measured call produces the upper-right HUD icon
+in slot 3. The held weapon comes through entity rendering. Excluding FUN_80089A0C
+removes 42,281 pixels across a large upper world region and retains the compass;
+it is not a HUD-only policy. Text/icon visibility controls are now independent.
+Wrist HUD placement is explicitly deferred by the user; compass treatment remains.
+
+# 2026-10-02: native Quest 3 / VDXR submission and corrections
+
+The opt-in Win32/OpenGL OpenXR backend locates both eyes for one predicted time,
+uses runtime poses/FOV, renders one restored checkpoint and submits a fresh
+complete pair. Failed/shed redraws end with zero layers rather than attaching new
+poses to old images. LOCAL recenter, validity checks, session events, swapchain
+ownership and teardown are implemented. Diagnostics are TCP openxr_stats/views/
+control; framework changes are inventoried in docs/UPSTREAM_PENDING.md.
+
+Initial real VDXR initialization refused the existing GL 3.3 context at
+opengl_version. A later producer sample records actual GL 4.6, required minimum
+4.0 and advertised maximum 5.0. The opt-in host environment PSX_OPENXR=1 now
+requests 4.6; ordinary launches retain 3.3. Actual runtime IPD sampled 0.066780m.
+A Debug sample submitted 13 frames out of 370 waits with 357 empty frames; its
+cost exceeded the existing budget. Release scale-5 eye textures are 2560x1200;
+a separate sample submitted 483 of 484 waits without empty frames or failures.
+One frame can be in progress at a TCP snapshot. These samples are not a headset
+refresh-rate or motion-to-photon measurement.
+
+The first direct XR blit was upside down in the headset. Flipping Y only during
+copy into acquired XR images corrected it; the user confirmed upright output
+and expected head-tracking direction. Desktop dumps retain their row convention.
+
+Scale trials: 1, 0.5, 0.25, then user-reversed direction to 2 and accepted 3.
+The user reported smaller settings looked bigger; this subjective observation is
+retained without inferring physical scale from it. Correction: the directory
+openxr-scale-half is not valid half-scale evidence: its build failed and the
+following shell launched an older binary. A guarded successful rebuild/rerun is
+openxr-scale-half-valid. The launcher now refuses after build/configure failure.
+A stale async request for 0.125 was superseded by explicit "try 2", then "try 3".
+
+The accepted scale-3 live snapshot records 5,806 waits, 5,805 submissions, no empty
+frames or XR failures. Stereo records 5,806 completed pairs, no shedding/failures;
+6.098ms EMA / 5.857ms last cost is a bounded sample in its scene, not a speedup
+ratio against earlier scenes. A snapshot taken during the next left eye has a
+zero right-eye entry cycle; do not treat it as a completed-pair mismatch or as
+equal-entry proof. The user accepted scale 3 while reporting an oversized weapon
+and possibly small enemies, and explicitly deferred fine tuning.
+
+# 2026-10-02: preserve authored entity focal length
+
+New producer-bound native projection tracing (frame 135, render=0) records
+620 H=400 entries at ra=8008BF84 and 175 H=133 entries at ra=80080F2C among
+1,401 native entries. This is actual RTP producer evidence for the entity path;
+it does not undo the earlier retraction of a detached H=133 sample or alter the
+established H=400 level path. GTE ring inspection now distinguishes native and
+host-view projections and supports pagination/full-frame count.
+
+Absolute XR focal terms discarded the game's different entity focal length.
+The optional projection_h_ref=400 policy multiplies focal terms by effective
+H/400, retaining world draws at H=400 and the authored entity ratio. A fixed
+Quest-FOV desktop control at zero separation/pose changes 10,021 pixels in
+[336,110,511,216] and visibly reduces the held grenade. Wall ROI
+[50,100,170,130] changes zero pixels. Correction: the exploratory ROI labelled
+enemy_right overlaps the weapon and its 1,067 changed pixels do not establish an
+enemy-size change. Both focal controls match all 96 recorded timeline rows;
+restore checks have zero mismatches/leaks/dropped stores. The policy is enabled
+by default; final weapon appearance needs headset assessment and other modes.
+
+The final bounded Release launcher capture completed two pairs with equal eye
+entry cycles, 51 completed pairs, no shedding/failures and 11.317ms EMA at the
+measured 2560x1200 eye size. VERIFY is off, so zero hashes are not verification.
+All owned measurement processes were closed. Complete pose/GTE/sandbox/watchdog
+tests, render guards, generated TCP index and opt-in Debug/Release builds pass.
+
+Evidence: compact VR_HEADSET_RECEIPT.json plus ignored analysis/vr-proof captures.
+Measurements before pin update used the framework working tree at external
+PSXRECOMP_ROOT, not the older pinned submodule reported by early launch receipts.
+Future launcher captures record actual build-root revision/changes and executable
+SHA256. No bulk images are added to Git. Current scheduling is the game's ~30Hz
+draw boundary; independent headset cadence, wide-FOV culling, physical calibration,
+controller actions and wrist HUD remain open. Setup: VR_OPENXR_SETUP.md.
+
+# 2026-10-02: delivered pin and matched native-XR control
+
+Framework commit 22bdc9e9 was pushed, then pinned in the game. Both Debug and
+Release build from the pinned submodule with OpenXR ON; the local rewind build
+setting is restored to ON. A fresh bounded Release native-XR capture records
+VirtualDesktopXR running/tracking, view_flags=15, effective units/meter=238.805970,
+55 submissions / 56 waits, zero empty frames/failures, and two completed eye
+manifests. Its executable SHA256 and clean actual framework revision are recorded
+in build_provenance.json. A separate desktop control uses the exact same binary
+and scene/settings; all 96 consecutive fingerprint rows match across every judge
+and locator column. This isolates headset pose/projection/submission from live
+guest timeline effects in the measured window. VERIFY is off, so it does not
+substitute for the separately verified Debug restore controls. Both processes
+closed automatically. Compact receipts include these producer values and the
+comparison; bulk captures remain ignored. Wrist placement remains deferred.
