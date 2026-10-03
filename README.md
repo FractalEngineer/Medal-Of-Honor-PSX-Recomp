@@ -2,8 +2,7 @@
 
 <!-- retcomm-readme-metrics -->
 [![GitHub downloads (all assets, all releases)](https://img.shields.io/github/downloads/FractalEngineer/Medal-Of-Honor-PSX-Recomp/total)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases)
-[![GitHub downloads (latest release)](https://img.shields.io/github/downloads/FractalEngineer/Medal-Of-Honor-PSX-Recomp/latest/total)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/latest)
-[![GitHub release](https://img.shields.io/github/v/release/FractalEngineer/Medal-Of-Honor-PSX-Recomp)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/latest)
+[![Alpha v0.1.0](https://img.shields.io/badge/alpha-v0.1.0-orange)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.0)
 <!-- /retcomm-readme-metrics -->
 
 <!-- retcomm-readme-boxart -->
