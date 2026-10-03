@@ -1239,3 +1239,30 @@ User authorized committing and pushing the alpha backlog/handoff documentation.
 This checkpoint includes those files and reverse-doc index/status updates only;
 runtime and framework pin remain at the accepted alpha. Local handoff links and
 Git whitespace checks pass.
+
+## 2026-10-03 — v0.1.0 native alpha release preparation
+
+User authorized pushing the game and publishing the 0.1.0 alpha, with upstream
+framework PRs to follow. Portable RunVR.bat workflow now picks/remembers the CUE,
+uses the packaged executable and performs normal startup inspection in PowerShell.
+RunFlat.bat clears VR activation flags. VR mod support ships as experimental;
+its previous developer-only feature would have been filtered out of public builds.
+
+Framework 9976567e includes verified OpenBIOS stamp refresh (all generated BIOS C
+unchanged) and literal .exe selection in the shared packager. Git Bash's unsuffixed
+alias had skipped DLL/signing gates, producing a missing-zlib 0xC0000135 startup
+failure under stripped PATH. Corrected packaging stages the import and passes the
+real clean-dependency launch. Retail BIOS was not regenerated; releases select
+OpenBIOS only. Required game generation leaves 25 C shards and dispatch unchanged.
+
+Release build, render guards, 332-command index and 29 shared layout tests pass.
+An extracted ZIP in a directory containing spaces boots through briefing to visible
+Mission 1 with an empty cache and no developer tools on PATH. Bundled TCC produced
+32 native images; flat XR-off/no-stereo state, save generation 1, load generation 2
+and normal exit 0 verified. PowerShell's new TCP status reader was exercised against
+the actual runtime. Prior black capture was a loading transition; later pixels show
+the level. TCP may close before quit acknowledgement, so owned-process normal exit
+was checked directly. These are bounded package checks, not cadence/full-playthrough
+proof. No new hardware assessment; Quest 3/VDXR acceptance remains the earlier
+gameplay baseline. Compact receipt: VR_ALPHA_RELEASE_RECEIPT.json; raw local results
+and captures are ignored under analysis/alpha and dist. Owned games closed.

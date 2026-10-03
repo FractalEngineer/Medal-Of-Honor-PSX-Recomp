@@ -22,6 +22,7 @@ param(
     [switch]$Verify,
     [switch]$Build,
     [string]$BuildDirectory = 'build-release',
+    [string]$DiscPath = '',
     [int]$Slot = -1,
     [string]$CaptureDirectory = '',
     [int]$Seconds = 0
@@ -30,6 +31,25 @@ $ErrorActionPreference = 'Stop'
 $vrRoot = Split-Path $PSScriptRoot -Parent
 $vrBuild = Join-Path $vrRoot $BuildDirectory
 $vrExe = Join-Path $vrBuild 'Medal_of_Honor__Recompiled.exe'
+if (-not $Build -and (Test-Path -LiteralPath (Join-Path $vrRoot 'Medal_of_Honor__Recompiled.exe'))) {
+    $vrExe = Join-Path $vrRoot 'Medal_of_Honor__Recompiled.exe'
+}
+
+function Get-VRStartupStatus {
+    $client = New-Object System.Net.Sockets.TcpClient
+    try {
+        if (-not $client.ConnectAsync('127.0.0.1', 4370).Wait(500)) {
+            throw 'VR status connection timed out.'
+        }
+        $client.ReceiveTimeout = 1000
+        $client.SendTimeout = 1000
+        $stream = $client.GetStream()
+        $request = [Text.Encoding]::UTF8.GetBytes('{"cmd":"openxr_stats"}' + "`n")
+        $stream.Write($request, 0, $request.Length)
+        $reader = New-Object System.IO.StreamReader($stream)
+        return ($reader.ReadLine() | ConvertFrom-Json)
+    } finally { $client.Dispose() }
+}
 $vrVariables = @{
     PSX_OPENXR = [string][int](-not $Desktop);
     # XR waits for its compositor; avoid an additional desktop VSync wait.
@@ -77,11 +97,38 @@ try {
         cmake --build $vrBuild --target psx-runtime
         if ($LASTEXITCODE -ne 0) { throw 'VR build failed; launch refused' }
     }
+    if (-not (Test-Path -LiteralPath $vrExe)) { throw "Game executable missing: $vrExe" }
+    # Explicit selection wins; otherwise reuse the runtime's remembered disc,
+    # then the existing local development layout. The release needs no ROM copy.
+    if (-not $DiscPath) {
+        $vrDiscCache = Join-Path (Split-Path $vrExe -Parent) 'disc.cfg'
+        if (Test-Path -LiteralPath $vrDiscCache) {
+            $vrCachedDisc = (Get-Content -LiteralPath $vrDiscCache -Raw).Trim()
+            if ($vrCachedDisc -and (Test-Path -LiteralPath $vrCachedDisc)) { $DiscPath = $vrCachedDisc }
+        }
+    }
+    if (-not $DiscPath -and (Test-Path -LiteralPath 'Input/medal-of-honor/medal-of-honor.cue')) {
+        $DiscPath = (Resolve-Path -LiteralPath 'Input/medal-of-honor/medal-of-honor.cue').Path
+    }
+    if (-not $DiscPath) {
+        Add-Type -AssemblyName System.Windows.Forms
+        $vrPicker = New-Object System.Windows.Forms.OpenFileDialog
+        try {
+            $vrPicker.Title = 'Select your Medal of Honor SLUS-00974 disc image'
+            $vrPicker.Filter = 'PlayStation CUE image (*.cue)|*.cue'
+            if ($vrPicker.ShowDialog() -ne [Windows.Forms.DialogResult]::OK) { throw 'Disc selection cancelled.' }
+            $DiscPath = $vrPicker.FileName
+        } finally { $vrPicker.Dispose() }
+    }
+    $DiscPath = (Resolve-Path -LiteralPath $DiscPath).Path
+    if ([IO.Path]::GetExtension($DiscPath) -ine '.cue') { throw 'Select the supported SLUS-00974 CUE image.' }
+    $vrDiscCache = Join-Path (Split-Path $vrExe -Parent) 'disc.cfg'
+    [IO.File]::WriteAllText($vrDiscCache, $DiscPath, (New-Object Text.UTF8Encoding($false)))
     foreach ($vrKey in $vrVariables.Keys) {
         $vrOldEnvironment[$vrKey] = [Environment]::GetEnvironmentVariable($vrKey,'Process')
         [Environment]::SetEnvironmentVariable($vrKey,$vrVariables[$vrKey],'Process')
     }
-    $vrProcess = Start-Process -FilePath $vrExe -ArgumentList '--no-launcher','--game','game.toml','--disc','Input/medal-of-honor/medal-of-honor.cue' -WorkingDirectory $vrRoot -WindowStyle Hidden -PassThru
+    $vrProcess = Start-Process -FilePath $vrExe -ArgumentList '--no-launcher','--game','game.toml','--disc',('"' + $DiscPath + '"') -WorkingDirectory $vrRoot -WindowStyle Hidden -PassThru
     if ($CaptureDirectory) {
         $vrSaveSlot = if ($Slot -ge 0) {$Slot} else {3}
         python vr/capture_stereo.py $CaptureDirectory --slot $vrSaveSlot --pairs 2 --executable $vrExe
@@ -92,8 +139,21 @@ try {
         python vr/capture_stereo.py $vrRunDir --slot $Slot --pairs 0 --executable $vrExe
         if ($LASTEXITCODE -ne 0) { throw 'VR slot load failed' }
     } elseif (-not $Desktop) {
-        python vr/check_vr_startup.py
-        if ($LASTEXITCODE -ne 0) { throw 'VR startup failed; no headset frames submitted' }
+        $vrDeadline = [DateTime]::UtcNow.AddSeconds(30)
+        $vrReady = $false
+        $vrLastStatus = $null
+        while ([DateTime]::UtcNow -lt $vrDeadline) {
+            if ($vrProcess.HasExited) { throw "Game exited during VR startup (code $($vrProcess.ExitCode)). Check your active OpenXR runtime and disc." }
+            try { $vrLastStatus = Get-VRStartupStatus } catch { $vrLastStatus = $null }
+            if ($vrLastStatus.running -and $vrLastStatus.submitted -gt 0) {
+                Write-Host "VR active: $($vrLastStatus.runtime); submissions: $($vrLastStatus.submitted)"
+                $vrReady = $true
+                break
+            }
+            if ($vrLastStatus.failures -gt 0) { break }
+            Start-Sleep -Milliseconds 200
+        }
+        if (-not $vrReady) { throw ('VR startup failed; no headset frames submitted. Check the active OpenXR runtime. Status: ' + ($vrLastStatus | ConvertTo-Json -Compress)) }
     }
     if ($Seconds -gt 0) {
         $null = $vrProcess.WaitForExit($Seconds * 1000)

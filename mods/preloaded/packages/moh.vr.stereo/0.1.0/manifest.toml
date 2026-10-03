@@ -3,7 +3,7 @@ id = "moh.vr.stereo"
 version = "0.1.0"
 name = "Medal of Honor VR Stereo"
 author = "Medal-Of-Honor-PSX-Recomp"
-description = "Per-eye transform injection and entity-table probe at FUN_80084718."
+description = "Experimental native VR support; enabled at runtime by RunVR.bat."
 license = "MIT"
 resolver = "declarative"
 
@@ -12,9 +12,9 @@ game_id = "SLUS-00974"
 
 [[feature]]
 id = "entity-probe"
-name = "Entity transform probe"
-description = "Logs the per-entity transform table from FUN_80084718. Set PSX_VR_PROBE=1 for output."
-channel = "developer"
+name = "Native VR support"
+description = "Opt-in stereo, headset input and tracked-rifle prototype. Launch with RunVR.bat; ordinary launches remain flat."
+channel = "experimental"
 default_enabled = true
 
 [[plugin]]

@@ -1,9 +1,9 @@
 # Medal of Honor  Recompiled
 
 <!-- retcomm-readme-metrics -->
-[![GitHub downloads (all assets, all releases)](https://img.shields.io/github/downloads/RetroPortingToolKit/Medal-Of-Honor-PSX-Recomp/total)](https://github.com/RetroPortingToolKit/Medal-Of-Honor-PSX-Recomp/releases)
-[![GitHub downloads (latest release)](https://img.shields.io/github/downloads/RetroPortingToolKit/Medal-Of-Honor-PSX-Recomp/latest/total)](https://github.com/RetroPortingToolKit/Medal-Of-Honor-PSX-Recomp/releases/latest)
-[![GitHub release](https://img.shields.io/github/v/release/RetroPortingToolKit/Medal-Of-Honor-PSX-Recomp)](https://github.com/RetroPortingToolKit/Medal-Of-Honor-PSX-Recomp/releases/latest)
+[![GitHub downloads (all assets, all releases)](https://img.shields.io/github/downloads/FractalEngineer/Medal-Of-Honor-PSX-Recomp/total)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases)
+[![GitHub downloads (latest release)](https://img.shields.io/github/downloads/FractalEngineer/Medal-Of-Honor-PSX-Recomp/latest/total)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/latest)
+[![GitHub release](https://img.shields.io/github/v/release/FractalEngineer/Medal-Of-Honor-PSX-Recomp)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/latest)
 <!-- /retcomm-readme-metrics -->
 
 <!-- retcomm-readme-boxart -->
@@ -16,7 +16,13 @@ Static recompilation of **Medal of Honor** built on
 [psxrecomp](https://github.com/mstan/psxrecomp) and
 [recomp-ui](https://github.com/RetroPortingToolKit/recomp-ui).
 
-_Add a short pitch in catalog_identity.json / README._
+Play the original game on a flat display, or opt into the experimental native
+VR alpha with head tracking, per-eye rendering and tracked-rifle controls.
+Flat play is the default; VR is enabled through a separate launcher.
+
+The **v0.1.0 Windows native alpha** is available from this fork's
+[releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.0).
+See [alpha installation and controls](ALPHA_README.md) before testing.
 
 | | |
 |---|---|
@@ -67,7 +73,36 @@ Optional box art under `launcher_assets/img/` may come from
 [libretro-thumbnails](https://github.com/libretro-thumbnails/libretro-thumbnails)
 (`Named_Boxarts`); see `BOXART_SOURCE.txt` when present.
 
-## Quick start (dev)
+## Flat play
+
+Launch `Medal_of_Honor__Recompiled.exe` normally and select your own disc image
+in the launcher. No headset is required. The supported disc is **SLUS-00974
+(NTSC-U)**; game data is not included.
+The Windows release also includes `RunFlat.bat`, which clears VR overrides.
+
+For a local Windows build, launch from the project root in a fresh terminal:
+
+```powershell
+.\build-release\Medal_of_Honor__Recompiled.exe --game game.toml --disc "C:\Games\Medal of Honor\medal-of-honor.cue"
+```
+
+Replace the example disc path with your own. Add `--no-launcher` to boot
+directly. OpenXR support can be compiled into the same executable while ordinary
+launches retain flat rendering and normal controller input. VR environment
+overrides should be absent for flat play; the VR wrapper restores its process
+environment when it exits.
+
+`RunVR.bat -Desktop` is a stereo diagnostic mode, not the ordinary flat launch.
+
+## Experimental VR alpha (Windows)
+
+The gameplay baseline is game `28b0c55` with framework `5bafeebf`; release
+`v0.1.0` adds portable launchers, alpha documentation and packaging. Its framework
+pin is `9976567e`, which refreshes the OpenBIOS generation stamp without changing
+generated BIOS C and fixes Windows dependency packaging. The release links only
+OpenBIOS.
+
+### Setup and launch
 
 For the local Quest 3 / VDXR build, connect Virtual Desktop and double-click
 `RunVR.bat` in the project folder. It starts normally in VR: boot videos,
@@ -77,13 +112,66 @@ navigates menus; A or right trigger confirms, B goes back. Accepted world scale,
 tracked rifle, movement/combat controls and pause distance remain enabled.
 It runs until you close the game; startup errors stay visible in the console.
 
-Optional: `RunVR.bat -Slot 5` explicitly loads the enemy test save.
+For the extracted release, no development tools or Python installation are
+required. `RunVR.bat` uses PowerShell, selects your CUE through a file picker and
+remembers its location. Pass `-DiscPath "C:\Games\Medal of Honor\medal-of-honor.cue"`
+to select a path explicitly. Local builds can still use the existing
+`Input/medal-of-honor/medal-of-honor.cue` layout. Quest 3 through Virtual
+Desktop with **VDXR** is the tested setup; other headsets, controllers and OpenXR
+runtimes remain unverified.
+
+Optional: `RunVR.bat -Slot 5` explicitly loads an existing local test save;
+test saves are not included or required for normal boot.
 `RunVR.bat -Build` rebuilds before normal boot. The default executable is
 `build-release/Medal_of_Honor__Recompiled.exe`. VR disables desktop VSync to
 avoid a second wait; the guest real-time speed cap remains active. The
 `-DesktopVSyncDiagnostic` option restores VSync only for comparison.
 
-Framework pin `5bafeebf` includes the matching native VR startup support.
+Source-only diagnostic slot/capture options require Python and the development
+helpers. They are not part of the packaged player workflow.
+
+### Current Touch controls
+
+| Control | Gameplay |
+| --- | --- |
+| Left stick | Move / strafe |
+| Right stick | Smooth turn |
+| Right trigger | Fire |
+| A | Use (native Square action) |
+| B | Cycle weapon |
+| X | Reload / use, depending on native game context |
+| Y | Jump |
+| Left stick click | Toggle crouch |
+| Left Menu button | Pause / Start |
+| Right grip | Legacy native aim binding, retained temporarily |
+
+In menus, use the left stick to navigate, A or right trigger to confirm, and B
+to go back. Controller assignments are provisional.
+
+### Known limitations and contributing
+
+- Tracked weapon mesh and shot override are a **rifle prototype**. Other weapons
+  and physical barrel-to-shot alignment need validation.
+- Stationary world shaking, missing nearby floor, pop-in, missing/transparent
+  Mission 1 ruins tiles and brighter headset color have been reported. Their
+  causes are still under investigation.
+- Wrist HUD and an in-game VR options menu are pending. World proportions are
+  not physically calibrated, and headset cadence needs further measurement.
+- Tracking loss/reconnect, other headset/runtime combinations and broader
+  mission coverage need testing.
+
+Report problems in this fork's
+[issue tracker](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/issues).
+Include the game/framework version, headset, OpenXR runtime, connection method,
+mission/location, reproduction steps and any relevant captures. Do not attach
+disc images or retail BIOS dumps.
+
+See [the alpha backlog](docs/reverse/VR_ALPHA_TODO.md) for testing tasks and
+[the VR handoff](docs/reverse/VR_HANDOFF.md) for development context.
+Game-specific weapons, controls and HUD changes belong here; generic framework
+work is tracked in [the upstream inventory](docs/UPSTREAM_PENDING.md).
+
+## Development build
 
 ```bash
 git submodule update --init --recursive
@@ -91,14 +179,22 @@ git submodule update --init --recursive
 python3 psxrecomp/psxrecomp_cli.py generate \
   --config game.toml --project-root . --disc disc/<your>.cue
 git add generated && git commit -m "Regenerate game C"
-cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DPSXRECOMP_BIOS_STEMS=OpenBIOS
 cmake --build build-release --target psx-runtime
 ```
 
-Releases: tag `vX.Y.Z` (or run the *Release builds* workflow). CI builds the
-committed `generated/` C on Linux, Windows and macOS and attaches
+For Windows VR, configure the Release build with `-DPSX_OPENXR=ON`, or use
+`RunVR.bat -Build` after preparing the build tools and generated game C. Compiling
+OpenXR support does not automatically enable VR when launching the executable.
+
+Release `v0.1.0` uses the locally verified Windows alpha package. CI builds its
+platform matrix without replacing that tested asset. Subsequent tags `vX.Y.Z`
+(or the *Release builds* workflow) build the
+committed `generated/` C on Linux, Windows and macOS and attach
 `moh-<version>-<platform>.zip`, the compiled game. Locally:
 `scripts/package_release.sh build-release linux-x64`.
+Windows packaging requires OpenXR and TCP startup inspection to be enabled
+(`-DPSX_OPENXR=ON -DPSX_DEBUG_TOOLS=ON`), and includes both launchers.
 
 ## Symbols
 

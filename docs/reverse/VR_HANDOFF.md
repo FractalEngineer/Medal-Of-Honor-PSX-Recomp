@@ -7,19 +7,25 @@ regenerating or committing anything.
 
 ## Current checkpoint and local work
 
-- Game: Medal of Honor PS1, SLUS-00974 (NTSC-U), branch `vr-dev`.
+- Game: Medal of Honor PS1, SLUS-00974 (NTSC-U). Release integration is on
+  `master`; `vr-dev` retains the same alpha commit for continued development.
   Alpha checkpoint **28b0c558bfc81258aeee1e93451a12ab15c189a1**, pushed to
   `origin` (FractalEngineer/Medal-Of-Honor-PSX-Recomp).
-- Framework: branch `vr-dev`, checkpoint
-  **5bafeebf3f0c2eaaa38212f960b9f6f88351cb74**, pushed to `fork`
+- Framework: branch `vr-dev`, release pin
+  **9976567eb8e95510ca7eeeeccd9af3a260885de5**, pushed to `fork`
   (FractalEngineer/psxrecomp). Main framework `origin` is upstream; do not push
   our VR branch there by accident. Game submodule pins this checkpoint cleanly.
-- User considers this the alpha baseline. No alpha tag/upload was requested or
-  created in these tasks. Remaining work is substantial.
-- Since that checkpoint, only documentation has changed: VR_ALPHA_TODO.md,
-  this handoff, the reverse-doc index and appended VR_PHASE9_STATUS.md entries.
-  User authorized committing/pushing these in a documentation checkpoint after
-  the alpha. Use `git log -1 -- docs/reverse/VR_HANDOFF.md` to identify it.
+- User authorized pushing the repo and publishing the Windows **v0.1.0 alpha**:
+  [release](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.0).
+  See [ALPHA_README.md](../../ALPHA_README.md) and
+  [VR_ALPHA_RELEASE_RECEIPT.json](VR_ALPHA_RELEASE_RECEIPT.json). Remaining work
+  is substantial; upstream framework PRs follow as a separate task.
+- Release preparation adds portable disc selection, a PowerShell startup check,
+  RunFlat.bat, experimental-channel VR support and packaging/docs. Framework
+  follow-ups refresh the OpenBIOS stamp (generated C unchanged) and fix Windows
+  dependency bundling. No guest simulation/rendering implementation changed.
+  The game release links OpenBIOS only; the retail BIOS stamp remains stale.
+  Use `git log -1 -- docs/reverse/VR_HANDOFF.md` to identify the release docs commit.
 - Main framework has a pre-existing untracked `.commandcode/` directory; it
   was excluded from the checkpoint. Do not silently add or remove unrelated work.
 - No game is running from the completed tests. Close owned games when done.
@@ -128,6 +134,12 @@ for desktop-only checks; add `-Slot N` only for an explicit reproduction.
 Ask for headset availability when user assessment is actually needed; do not
 assume a previous active stream is still available.
 
+The extracted Windows alpha also uses RunVR.bat, with the executable at the
+package root. It picks/remembers the user's CUE or accepts -DiscPath; normal boot
+uses PowerShell TCP status and needs no installed Python. Source slot/capture
+diagnostics still require their Python helpers. Use RunFlat.bat for ordinary flat
+play: -Desktop keeps stereo diagnostics enabled and is not the flat player mode.
+
 ```powershell
 cmake --build build-debug --target psx-runtime
 python psxrecomp/psxrecomp_cli.py generate --config game.toml --project-root . --disc Input/medal-of-honor/medal-of-honor.cue
@@ -193,3 +205,9 @@ Co-authored-by/bot trailers. Push framework first, update the game pin, rerun
 required generation/builds, then commit/push game. The user authorized the alpha checkpoint and then this documentation checkpoint.
 Further implementation and publishing follow the latest user request; do not
 interpret this handoff or its backlog as blanket authorization.
+
+Latest authorization: push the game, tag v0.1.0 and publish an alpha release.
+Framework dependency fixes were pushed first and pinned. Flat cold-cache Mission 1,
+save/load and exit checks passed from the package with developer tools absent.
+No new live Quest test was performed during packaging; earlier acceptance applies
+to the gameplay baseline. Owned test games are closed. No upstream PR was opened.

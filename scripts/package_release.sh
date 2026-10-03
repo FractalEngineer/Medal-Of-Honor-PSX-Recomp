@@ -49,7 +49,7 @@ for _doc in DISC.md; do
 done
 
 cd "${ROOT}"
-exec bash "${PACKAGER}" \
+bash "${PACKAGER}" \
   --root "${ROOT}" \
   --build-dir "${BUILD_DIR}" \
   --artifact "${ARTIFACT_TAG}" \
@@ -60,3 +60,8 @@ exec bash "${PACKAGER}" \
   --version-env RELEASE_VERSION \
   --disc-hint "your legally owned Medal of Honor disc" \
   "${EXTRA[@]}"
+
+if [[ "${ARTIFACT_TAG}" == windows-* ]]; then
+  "${PSX_RELEASE_STAGE_PYTHON:-python3}" scripts/finalize_alpha.py \
+    --build-dir "${BUILD_DIR}" --version "$(tr -d '[:space:]' < VERSION)"
+fi

@@ -8,13 +8,11 @@
 #
 # WHAT THIS SHIPS. A compiled game. The title COMMITS its generated/ game C
 # (psxrecomp_cli.py generate, run once by the developer from a legal disc);
-# the framework COMMITS its two BIOS backends (OpenBIOS and SCPH-1001) in
-# psxrecomp/generated/. CI links both into the runtime and packages the
-# executable with its runtime data. Players download, point it at their disc
-# (and, if they want the retail BIOS, their own dump — the runtime needs the
-# image's data and checks its identity), and play. Nothing is generated or
-# compiled on a player's machine, and no emitters, sources, or CLI ship at
-# the zip root.
+# the framework's committed OpenBIOS backend is selected for release builds.
+# Players download, point it at their disc, and play. The bundled overlay
+# toolchain compiles streamed code from the player's disc automatically; no
+# development tools need to be installed. No emitters, sources, or CLI ship
+# at the zip root.
 #
 # WHAT NEVER SHIPS. Disc images and BIOS dumps (the zip carries only the
 # OpenBIOS image). The overlay shard cache: it is compiled FROM THE DISC,
@@ -228,7 +226,7 @@ jobs:
       # prints every input's digest so the disagreement names a file.
       - name: Verify BIOS backend stamps
         shell: bash
-        run: bash psxrecomp/tools/ci/check_bios_stamps.sh --framework psxrecomp
+        run: bash psxrecomp/tools/ci/check_bios_stamps.sh --framework psxrecomp OpenBIOS
 
       - name: Setup MSYS2 (Windows)
         if: runner.os == 'Windows'
@@ -427,6 +425,9 @@ jobs:
         run: |
           set -euo pipefail
           EXTRA=()
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            EXTRA+=("-DPSX_OPENXR=ON" "-DPSX_DEBUG_TOOLS=ON")
+          fi
           if [[ -n "${CMAKE_OSX_DEPLOYMENT_TARGET:-}" ]]; then
             EXTRA+=("-DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}")
           fi
@@ -498,6 +499,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DPSXRECOMP_REQUIRE_GAME_C=ON \
             -DPSXRECOMP_BIOS_STALE_FATAL=ON \
+            -DPSXRECOMP_BIOS_STEMS=OpenBIOS \
             -DPSXRECOMP_FORCE_SETUP_HOST=OFF \
             -DPSXRECOMP_ALLOW_NO_BIOS=OFF \
             -DPSX_SETUP_WIZARD=ON \
@@ -512,8 +514,8 @@ jobs:
             echo "::error::CMake did not link the OpenBIOS backend (psxrecomp/generated missing or stale?)"
             exit 1
           fi
-          if ! grep -qE 'BIOS backends linked: .*SCPH1001' build-ci-configure.log; then
-            echo "::error::CMake did not link the SCPH-1001 backend (psxrecomp/generated/SCPH1001_* missing or stale?)"
+          if ! grep -qE 'BIOS backends linked: OpenBIOS$' build-ci-configure.log; then
+            echo "::error::Release must link only the bundled OpenBIOS backend"
             exit 1
           fi
           if ! grep -q 'Vulkan backend: headers' build-ci-configure.log; then
@@ -667,7 +669,9 @@ jobs:
   release:
     name: GitHub Release
     needs: [prepare, build]
-    if: needs.prepare.outputs.publish == 'true'
+    # v0.1.0 is published manually with its locally verified Windows alpha ZIP.
+    # CI still builds its platform matrix without replacing that tested asset.
+    if: needs.prepare.outputs.publish == 'true' && needs.prepare.outputs.version != '0.1.0'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout (for tagging on workflow_dispatch)
@@ -714,3 +718,4 @@ jobs:
           generate_release_notes: true
           fail_on_unmatched_files: true
           target_commitish: ${{ github.sha }}
+          prerelease: true
