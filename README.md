@@ -1,4 +1,4 @@
-# Medal of Honor  Recompiled
+# Medal of Honor  Recompiled + Full 6dof VR
 
 <!-- retcomm-readme-metrics -->
 [![GitHub downloads (all assets, all releases)](https://img.shields.io/github/downloads/FractalEngineer/Medal-Of-Honor-PSX-Recomp/total)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases)
@@ -119,8 +119,6 @@ to select a path explicitly. Local builds can still use the existing
 Desktop with **VDXR** is the tested setup; other headsets, controllers and OpenXR
 runtimes remain unverified.
 
-Optional: `RunVR.bat -Slot 5` explicitly loads an existing local test save;
-test saves are not included or required for normal boot.
 `RunVR.bat -Build` rebuilds before normal boot. The default executable is
 `build-release/Medal_of_Honor__Recompiled.exe`. VR disables desktop VSync to
 avoid a second wait; the guest real-time speed cap remains active. The
