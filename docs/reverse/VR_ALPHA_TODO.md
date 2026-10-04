@@ -46,6 +46,10 @@ an alpha tag, release upload, or changes to gameplay yet.
 - [ ] **Known gap: wider-FOV and large-head-turn coverage.** Verify side/behind
   views, looking down/up, leaning and smooth body turns in several sectors.
   Check near-plane clipping and bounds separately from portal/distance culling.
+  The user accepted eye-frustum world selection on Quest 3 / VDXR, including a
+  movement-enabled slot-0 gameplay run, on 2026-10-05. Normal VR launch enables
+  it; FOV and native PVS masks stay unchanged. See VR_HEAD_VISIBILITY_FIX.md.
+  Multi-sector and near-plane coverage remain open.
 - [ ] **Known gap: stereo coverage across levels and render variants.** Extend
   beyond the measured scenes: terrain, dynamic enemies, animated objects,
   effects and later-area paths. Preserve true parallax for world geometry.
