@@ -1,9 +1,15 @@
 # VR alpha handoff - start here
 
-Updated: 2026-10-03. This file is the entry point for a new chat/agent.
+Updated: 2026-10-05. This file is the entry point for a new chat/agent.
 Follow the latest user request; the backlog is not authorization to implement
 all items or publish a release. Read current local changes before resetting,
 regenerating or committing anything.
+
+Latest accepted fix: the user approved the headset color correction on Quest 3 /
+Virtual Desktop VDXR and requested a PR into game `master`. This branch pins the
+single framework correction `3618bc00381588b7e9ea9b5173e8872470ed0379`, extracted
+from the released `9976567e` base. The PR contains no world-view, visibility or
+trace experiments. See the latest VR_PHASE9_STATUS.md entry for validation.
 
 ## Current checkpoint and local work
 
@@ -11,8 +17,8 @@ regenerating or committing anything.
   `master`; `vr-dev` retains the same alpha commit for continued development.
   Alpha checkpoint **28b0c558bfc81258aeee1e93451a12ab15c189a1**, pushed to
   `origin` (FractalEngineer/Medal-Of-Honor-PSX-Recomp).
-- Framework: branch `vr-dev`, release pin
-  **9976567eb8e95510ca7eeeeccd9af3a260885de5**, pushed to `fork`
+- Framework: branch `fix/vr-headset-color-release`, current pin
+  **3618bc00381588b7e9ea9b5173e8872470ed0379**, pushed to `fork`
   (FractalEngineer/psxrecomp). Main framework `origin` is upstream; do not push
   our VR branch there by accident. Game submodule pins this checkpoint cleanly.
 - User authorized pushing the repo and publishing the Windows **v0.1.0 alpha**:

@@ -6,8 +6,15 @@ upstream PRs yet; this inventory is not publishing or PR authorization.
 
 Fork: `github.com/FractalEngineer/psxrecomp` (from
 `RetroPortingToolKit/psxrecomp` @ `3505f2a0`).
-Submodule pin here: `psxrecomp` @ `9976567e` (from `vr-dev`). The exact gitlink,
+Submodule pin here: `psxrecomp` @ `3618bc00` (color correction over `9976567e`). The exact gitlink,
 not the branch name, determines the framework used by the game.
+
+Accepted color follow-up (2026-10-05): user approved Quest 3 / VDXR brightness
+and requested a game-master PR. Framework `fix/vr-headset-color-release` contains
+one correction commit from the release pin: sRGB swapchain preference, explicit
+linear fallback and shared desktop gamma, with real-GL gameplay/native controls.
+World experiments remain separate. This approval does not publish the broader
+upstream VR stack or a new release.
 
 ## Alpha integration and proposed upstream order
 
