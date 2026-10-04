@@ -1266,3 +1266,33 @@ was checked directly. These are bounded package checks, not cadence/full-playthr
 proof. No new hardware assessment; Quest 3/VDXR acceptance remains the earlier
 gameplay baseline. Compact receipt: VR_ALPHA_RELEASE_RECEIPT.json; raw local results
 and captures are ignored under analysis/alpha and dist. Owned games closed.
+
+
+## 2026-10-05 - accepted headset color correction, master PR
+
+The user accepted the brightness/contrast correction on Quest 3 / Virtual
+Desktop VDXR and requested a PR into game master. The framework fix was extracted
+as one commit, `3618bc00381588b7e9ea9b5173e8872470ed0379`, directly over the
+released `9976567e` pin, then pushed to fork/fix/vr-headset-color-release before
+updating this gitlink. Runtime color code matches the headset-tested candidate;
+development GTE trace instrumentation and all game world experiments are excluded.
+
+PSX source RGB is already display encoded. Prefer GL_SRGB8_ALPHA8; linear-only
+XR targets receive an exact sRGB decode. Gameplay respects desktop post_gamma;
+native GL_BACK is already gamma corrected and is not corrected twice. Alpha,
+vertical orientation and incoming GL state are preserved. No global brightness
+multiplier or guest timing, projection, simulation or generated-code change.
+
+Validation: all eight real-GL combinations pass for gameplay and native copies
+(two swapchain formats, two gamma values, incoming framebuffer-sRGB on/off),
+including pixel tolerance <=1 LSB, flip/alpha and GL state restoration. Off-XR
+input controls and render-pass guards pass. A fresh Release build uses this
+master-based game worktree and the extracted framework worktree, with cached
+SDL/OpenXR/UI/rbengine dependencies and OpenBIOS only. OpenBIOS passes the emitter
+stamp check; game and BIOS generated sources are unchanged. The exact built
+executable passes ordinary flat slot-0 load, 96 guest fingerprints, presented
+readback and clean owned-process closure with XR and stereo disabled.
+
+Separate native-menu perceptual acceptance and additional headset/runtime
+combinations remain unverified; their source-owned GL paths passed. This is a
+PR for the accepted fix, not a merge or new alpha release.

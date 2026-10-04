@@ -52,14 +52,14 @@ an alpha tag, release upload, or changes to gameplay yet.
 
 ## 2. Headset color and presentation
 
-- [ ] **Reported: headset brighter / lower contrast than flat.** Use the same
-  frame and view with controlled display settings. Inspect source texture,
-  presentation gamma, XR swapchain format and linear/sRGB handling, including
-  native UI quads versus gameplay projection. Compare captured pixels before
-  submission and the headset observation; check VD/headset settings separately.
-  Gamma/encoding mismatch is a hypothesis, not an established cause. Success:
-  documented color path and matched reference behavior without a blanket
-  brightness adjustment hiding the fault.
+- [x] **Headset brighter / lower contrast than flat: accepted correction.**
+  The user accepted the color repair on Quest 3 / Virtual Desktop VDXR on
+  2026-10-05. Framework `3618bc00` prefers an sRGB XR swapchain and explicitly
+  decodes display-encoded source RGB for linear-only runtimes, preserving
+  desktop presentation gamma. Real-GL fixtures cover gameplay and native
+  copies, both formats, gamma and incoming framebuffer-sRGB state. No blanket
+  brightness multiplier. Other runtimes and separate native-menu perceptual
+  acceptance remain unverified; see the latest VR_PHASE9_STATUS.md entry.
 - [ ] **Known gap: independent headset cadence.** Measure guest VBlanks,
   actual redraws, XR submissions and compositor behavior separately during
   normal play and heavy scenes. Investigate headset-rate pose/render scheduling
