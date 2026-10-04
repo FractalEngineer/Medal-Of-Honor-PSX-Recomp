@@ -6,6 +6,7 @@ param(
     [switch]$DesktopVSyncDiagnostic,
     [switch]$MovementDiagnostic,
     [switch]$NoMovement,
+    [switch]$NoHeadFrustumDiagnostic,
     [switch]$WeaponAimDiagnostic,
     [switch]$WeaponPoseDiagnostic,
     [ValidateRange(1,65536)][double]$WeaponModelUnitsPerMeter = 850,
@@ -57,6 +58,8 @@ $vrVariables = @{
     PSX_VSYNC = $(if ($Desktop) { [Environment]::GetEnvironmentVariable('PSX_VSYNC','Process') } else { [string][int]$DesktopVSyncDiagnostic.IsPresent });
     PSX_VR_OPENXR = [string][int](-not $Desktop);
     PSX_VR_STEREO = '1'; PSX_VR_PROBE = '0'; PSX_VR_INTERP = '0';
+    # Accepted eye-view visibility for normal VR; keep desktop diagnostics native.
+    PSX_VR_HEAD_FRUSTUM = [string][int]((-not $Desktop) -and (-not $NoHeadFrustumDiagnostic));
     PSX_VR_MOVEMENT = [string][int]((-not $NoMovement) -and ((-not $Desktop) -or $MovementDiagnostic));
     PSX_VR_WEAPON_AIM = [string][int]($WeaponAimDiagnostic -or $WeaponPoseDiagnostic);
     PSX_VR_WEAPON_POSE = [string][int]$WeaponPoseDiagnostic.IsPresent;

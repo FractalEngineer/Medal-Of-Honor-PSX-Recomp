@@ -60,6 +60,7 @@
 #include <math.h>
 #include "moh_vr_input.h"
 #include "moh_vr_aim.h"
+#include "moh_vr_frustum.h"
 
 #define FUN_80084718 0x80084718u
 /* Geometry pass: entity -> screen geometry. FUN_80082948 dispatches here on
@@ -352,6 +353,33 @@ static int g_authored_focal = 1, g_desktop_fov;
 static double g_head_yaw, g_head_position[3];
 static PSXModRenderView g_eye_view[2];
 static uint32_t g_stereo_eye;
+static int g_head_frustum;
+
+/* Measured SLUS-00974 tree: bbox shorts at +0/+6, leaf count at +12,
+ * PVS masks at +16/+20, children +24/+32/+28; native output queue has
+ * 1000 words before 800AB140. Preflight everything before writing guest RAM.
+ * The sandbox owns rollback. This opt-in candidate never changes native play. */
+static int vr_head_frustum_filter(CPUState *cpu,uint32_t address) {
+    vr_lvtx_entry(cpu,address);
+    if(!g_head_frustum||!g_in_pass||address!=LVTX_8008B3E8||g_stereo_eye>1||
+       psx_mod_read_word(address)!=0x27bdfee0u||
+       psx_mod_read_word(address+4)!=0x3c02800au||
+       psx_mod_read_word(address+8)!=0x3c03800au||
+       psx_mod_read_word(address+12)!=0x8c42d638u) return 0;
+    uint32_t queue[1000];unsigned count=0;
+    double matrix[9],tr[3];
+    for(int i=0;i<9;i++)matrix[i]=(int16_t)(cpu->gte_ctrl[i/2]>>((i%2)*16))/4096.0;
+    for(int i=0;i<3;i++)tr[i]=(int32_t)cpu->gte_ctrl[5+i];
+    double cx=(int32_t)cpu->gte_ctrl[24]/65536.0,cy=(int32_t)cpu->gte_ctrl[25]/65536.0;
+    uint32_t masks[2]={psx_mod_read_word(0x800aa178u),psx_mod_read_word(0x800aa17cu)};
+    int bypass_masks=psx_mod_read_word(0x800aa180u)!=0;
+    if(!moh_vr_collect_tree(cpu->gpr[4],queue,&count,matrix,tr,&g_eye_view[g_stereo_eye],
+                            cx,cy,masks,bypass_masks))return 0;
+    for(unsigned i=0;i<count;i++)psx_mod_write_word(0x800aa1a0u+i*4,queue[i]);
+    psx_mod_write_word(0x800aa19cu,count);psx_mod_write_word(0x800ab140u,0);
+    cpu->gte_ctrl[26]=(uint16_t)psx_mod_read_word(0x8009a628u);
+    return 1;
+}
 static uint32_t g_stereo_success;
 static int g_menu_surface=1,g_menu_flat;
 static double g_menu_distance=2,g_menu_width=2;
@@ -835,6 +863,7 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_PASS_DRAW"))) g_pass_draw = atoi(e);
     if ((e = getenv("PSX_VR_STEREO"))) g_stereo = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_OPENXR"))) g_openxr = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_HEAD_FRUSTUM"))) g_head_frustum = !strcmp(e,"1");
     if ((e = getenv("PSX_VR_WEAPON_POSE"))) g_weapon_pose = atoi(e) != 0;
     if ((e = getenv("PSX_VR_MENU_SURFACE"))) g_menu_surface=atoi(e)!=0;
     if ((e = getenv("PSX_VR_MENU_DISTANCE"))) g_menu_distance=strtod(e,NULL);
@@ -919,9 +948,8 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     (void)psx_mod_register_function_entry_plugin("moh.vr.stereo",
                                                  RENDER_800824D0,
                                                  vr_render_entry);
-    (void)psx_mod_register_function_entry_plugin("moh.vr.stereo",
-                                                 LVTX_8008B3E8,
-                                                 vr_lvtx_entry);
+    (void)psx_mod_register_function_filter_plugin("moh.vr.stereo",LVTX_8008B3E8,
+                                                 vr_head_frustum_filter);
     (void)psx_mod_register_function_entry_plugin("moh.vr.stereo",
                                                  VSYNC_80016E38,
                                                  vr_vsync_entry);
