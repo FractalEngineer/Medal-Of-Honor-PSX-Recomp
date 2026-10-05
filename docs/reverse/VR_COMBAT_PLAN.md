@@ -1,3 +1,6 @@
+> Historical design and measurements. Current status/builds: [VR_HANDOFF.md](VR_HANDOFF.md).
+> Current tasks: [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md). Current controls: [ALPHA_README.md](../../ALPHA_README.md).
+
 # Quest combat controls and aiming
 
 2026-10-06 update: gameplay jump moves from left Y to right-stick click at the

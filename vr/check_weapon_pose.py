@@ -66,6 +66,7 @@ def capture(out, name, pose, multiplayer=False):
     save(directory, 'hands.json', hands)
     return {'case': name, 'request': pose, 'before_pair': before,
             'manifest': manifest, 'hands': hands,
+            'producer_vertices': sorted({tuple(e['V0']) for e in vertices}),
             'producer': {k: vertex[k] for k in ('seq', 'frame', 'ra', 'V0', 'RT', 'TR', 'H', 'S2')}}
 
 
@@ -87,9 +88,11 @@ def main():
             save(args.directory, 'controls.json', receipt)
             print(name, row['manifest']['pair_id'], row['producer']['V0'], flush=True)
         rows = {r['case']: r for r in receipt['controls']}
-        assert rows['native']['producer']['V0'] == rows['unfocused']['producer']['V0']
-        assert rows['straight']['producer']['V0'] != rows['right']['producer']['V0']
-        assert rows['straight']['producer']['V0'] != rows['left45']['producer']['V0']
+        # A TCP ring read can end at different vertices within the native draw.
+        # Compare the observed geometry, rather than whichever vertex was last.
+        assert rows['native']['producer_vertices'] == rows['unfocused']['producer_vertices']
+        assert rows['straight']['producer_vertices'] != rows['right']['producer_vertices']
+        assert rows['straight']['producer_vertices'] != rows['left45']['producer_vertices']
         receipt['stereo'] = command('stereo_stats')
         receipt['restore'] = command('render_pass_stats')
         assert receipt['restore']['verify_mismatch'] == 0

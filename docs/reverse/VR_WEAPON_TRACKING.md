@@ -1,4 +1,8 @@
-# All-weapon tracking candidate
+# Weapon tracking implementation
+
+Current status: integrated into master and published in v0.1.3. Normal and
+weapon-control launchers use `build-release`; the measurements below retain
+their historical binary/branch provenance.
 
 2026-10-05: the user shelved jitter and moved weapon tracking forward. Work is
 on `feature/vr-all-weapon-tracking`, refreshed onto v0.1.2 master `1b4f8ae` on

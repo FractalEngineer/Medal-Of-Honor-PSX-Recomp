@@ -1,3 +1,6 @@
+> Historical design and measurements. Current status/builds: [VR_HANDOFF.md](VR_HANDOFF.md).
+> Current tasks: [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md). Current controls: [ALPHA_README.md](../../ALPHA_README.md).
+
 # Calibration, HUD and OpenXR execution
 
 Date: 2026-10-02. Quest 3 through VDXR; user IPD 67 mm.

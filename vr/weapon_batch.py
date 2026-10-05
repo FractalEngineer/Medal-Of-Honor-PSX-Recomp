@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--seconds', type=int, default=30)
     parser.add_argument('--internal-resolution', default='1080p',
                         choices=['native','720p','1080p','1440p','4k','5k','8k','display'])
-    parser.add_argument('--build-directory', type=Path, default=Path('build-vr-weapons'))
+    parser.add_argument('--build-directory', type=Path, default=Path('build-release'))
     parser.add_argument('--disc', type=Path, default=ROOT/'Input/medal-of-honor/medal-of-honor.cue')
     parser.add_argument('--port', type=int, default=4372)
     parser.add_argument('--desktop', action='store_true')

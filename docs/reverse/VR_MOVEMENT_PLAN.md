@@ -1,3 +1,6 @@
+> Historical design and measurements. Current status/builds: [VR_HANDOFF.md](VR_HANDOFF.md).
+> Current tasks: [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md). Current controls: [ALPHA_README.md](../../ALPHA_README.md).
+
 # Quest locomotion and smooth turning
 
 User priority on 2026-10-02: movement before further HUD work. Left stick moves

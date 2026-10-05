@@ -1,3 +1,6 @@
+> Historical design and measurements. Current status/builds: [VR_HANDOFF.md](VR_HANDOFF.md).
+> Current tasks: [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md). Current controls: [ALPHA_README.md](../../ALPHA_README.md).
+
 # Stereo rendering execution plan
 
 Date: 2026-10-02. Branch: `vr-dev` in the game and framework repositories.

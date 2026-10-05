@@ -1,3 +1,6 @@
+> Historical design and measurements. Current status/builds: [VR_HANDOFF.md](VR_HANDOFF.md).
+> Current tasks: [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md). Current controls: [ALPHA_README.md](../../ALPHA_README.md).
+
 # Tracked weapon and native shot aiming
 
 2026-10-02. Continue accepted movement/combat, WorldScale 3, Quest 3/VDXR.

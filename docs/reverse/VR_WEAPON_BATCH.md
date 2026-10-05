@@ -30,7 +30,7 @@ leave the selected weapon
 equipped during an individual control. Right grip's existing native aim/zoom
 binding remains; assess scoped behavior separately. The launcher uses the new
 master's 1080p internal-resolution default. It requires Python and the locally
-built `build-vr-weapons` executable.
+built `build-release` executable.
 
 For a comparison, `native` retains the game's weapon pose/aim while the view
 still follows the head. `tracked` uses the right hand. Compare runs each weapon
@@ -75,6 +75,10 @@ If clip/reserve ammo is zero it adds one shot / 20 reserve rounds in the isolate
 process; native reload and depletion continue. It does not replenish nonzero ammo
 or change source saves, controller settings or the original loadouts.
 Ammo changes are checked after guest frames to ensure they survive eye rollback.
+
+All normal and weapon launchers share the current `build-release` target.
+Use `-BuildDirectory` only for an explicitly separate candidate; check the
+executable path and stamp before comparing results.
 
 ## Scope and evidence
 

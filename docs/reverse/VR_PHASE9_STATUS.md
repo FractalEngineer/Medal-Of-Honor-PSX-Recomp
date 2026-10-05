@@ -1399,3 +1399,37 @@ accepts a distinct master artifact label, preserving ordinary release labels
 and recording the exact source commit in BUILD_INFO.json. This is a latest-master
 local build, not a new numbered GitHub release. Packaging/build verification
 is recorded separately from the historical headset acceptance.
+
+
+## 2026-10-06 - post-release workspace cleanup
+
+The user requested removing stale builds/artifacts and consolidating documentation
+before continuing the backlog. Housekeeping is on `chore/vr-workspace-cleanup`
+from v0.1.3. The released ZIP and all 19 original save files are unchanged.
+
+Normal and weapon launchers now share `build-release`, rebuilt from the root
+pinned framework/UI sources. Their tracked source content matched the previous
+release-worktree copies. No runtime implementation, generated game C, pin or
+release artifact changed. Historical receipt hashes remain historical.
+
+Archived 6,904 old evidence files, older release files and root runtime dumps;
+read-back SHA-256 verification precedes deletion of loose captured files. Cleanup
+reclaimed 11.71 GiB, retaining accepted/native weapon evidence, Ghidra, current
+color/visibility and HUD discovery, all registered worktrees and shelved jitter.
+Two access-restricted readback remnants were moved intact into the archive area.
+The old dirty release worktree and its verified packaging emitters remain; a
+fresh emitter configure currently encounters an unclassified real-GL fixture
+in the pinned test-registration guard. No guard or pinned source was bypassed.
+
+The normal shortcut passes native/translated/rotated/unfocused mesh controls;
+MP40 passes the shared-build synthetic multiplayer control. Both have positive
+rollback checks and zero mismatches, and owned games close normally. The geometry
+checker now compares observed native vertex sets: its old last-entry equality
+could compare different vertices from otherwise identical native geometry.
+These desktop checks are not a new headset acceptance claim.
+
+README, handoff, todo and execution guidance are consolidated around the published
+baseline. Current controls live in ALPHA_README; historical designs are labelled.
+Public v0.1.3 notes are mirrored using the user's approved short text. The backlog
+order is unchanged with jitter explicitly shelved. See VR_CLEANUP_RECEIPT.json
+and VR_PROOF_CLEANUP_PLAN.md for retained paths, archives and measurements.

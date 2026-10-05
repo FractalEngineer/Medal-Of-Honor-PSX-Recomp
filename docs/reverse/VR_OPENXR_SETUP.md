@@ -1,3 +1,6 @@
+> Historical design and measurements. Current status/builds: [VR_HANDOFF.md](VR_HANDOFF.md).
+> Current tasks: [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md). Current controls: [ALPHA_README.md](../../ALPHA_README.md).
+
 # Quest 3 / VDXR prototype
 
 Accepted profile: Quest 3 through Virtual Desktop's VDXR runtime, user IPD 67mm,

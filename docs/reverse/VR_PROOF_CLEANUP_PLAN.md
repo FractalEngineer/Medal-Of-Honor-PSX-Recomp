@@ -1,4 +1,51 @@
-# VR proof retention
+# Build and proof retention
+
+Updated: 2026-10-06. Current status: [VR_HANDOFF.md](VR_HANDOFF.md).
+Cleanup reclaimed 11.71 GiB. [VR_CLEANUP_RECEIPT.json](VR_CLEANUP_RECEIPT.json)
+records the compact result; full manifests and hashes remain local under
+`analysis/cleanup-20261006/`.
+The published v0.1.3 ZIP, original saves/disc, current Release build, registered
+worktrees, shelved jitter branch/build, Ghidra project and accepted evidence remain.
+
+## Current layout
+
+- `build-release` is the shared normal/weapon-control target, using root pinned
+  submodules. Separate candidate builds require an explicit `-BuildDirectory`.
+- `dist/` retains the exact published `moh-0.1.3-windows-x64.zip`; extracted
+  smoke/staging copies are generated outputs and can be recreated from it.
+- `analysis/weapon-capture/` retains accepted headset controls, final native/
+  synthetic controls, profile fixtures, native inventory, release/master receipts
+  and the Ghidra project. Receipts keep their historical source/binary hashes.
+- `analysis/vr-proof/` retains current color/visibility and HUD/compass discovery.
+- `analysis/archive/20261006/` contains historical-evidence.zip,
+  older-release-files.zip and root-runtime-logs.zip. Each was read back and
+  checked against a SHA-256 manifest before its loose source files were removed.
+- `analysis/archive/20261006/access-restricted/` retains two old readback
+  temporary-directory remnants intact. Windows denied access to their children;
+  they were moved without changing permissions or deleting unreadable contents.
+- Registered worktrees and branch refs were not deleted. The old release
+  worktree has local changes and provides the verified packaging emitters.
+  Unrelated main-framework edits remain untouched.
+
+## Retrieve historical evidence
+
+Archive member paths start at the game repository root, such as
+`analysis/vr-proof/jitter-controls-20261005/...`. `CLEANUP_MANIFEST.json` inside
+an archive records each file's bytes and SHA-256. A historical path in a receipt
+may refer to an archived member, not a currently loose file.
+
+Use Python's `zipfile` or an archive manager to extract only the required
+case into a separate analysis directory. Do not restore old save copies over
+`saves/`, and do not bulk-unpack old runtime caches into the active build.
+The original relative paths and measurements remain available in the archive.
+Do not substitute a later executable or regenerate a historical receipt's hashes.
+
+Future captures belong under ignored `analysis/`, with exact build/settings,
+native control, measured result and a compact receipt. Keep selected source
+images needed to recheck a measurement; archive superseded runs after validating
+retention. Do not bulk-read proof for general session context.
+
+## Earlier tracked-proof cleanup
 
 Completed 2026-10-02 after user confirmation. Removed 57 redundant, exploratory
 or large Release PNGs. The proof working tree fell from 118.86 MiB to 6.51 MiB:

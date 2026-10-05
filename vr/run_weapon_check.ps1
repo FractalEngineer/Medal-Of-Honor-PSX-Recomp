@@ -1,7 +1,7 @@
 param(
     [ValidateRange(0,11)][int]$Slot = 6,
     [ValidateRange(1,300)][int]$Seconds = 30,
-    [string]$BuildDirectory = 'build-vr-weapons',
+    [string]$BuildDirectory = 'build-release',
     [string]$DiscPath = '',
     [switch]$Desktop,
     [switch]$Verify

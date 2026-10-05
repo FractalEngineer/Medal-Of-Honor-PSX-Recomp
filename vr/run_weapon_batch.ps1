@@ -5,7 +5,7 @@ param(
     [ValidateRange(1,300)][int]$Seconds = 30,
     [ValidateSet('native','720p','1080p','1440p','4k','5k','8k','display')]
     [string]$InternalResolution = '1080p',
-    [string]$BuildDirectory = 'build-vr-weapons',
+    [string]$BuildDirectory = 'build-release',
     [string]$DiscPath = '',
     [switch]$Desktop,
     [switch]$Verify,

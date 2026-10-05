@@ -1,34 +1,25 @@
 # VR alpha follow-up checklist
 
-Updated: 2026-10-06. Current weapon work is rebased onto master `1b4f8ae`
-(v0.1.2). v0.1.1 alpha includes merged master `7ac0509`,
-framework `3618bc00`: accepted headset color and head-turn visibility fixes.
-Target: Quest 3 through Virtual Desktop / VDXR; user IPD 67mm.
+Updated: 2026-10-06. Baseline: published v0.1.3 (`c72ddc95`), framework
+`3618bc00`, Quest 3 / Virtual Desktop VDXR. Current build/layout and evidence
+are in [VR_HANDOFF.md](VR_HANDOFF.md); controls are in
+[ALPHA_README.md](../../ALPHA_README.md). This is the single active backlog.
 
-This is the current backlog, not a claim that the causes below are established.
-**Reported** means user-observed; **known gap** means implementation or validation
-is incomplete; **proposal** needs a choice before changing the accepted behavior.
-Latest user priority: shelf jitter and implement tracking for all weapons.
-The jitter candidate is preserved on `fix/vr-jitter-tolerance` (`04624df`);
-the movement-enabled tolerance test regressed distant-enemy stability relative
-to the integer-view control. Resume that investigation only when requested.
-Weapon work uses `feature/vr-all-weapon-tracking`, based on v0.1.2 master.
-The user accepted all ten weapon tracking controls in the headset on 2026-10-06
-and requested integration into master, a current build, and jump on right-stick
-click. [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md) is the launch/test guide.
+Follow the numbered order below, with jitter explicitly shelved by the user.
+All ten supplied weapon tracking controls are visually accepted and released;
+remaining combat/special-mode/asset checks are separate. Batch future headset
+checks, defaulting to 30 seconds with movement enabled. Cleanup does not start
+or reprioritize any implementation task.
 
-Unchecked items remain open. Recommended order: rendering/correctness, weapon
-coverage and controls, wrist UI, then calibration and broader release coverage.
-
-Keep the accepted baseline: genuine per-eye gameplay, normal VR boot without a
-save, usable menus/pause surface, consistent locomotion, accepted rifle grip/
-appearance, and the sound/framerate fix. WorldScale 3 remains provisional.
-The rejected movie bicubic trial stays removed. The user authorized v0.1.1
-publication with these two merged fixes before continuing jitter work.
+Unchecked items remain open. **Reported** is user-observed; **known gap** is an
+implementation/validation limit; **proposal** needs a layout choice before coding.
+Preserve the accepted normal boot/menu, stereo, color/visibility, locomotion,
+weapon calibration and pacing. World scale remains provisional; rejected movie
+bicubic and jitter experiments are excluded.
 
 ## 1. World rendering and level correctness - highest priority
 
-- [ ] **Reported: garbled and shaky world, even while stationary.** Reproduce
+- [ ] **Shelved: garbled and shaky world, even while stationary.** Reproduce
   in a fixed scene. Compare flat/native, neutral stereo, fixed synthetic head
   pose, and actual tracked poses. Establish whether vertices/packets change at
   a frozen guest checkpoint, whether small pose noise is amplified, or whether
@@ -38,8 +29,10 @@ publication with these two merged fixes before continuing jitter work.
   geometry with a fixed pose and no new folding/corruption relative to flat.
   Frozen render views stop the shaking, but are diagnostic. Continuous-pose
   experiments were unchanged/possibly worse; tolerance 1 reduced world/weapon
-  shaking while worsening sky/compass. Those separate local candidates remain
-  outside v0.1.1. Investigate draw provenance before accepting a playable fix.
+  shaking while worsening sky/compass. Candidates remain outside the release.
+  `fix/vr-jitter-tolerance` at `04624df` preserves the experiment; its walking
+  test worsened distant-enemy stability.
+  Resume only when requested, then investigate draw provenance before accepting a fix.
 - [ ] **Reported: floor immediately below the player appears unrendered.**
   Also reproduce the previously captured large black lower-world polygon.
   Determine whether these share a producer: absent geometry, an occluding
@@ -105,13 +98,13 @@ publication with these two merged fixes before continuing jitter work.
   head/body fixed, then head/body with controller direction held. Include body
   turning, recentering, recoil/reload and close-wall positions. Accepted visual
   grip/alignment does not establish damage-ray alignment.
-- [ ] **Reported requirement: test every weapon.** Inventory each obtainable
+- [ ] **Known gap: remaining weapon combat and asset validation.** Inventory each obtainable
   weapon and record model/shot identifiers, supported pose path and results.
   Test equip/switch, mesh and grip, muzzle/shot alignment, ammo, fire/release,
   reload, recoil, animations, sound and damage. Cover grenades/projectiles and
   scoped/special aim behavior where present; do not assume firearm ray logic.
   Native inventory now identifies ten weapon IDs across multiplayer slots 1–5.
-  The local candidate adds guarded mesh profiles for all ten, retaining animated
+  The released implementation adds guarded mesh profiles for all ten, retaining animated
   gun parts, and weapon/actor pairs for the common shot constructor. Rifle,
   Thompson and fragmentation-grenade single-player controls pass. All ten IDs
   now pass desktop mesh and native shot/first-motion controls. The prepared batch
@@ -222,14 +215,3 @@ processes after tests. Commit/push at the user's authorized checkpoints.
 Reference: VR_PHASE9_STATUS.md, VR_LAUNCH_RECEIPT.json, VR_FULL_BOOT_PLAN.md,
 VR_HEADSET_PLAN.md, VR_WEAPON_AIM_PLAN.md and VR_WEAPON_VISUAL_RECEIPT.json.
 Older pending entries must be read with their later acceptance/correction notes.
-
-
-## 2026-10-06 ? v0.1.3 publication
-
-The user accepted the rebuilt normal launcher and authorized a new release.
-Version 0.1.3 includes the all-weapon tracking checkpoint and right-stick-click
-jump, retaining the color/visibility fixes and 1080p default. The old local
-`build-release` target was corrected; it had differed from the current batch
-and ZIP builds. See [VR_RELEASE_V0.1.3.md](VR_RELEASE_V0.1.3.md). Broader damage,
-special-mode, single-player asset, HUD and reconnect gates remain open;
-no new jitter candidate is included.

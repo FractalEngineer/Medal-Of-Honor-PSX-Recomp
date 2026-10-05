@@ -1,7 +1,8 @@
-# VR reverse-engineering notes (`vr-dev`)
+# VR documentation index
 
 Start a new VR session with [VR_HANDOFF.md](VR_HANDOFF.md); it links the current
-alpha checkpoint, prioritized backlog and the most important docs. The material
+alpha checkpoint, prioritized backlog and the most important docs. Current controls live in [ALPHA_README.md](../../ALPHA_README.md); current
+priorities live only in [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md). The material
 below is the historical reverse-engineering introduction.
 
 Current all-weapon headset controls: [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md).

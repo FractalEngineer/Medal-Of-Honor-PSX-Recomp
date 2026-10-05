@@ -2,7 +2,7 @@
 
 <!-- retcomm-readme-metrics -->
 [![GitHub downloads (all assets, all releases)](https://img.shields.io/github/downloads/FractalEngineer/Medal-Of-Honor-PSX-Recomp/total)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases)
-[![Alpha v0.1.1](https://img.shields.io/badge/alpha-v0.1.1-orange)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.1)
+[![Alpha v0.1.3](https://img.shields.io/badge/alpha-v0.1.3-orange)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.3)
 <!-- /retcomm-readme-metrics -->
 
 <!-- retcomm-readme-boxart -->
@@ -16,11 +16,11 @@ Static recompilation of **Medal of Honor** built on
 [recomp-ui](https://github.com/RetroPortingToolKit/recomp-ui).
 
 Play the original game on a flat display, or opt into the experimental native
-VR alpha with head tracking, per-eye rendering and tracked-rifle controls.
+VR alpha with head tracking, per-eye rendering and tracked-weapon controls.
 Flat play is the default; VR is enabled through a separate launcher.
 
-The **v0.1.1 Windows native alpha** is available from this fork's
-[releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.1).
+The **v0.1.3 Windows native alpha** is available from this fork's
+[releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.3).
 See [alpha installation and controls](ALPHA_README.md) before testing.
 
 | | |
@@ -95,37 +95,32 @@ environment when it exits.
 
 ## Experimental VR alpha (Windows)
 
-Release `v0.1.1` adds the accepted headset color and head-turn visibility fixes
-over `v0.1.0`, with framework pin `3618bc00`. World selection follows each eye's
-view; eye FOV and native sector visibility remain unchanged. Both fixes were
-accepted on Quest 3 / Virtual Desktop VDXR. World jitter remains open and its
-experimental candidates are excluded. The release links bundled OpenBIOS only.
+The current [v0.1.3 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.3)
+includes controller tracking for all ten weapon types, right-stick-click jump,
+headset color and head-turn visibility fixes, and a 1080p default. Quest 3 through
+Virtual Desktop with **VDXR** is the tested setup.
 
 ### Setup and launch
 
-For the local Quest 3 / VDXR build, connect Virtual Desktop and double-click
-`RunVR.bat` in the project folder. It starts normally in VR: boot videos,
-main menu and briefing use a comfortable native-screen surface, and gameplay
-switches to genuine per-eye rendering. No save state is required. Left stick
-navigates menus; A or right trigger confirms, B goes back. Accepted world scale,
-tracked rifle, movement/combat controls and pause distance remain enabled.
-It runs until you close the game; startup errors stay visible in the console.
+Download the Windows release and extract the entire ZIP. Connect your headset,
+activate your OpenXR runtime, and double-click `RunVR.bat`. Select your own
+**SLUS-00974 (NTSC-U)** CUE/BIN image when prompted; the launcher remembers its
+location. Keep the BIN files beside the CUE.
 
-For the extracted release, no development tools or Python installation are
-required. `RunVR.bat` uses PowerShell, selects your CUE through a file picker and
-remembers its location. Pass `-DiscPath "C:\Games\Medal of Honor\medal-of-honor.cue"`
-to select a path explicitly. Local builds can still use the existing
-`Input/medal-of-honor/medal-of-honor.cue` layout. Quest 3 through Virtual
-Desktop with **VDXR** is the tested setup; other headsets, controllers and OpenXR
-runtimes remain unverified.
+Boot videos, menus and briefing appear on a screen in VR; gameplay switches to
+per-eye rendering. No save state, Python installation or development tools are
+required. The game runs until you close it, and startup errors remain visible
+in the console. Keep your `saves/` folder when updating.
 
-`RunVR.bat -Build` rebuilds before normal boot. The default executable is
-`build-release/Medal_of_Honor__Recompiled.exe`. VR disables desktop VSync to
-avoid a second wait; the guest real-time speed cap remains active. The
-`-DesktopVSyncDiagnostic` option restores VSync only for comparison.
+To select a disc explicitly:
 
-Source-only diagnostic slot/capture options require Python and the development
-helpers. They are not part of the packaged player workflow.
+```powershell
+.\RunVR.bat -DiscPath "C:\Games\Medal of Honor\medal-of-honor.cue"
+```
+
+Use `RunFlat.bat` for ordinary flat play. See
+[ALPHA_README.md](ALPHA_README.md) for further installation details and alpha
+limitations.
 
 ### Current Touch controls
 
@@ -134,39 +129,29 @@ helpers. They are not part of the packaged player workflow.
 | Left stick | Move / strafe |
 | Right stick | Smooth turn |
 | Right trigger | Fire |
-| A | Use (native Square action) |
+| A | Use |
 | B | Cycle weapon |
-| X | Reload / use, depending on native game context |
-| Y | Jump |
+| X | Reload / use, according to game context |
+| Right stick click | Jump |
 | Left stick click | Toggle crouch |
 | Left Menu button | Pause / Start |
-| Right grip | Legacy native aim binding, retained temporarily |
+| Right grip | Native aim binding |
 
-In menus, use the left stick to navigate, A or right trigger to confirm, and B
-to go back. Controller assignments are provisional.
+In menus, the left stick navigates, A or right trigger confirms, and B goes back.
 
-### Known limitations and contributing
-
-- Tracked weapon mesh and shot override are a **rifle prototype**. Other weapons
-  and physical barrel-to-shot alignment need validation.
-- Stationary world shaking, missing nearby floor, pop-in, missing/transparent
-  Mission 1 ruins tiles and brighter headset color have been reported. Their
-  causes are still under investigation.
-- Wrist HUD and an in-game VR options menu are pending. World proportions are
-  not physically calibrated, and headset cadence needs further measurement.
-- Tracking loss/reconnect, other headset/runtime combinations and broader
-  mission coverage need testing.
+### Report issues and contribute
 
 Report problems in this fork's
 [issue tracker](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/issues).
-Include the game/framework version, headset, OpenXR runtime, connection method,
-mission/location, reproduction steps and any relevant captures. Do not attach
-disc images or retail BIOS dumps.
+Include the build version, headset, OpenXR runtime, connection method,
+mission/location, steps to reproduce, and any relevant captures. Mention whether
+the issue also occurs in flat play. Do not attach disc images or retail BIOS dumps.
 
-See [the alpha backlog](docs/reverse/VR_ALPHA_TODO.md) for testing tasks and
-[the VR handoff](docs/reverse/VR_HANDOFF.md) for development context.
-Game-specific weapons, controls and HUD changes belong here; generic framework
-work is tracked in [the upstream inventory](docs/UPSTREAM_PENDING.md).
+For development context, start with the
+[VR handoff](docs/reverse/VR_HANDOFF.md) and
+[alpha todo list](docs/reverse/VR_ALPHA_TODO.md). Game-specific weapons, controls
+and HUD changes belong here; generic framework work is tracked in
+[the upstream inventory](docs/UPSTREAM_PENDING.md).
 
 ## Development build
 
@@ -184,7 +169,7 @@ For Windows VR, configure the Release build with `-DPSX_OPENXR=ON`, or use
 `RunVR.bat -Build` after preparing the build tools and generated game C. Compiling
 OpenXR support does not automatically enable VR when launching the executable.
 
-Releases `v0.1.0` and `v0.1.1` use locally verified Windows alpha packages. CI builds
+Releases `v0.1.0` through `v0.1.3` use locally verified Windows alpha packages. CI builds
 its platform matrix without replacing those tested assets. Other tags `vX.Y.Z`
 (or the *Release builds* workflow) build the
 committed `generated/` C on Linux, Windows and macOS and attach
