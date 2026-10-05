@@ -4,6 +4,8 @@ Start a new VR session with [VR_HANDOFF.md](VR_HANDOFF.md); it links the current
 alpha checkpoint, prioritized backlog and the most important docs. The material
 below is the historical reverse-engineering introduction.
 
+Current all-weapon headset controls: [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md).
+
 These notes ground `docs/VR_PLAN.md` in how **psxrecomp actually works**. The plan
 was written generically; this directory records the real seams, so we do not
 build a VR layer on wrong assumptions.

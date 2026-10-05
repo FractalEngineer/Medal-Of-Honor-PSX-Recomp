@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "purpose": "Local all-weapon headset controls using original player loadouts",
+  "base": "1b4f8ae",
+  "framework": "3618bc00381588b7e9ea9b5173e8872470ed0379",
+  "weapons": [
+    {"key": "rifle", "id": 12, "label": "M1 rifle", "slot": 3, "switches": 0, "faces": 280, "nodes": 23},
+    {"key": "pistol", "id": 8, "label": "Pistol", "slot": 1, "switches": 0, "faces": 315, "nodes": 14},
+    {"key": "bar", "id": 6, "label": "BAR", "slot": 1, "switches": 1, "faces": 327, "nodes": 30},
+    {"key": "thompson", "id": 1, "label": "Thompson", "mode": "single-player", "slot": 6, "switches": 0, "faces": 382, "nodes": 32},
+    {"key": "mp40", "id": 11, "label": "MP40", "slot": 4, "switches": 1, "faces": 309, "nodes": 28},
+    {"key": "shotgun", "id": 4, "label": "Shotgun", "slot": 4, "switches": 0, "faces": 334, "nodes": 27},
+    {"key": "scoped-rifle", "id": 5, "label": "Scoped rifle", "slot": 2, "switches": 1, "faces": 317, "nodes": 23},
+    {"key": "bazooka", "id": 2, "label": "Bazooka", "slot": 1, "switches": 2, "faces": 190, "nodes": 3},
+    {"key": "frag-grenade", "id": 3, "label": "Fragmentation grenade", "slot": 1, "switches": 3, "faces": 337, "nodes": 24},
+    {"key": "stick-grenade", "id": 10, "label": "Stick grenade", "slot": 2, "switches": 3, "faces": 285, "nodes": 22}
+  ]
+}

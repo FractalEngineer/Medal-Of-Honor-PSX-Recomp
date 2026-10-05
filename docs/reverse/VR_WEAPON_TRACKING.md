@@ -1,11 +1,20 @@
 # All-weapon tracking candidate
 
 2026-10-05: the user shelved jitter and moved weapon tracking forward. Work is
-on `feature/vr-all-weapon-tracking`, based on v0.1.1 master `b3033cc`, with the
-released framework pin `3618bc00`. Jitter remains unaccepted on the separate
+on `feature/vr-all-weapon-tracking`, refreshed onto v0.1.2 master `1b4f8ae` on
+2026-10-06, with released framework pin `3618bc00`. Jitter remains unaccepted
+on the separate
 `fix/vr-jitter-tolerance` branch at `04624df`; its movement test regressed distant
 enemy shapes compared with the integer-view control. Do not include that
 experiment in weapon builds.
+
+The user requested all weapon controls ready for a later headset batch. Launch
+[RunVRWeaponBatch.bat](../../RunVRWeaponBatch.bat) for ten movement-enabled,
+30-second tracked controls; `-Mode compare` adds a native control for each weapon.
+See [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md) for recipes and scope. All ten IDs
+have passing desktop mesh/shot controls. Nine batch cases use multiplayer; the
+Thompson uses original single-player slot 6 because native firing was not observed
+from multiplayer slot 5. Hardware acceptance remains pending.
 
 ## Native inventory
 
@@ -41,7 +50,8 @@ The first-person model is named by `player+256` in both modes. Input is named by
 `player+904`; `input+84` is a loadout slot and `input+85` is the weapon ID. In
 single-player the first-person object is embedded at `input+784`. Multiplayer's
 `input+164` is the third-person body/held model and must not be substituted for
-the first-person model. Single-player scene/camera globals are `8009D64C` and
+the first-person model. Multiplayer's first-person object is at `input+2452`.
+Single-player scene/camera globals are `8009D64C` and
 `8009D654`; multiplayer uses `80099418`, `80099428` and current player `8009942C`.
 
 Profiles in `vr/moh_vr_weapons.h` match the captured native first-person meshes:
@@ -80,12 +90,36 @@ pitch during their native launch-velocity calculation, then native flight takes 
 Multiplayer code differs: transform `800836C0`, geometry `8007E414`, firing
 `8007A150`, shared constructor `80045718`, and basis `8006591C` called at `80045908`.
 The first-person mesh layouts match, including the rifle/grenade single-player
-controls. New runtime hooks remain single-player scoped.
+controls. The opt-in `PSX_VR_WEAPON_MP_CONTROL=1` bench adds these measured hooks
+and native player-one view reconstruction. It preserves two-player simulation,
+draws player one into each eye, and uses `8009943C` as shot/mesh owner, rather
+than the transient current-player camera global. See the batch guide for the
+512x120 render contract, omitted split-screen HUD and native visibility limits.
 
 ## Verification and remaining gates
 
-The compact [VR_WEAPON_TRACKING_RECEIPT.json](VR_WEAPON_TRACKING_RECEIPT.json)
-records the candidate binary/source hashes and accepted desktop evidence.
+The current [VR_WEAPON_CONTROLS_RECEIPT.json](VR_WEAPON_CONTROLS_RECEIPT.json)
+records the candidate binary/source hashes and all ten desktop controls. The
+older [VR_WEAPON_TRACKING_RECEIPT.json](VR_WEAPON_TRACKING_RECEIPT.json) records
+the 2026-10-05 single-player checkpoint and is retained as historical evidence.
+
+2026-10-06: all ten IDs pass native/straight/translated/rotated/unfocused mesh
+controls with complete fresh eye PNGs, the measured H=133 weapon producer and
+zero rollback mismatches. Native/straight/45-degree/unfocused shot controls
+observe the native constructor and first movement; tracked shots write six pose
+fields, native and unfocused controls write none. The shotgun emits at least six
+native pellet constructors in every control. Native automatic-fire spread and
+shotgun angle perturbations occur after the hooked basis call and remain native.
+Streaming trace collection rejects ring overwrite/truncation and distinguishes
+constructor instances when native actors reuse addresses.
+
+Single-player rifle, Thompson and fragmentation-grenade controls also pass on
+the current binary. A right-eye abort inside tracked shotgun vertices triggers one
+real watchdog, restores with zero mismatches, and recovers to fresh stereo pairs.
+The compact receipt names accepted per-weapon files; a failed multi-slot inventory
+is not accepted wholesale. Slot 3 MP40 and slot 5 Thompson produced no native shot
+in their firing controls, so the batch uses verified alternatives. Causes remain
+unestablished; no native fire logic was bypassed.
 
 - Release/OpenXR/OpenGL build in `build-vr-weapons` passes with the strict
   OpenBIOS stamp, framework `3618bc00`, and release UI pin `5de138a8`.
@@ -108,8 +142,8 @@ records the candidate binary/source hashes and accepted desktop evidence.
 Still open: live firing/damage and pose controls for the other seven IDs in
 single-player; physical grip/barrel alignment for each weapon; recoil/reload,
 switching, close-wall behavior, shotgun spread, rocket collision, both grenade
-types and scoped mode; controller/head/body independence; per-eye watchdog
-recovery with new assets; Quest acceptance. The captured ten IDs are the supplied
+types and scoped mode; controller/head/body independence; hardware tracking-loss
+recovery; Quest acceptance. The captured ten IDs are the supplied
 loadouts, not a proof that every special/NPC weapon ID is player-obtainable.
 Keep the TODO unchecked and do not merge/publish this candidate yet. Legacy
 grip/aim bindings remain until tracked coverage and special modes are validated.

@@ -1323,3 +1323,56 @@ the delayed launch; a one-time sample expires before release. No physical hit,
 all-weapon gameplay, scoped-mode or headset acceptance claim follows from these
 controls. Other seven live single-player paths and hardware calibration remain
 open. See VR_WEAPON_TRACKING.md and VR_WEAPON_SET_RECEIPT.json for exact receipts.
+
+
+## 2026-10-06: master refresh and ten-weapon batch controls
+
+User requested controls for all weapons to batch-test later in the headset.
+Fetched master `1b4f8ae` (v0.1.2) and rebased the local
+`feature/vr-all-weapon-tracking` branch. Framework pin remains `3618bc00`; the
+new master's 1080p launcher default is retained. Jitter stays shelved at
+`04624df`, excluded from this candidate. No PR, merge, push or release requested.
+
+Local Ghidra headless analysis of copied multiplayer RAM establishes the native
+first-view chain, player-one owner `8009943C`, embedded first-person object
+`input+2452`, transform/geometry producers and native projectile basis call.
+Opt-in `PSX_VR_WEAPON_MP_CONTROL=1` registers the multiplayer hooks and reconstructs
+player one's native 512x120 view per eye, excluding wait/flip, second view and
+split-screen HUD. Native two-player simulation, weapon switching, ammo, reload,
+spread, grenade release, flight/collision and damage code remain active. This
+is a weapon test bench; multiplayer head-turn visibility/menu support and all
+single-player asset variants are not established. Accepted single-player color
+and head-frustum behavior remain the baseline.
+
+All ten IDs have native/straight/translated/rotated/unfocused desktop mesh
+controls and native/straight/45-degree/unfocused constructor/first-motion
+controls. Shotgun controls include at least six native pellet constructors.
+Tracked constructors write six pose fields; native/unfocused constructors write
+none. Streaming filtered traces reject overwritten/truncated intervals and count
+constructor instances rather than reused actor pointers. Raw failures caused by
+truncated traces were not accepted. Single-player rifle/Thompson/fragmentation
+grenade regression and a tracked right-eye watchdog/rollback recovery control
+are included. Exact executable hashes and final measurements are recorded in
+VR_WEAPON_CONTROLS_RECEIPT.json, with per-weapon accepted evidence paths.
+
+Native firing was not observed from slot 3 MP40 or slot 5 Thompson during their
+controls; both mesh controls passed. Causes remain unestablished. The batch uses
+verified multiplayer slot 4 MP40 and single-player slot 6 Thompson, rather than
+bypassing native fire logic. Source save hashes are unchanged. Earlier failed
+multi-slot inventories are not blanket acceptance of their partial captures.
+
+RunVRWeaponBatch.bat prepares all ten weapons, with movement enabled and 30
+seconds per case. `-Mode compare` runs native then tracked; `-Weapon <key>`
+selects one. Each case owns TCP 4372 and an isolated save copy. Input and hands
+are neutral during preparation; overrides clear before live headset tracking.
+Model readiness is checked exactly, and zero-ammo edits are verified after guest
+frames. TCP reads can observe temporary compacted eye-model faces, and a write
+serviced during a pass can roll back; bounded readiness/persistence checks avoid
+accepting either as native state. Expensive restore verification is desktop-only
+by default. The full launcher comparison exercises twenty synthetic desktop
+cases; final acceptance and measurement details are in the compact receipt.
+
+No new headset run was requested or launched. Per-weapon grip/size, physical
+barrel alignment and damage, scoped behavior, recoil/reload, grenade/rocket
+collision, tracking loss and comfortable gameplay remain hardware gates. The
+weapon TODO stays unchecked. See VR_WEAPON_BATCH.md for the next user batch.

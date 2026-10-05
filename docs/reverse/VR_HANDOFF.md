@@ -1,9 +1,24 @@
 # VR alpha handoff - start here
 
-Updated: 2026-10-05. This file is the entry point for a new chat/agent.
+Updated: 2026-10-06. This file is the entry point for a new chat/agent.
 Follow the latest user request; the backlog is not authorization to implement
 all items or publish a release. Read current local changes before resetting,
 regenerating or committing anything.
+
+**Active weapon checkpoint:** refreshed `origin/master` to `1b4f8ae` (v0.1.2)
+and rebased `feature/vr-all-weapon-tracking`. Framework remains `3618bc00`; master
+adds the 1080p launcher default and release workflow changes. The user requested
+controls for all weapons to batch-test later in the headset. Ten IDs pass desktop
+mesh and native shot/first-motion controls, with native/unfocused fallback and
+zero rollback mismatches; tracked shotgun watchdog recovery also passes.
+[RunVRWeaponBatch.bat](../../RunVRWeaponBatch.bat) prepares ten 30-second,
+movement-enabled controls; `-Mode compare` runs native then tracked for each.
+Nine cases use original multiplayer saves; Thompson uses original single-player
+slot 6 because slot 5's native firing control produced no constructor. MP40 uses
+verified slot 4 rather than slot 3. See [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md)
+and [VR_WEAPON_CONTROLS_RECEIPT.json](VR_WEAPON_CONTROLS_RECEIPT.json). This remains
+a local candidate with individual physical calibration, damage and special-mode
+acceptance pending. Jitter stays shelved at `04624df` and is excluded.
 
 Release v0.1.1: the user merged PR #1 (headset color) and PR #2 (head-turn
 world visibility), then requested this Windows release before continuing jitter work.
@@ -16,7 +31,7 @@ and moved the active task to all-weapon tracking. `fix/vr-jitter-tolerance`
 retains its rebased v0.1.1 experiment and test results at `04624df`.
 The 30-second movement tests found distant-enemy flickering/shapes worse in
 the tolerance candidate; the integer-view control was better. No playable
-jitter fix is accepted. Weapon work starts from master `b3033cc` on local
+jitter fix is accepted. Weapon work initially started from master `b3033cc` on local
 `feature/vr-all-weapon-tracking`; see [VR_WEAPON_TRACKING.md](VR_WEAPON_TRACKING.md).
 The clean ZIP cold-boots into Mission 1 without developer
 tools on PATH; bundled overlay compilation, flat VR isolation, save/load and
@@ -75,7 +90,7 @@ Then consult these docs in order; no need to load every historical receipt.
 | [Framework CLAUDE.md](../../psxrecomp/CLAUDE.md) | Framework rules: faithful foundation versus opt-in enhancements; TCP inspection convention. |
 | [Framework timing plan](../../psxrecomp/docs/internal/FAITHFUL_TIMING_PLAN.md) | Required framework north star/status log; consult latest entries and update during framework work. |
 | [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md) | Current prioritized backlog, latest user reports, open validation and optional design choices. |
-| [VR_PHASE9_STATUS.md](VR_PHASE9_STATUS.md) | Measurements, corrections and acceptance history. Start at the latest 2026-10-03 entries; look up older sections as needed. |
+| [VR_PHASE9_STATUS.md](VR_PHASE9_STATUS.md) | Measurements, corrections and acceptance history. Start at the latest 2026-10-06 entry; look up older sections as needed. |
 | [Game README](../../README.md) | Current normal-boot RunVR.bat usage and build/regeneration instructions. |
 | [VR_FULL_BOOT_PLAN.md](VR_FULL_BOOT_PLAN.md) | Accepted native boot/menu/video surface and genuine-stereo gameplay handoff, pacing fix and remaining inactivity-policy limitation. |
 | [Framework OPENXR_RENDERING.md](../../psxrecomp/docs/OPENXR_RENDERING.md) | Current XR lifecycle, fresh-pair/native-source contracts, pose/input diagnostics and measured limits. |
@@ -100,6 +115,7 @@ and update the same paths in the separate framework repo as well.
 | [VR_MOVEMENT_PLAN.md](VR_MOVEMENT_PLAN.md) | Native analog-curve inversion, symmetric turning/diagonal correction and input-control evidence. |
 | [VR_COMBAT_PLAN.md](VR_COMBAT_PLAN.md) | Native action bindings, contextual reload/use and Quest button acceptance; older aiming/pause next steps have later updates. |
 | [VR_WEAPON_AIM_PLAN.md](VR_WEAPON_AIM_PLAN.md) | Shot producers, guarded rifle aiming, tracked mesh and physical calibration. Read final acceptance notes as well as early pending items. |
+| [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md) | Current ten-weapon launcher, verified source-save recipes, native/tracked comparison and multiplayer bench limits. |
 | [VR_PROOF_CLEANUP_PLAN.md](VR_PROOF_CLEANUP_PLAN.md) | Retained proof versus archived assets and why bulk evidence should not be loaded for ordinary context. |
 | [LIVE_TESTING.md](LIVE_TESTING.md), [tooling.md](tooling.md), [GHIDRA.md](GHIDRA.md) | Historical testing/disassembly procedures. Old slot descriptions/headless instructions are not the current VR launch contract. |
 

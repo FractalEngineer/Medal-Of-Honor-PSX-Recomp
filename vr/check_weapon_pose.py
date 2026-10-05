@@ -12,11 +12,13 @@ from capture_stereo import command, save
 from check_movement import load, wait_frames
 
 
-def capture(out, name, pose):
+def capture(out, name, pose, multiplayer=False):
     directory = out / name
     directory.mkdir()
     command('openxr_hands_override', clear=1)
-    if pose is not None:
+    def refresh_pose():
+        if pose is None:
+            return
         command('openxr_hands_override', hand='right', pose='grip',
                 px_mm=pose.get('px_mm', 150), py_mm=-150, pz_mm=-400,
                 focused=pose.get('focused', 1))
@@ -24,12 +26,20 @@ def capture(out, name, pose):
                 px_mm=150, py_mm=-150, pz_mm=-400,
                 qy=pose.get('qy', 0), qw=pose.get('qw', 1000000),
                 focused=pose.get('focused', 1))
-    wait_frames(8)
+    first = command('frame')['frame']
+    deadline = time.monotonic()+30
+    while command('frame')['frame'] < first+8:
+        refresh_pose()
+        if time.monotonic()>deadline:
+            raise TimeoutError('pose response frames')
+        time.sleep(.04)
+    refresh_pose()
     before = command('stereo_stats')['last_pair_id']
     hands = command('openxr_hands')
     command('stereo_dump', path=directory.resolve().as_posix(), count=1)
     deadline = time.monotonic() + 30
     while True:
+        refresh_pose()
         manifests = [p for p in directory.glob('p*.json') if p.stem[1:].isdigit()]
         if manifests:
             path = manifests[0]
@@ -48,7 +58,8 @@ def capture(out, name, pose):
         time.sleep(.05)
     ring = command('gte_ring_dump', render=1, count=4096)
     save(directory, 'gte.json', ring)
-    vertices = [e for e in ring['entries'] if e['ra'] == '0x80080F2C']
+    producer_ra = '0x8007E56C' if multiplayer else '0x80080F2C'
+    vertices = [e for e in ring['entries'] if e['ra'] == producer_ra and e['H'] == 133]
     if not vertices:
         raise RuntimeError('no held-weapon RTPS producer')
     vertex = max(vertices, key=lambda e: e['seq'])

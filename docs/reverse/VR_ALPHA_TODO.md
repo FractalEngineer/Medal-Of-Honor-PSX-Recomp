@@ -1,6 +1,7 @@
 # VR alpha follow-up checklist
 
-Updated: 2026-10-05. v0.1.1 alpha includes merged master `7ac0509`,
+Updated: 2026-10-06. Current weapon work is rebased onto master `1b4f8ae`
+(v0.1.2). v0.1.1 alpha includes merged master `7ac0509`,
 framework `3618bc00`: accepted headset color and head-turn visibility fixes.
 Target: Quest 3 through Virtual Desktop / VDXR; user IPD 67mm.
 
@@ -11,7 +12,9 @@ Latest user priority: shelf jitter and implement tracking for all weapons.
 The jitter candidate is preserved on `fix/vr-jitter-tolerance` (`04624df`);
 the movement-enabled tolerance test regressed distant-enemy stability relative
 to the integer-view control. Resume that investigation only when requested.
-Weapon work uses `feature/vr-all-weapon-tracking`, based on v0.1.1 master.
+Weapon work uses `feature/vr-all-weapon-tracking`, based on v0.1.2 master.
+The user's current request is to prepare all weapon controls for a later headset
+batch; [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md) is the launch/test guide.
 
 Unchecked items remain open. Recommended order: rendering/correctness, weapon
 coverage and controls, wrist UI, then calibration and broader release coverage.
@@ -106,11 +109,16 @@ publication with these two merged fixes before continuing jitter work.
   Test equip/switch, mesh and grip, muzzle/shot alignment, ammo, fire/release,
   reload, recoil, animations, sound and damage. Cover grenades/projectiles and
   scoped/special aim behavior where present; do not assume firearm ray logic.
-  Native inventory now identifies ten weapon IDs across multiplayer slots 1?5.
+  Native inventory now identifies ten weapon IDs across multiplayer slots 1–5.
   The local candidate adds guarded mesh profiles for all ten, retaining animated
   gun parts, and weapon/actor pairs for the common shot constructor. Rifle,
-  Thompson and fragmentation-grenade synthetic mesh controls pass; remaining
-  gameplay/hardware coverage is open. See VR_WEAPON_TRACKING.md and its receipt.
+  Thompson and fragmentation-grenade single-player controls pass. All ten IDs
+  now pass desktop mesh and native shot/first-motion controls. The prepared batch
+  runs nine multiplayer cases and single-player Thompson, movement enabled for
+  30 seconds each. Native firing was not observed in slot 3 MP40 / slot 5 Thompson
+  controls; verified alternatives are used. Headset grip, firing/damage and
+  special-mode acceptance remain open. See VR_WEAPON_TRACKING.md and the current
+  VR_WEAPON_CONTROLS_RECEIPT.json; keep this item unchecked until those gates pass.
 - [ ] **Reported requirement: disable legacy aiming controls.** Remove the
   temporary right-grip native aim binding and any unwanted legacy camera/zoom
   behavior once tracked aiming coverage is validated. Review special/scoped

@@ -1,8 +1,9 @@
 {
   "documented_date": "2026-10-04",
+  "last_verified_date": "2026-10-06",
   "game_branch": "develop",
   "framework_branch": "develop",
-  "source": "User reports slot 0 is the direct in-game single-player scene; multiplayer weapon sets start at slot 1, with players facing each other. Switch weapons and fire; ammo may be replenished when zero. Exact slot/weapon mapping is not yet live-verified.",
+  "source": "User reports slot 0 is the direct in-game single-player scene; multiplayer weapon sets start at slot 1, with players facing each other. Switch weapons and fire; ammo may be replenished when zero. Copied-save native inventory verifies multiplayer slots 1-5 and single-player slots 0/6/9; see VR_WEAPON_SET_RECEIPT.json. The current headset batch recipes and desktop controls are in VR_WEAPON_CONTROLS_RECEIPT.json; hardware acceptance remains pending.",
   "archive": "analysis/vr-proof/alpha-followup-original-saves/<sha256>/<original filename>",
   "rules": [
     "Never overwrite source saves for experiments.",

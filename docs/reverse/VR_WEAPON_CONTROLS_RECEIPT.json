@@ -1,0 +1,574 @@
+{
+  "date": "2026-10-06",
+  "branch": "feature/vr-all-weapon-tracking",
+  "base": "1b4f8ae1192c50e02f57f55caab204afe9a23fdd",
+  "base_release": "v0.1.2",
+  "framework": "3618bc00381588b7e9ea9b5173e8872470ed0379",
+  "ui": "5de138a8",
+  "candidate": "build-vr-weapons/Medal_of_Honor__Recompiled.exe",
+  "candidate_sha256": "29598fd43695aae8f26f9b52b01496838329ba4844b42a3083ca6797d7450c56",
+  "source_sha256": {
+    "vr/psx_vr_stereo.c": "b70f2eec7cc2910ae209542e787a80defee64c9cb55cdfbc1a47d962ed503b12",
+    "vr/moh_vr_weapons.h": "97768448da4514e605487c8732dd390dcfa9f381e4b5e55df32cf2347827a672",
+    "vr/moh_vr_aim.c": "37b67803d69a06d14ea0837ed3a56abeab5eb54bb86f632923e5e38fb8e24bde",
+    "vr/check_weapon_pose.py": "8018a7264d4a6d7e508ea5544fb979a2699e40d57ba2a84e907db4b888e80372",
+    "vr/check_weapon_aim.py": "a4fa3118d719d4cbd6800bb937abca7c3845c4c73ecafd4f6cf6a02f47ec6c85",
+    "vr/inspect_weapon_sets.py": "4627fa5b76b443d775db3974880cb4b6e6f659cd26062d4f904bfa1ae9251240",
+    "vr/weapon_batch.py": "6eb322dae980a0d96675d418c62c2bf3e1306e6ad0b10d0492ed4e6cfe068cb0",
+    "vr/weapon_controls.json": "7621890043a3a49f161c7d282233a7be0bcd3e65923c14d98daaa989d09c469e",
+    "vr/run_weapon_batch.ps1": "2fda2ae98e053c6133d1ab7102495d1ec1b8ab95b5f709e91a2e24ccc6fa2bc6",
+    "RunVRWeaponBatch.bat": "d7ee98487e408aa4e7a78c1162eb0aa0b8810cba4ccf512b7f3b2ffe89e22507"
+  },
+  "build": {
+    "configuration": "Release",
+    "renderer": "OpenGL",
+    "openxr": true,
+    "bios": "OpenBIOS",
+    "bios_stamp_strict": true
+  },
+  "synthetic_desktop": true,
+  "headset_acceptance": false,
+  "jitter_included": false,
+  "weapons": [
+    {
+      "key": "rifle",
+      "id": 12,
+      "label": "M1 rifle",
+      "slot": 3,
+      "switches": 0,
+      "faces": 280,
+      "nodes": 23,
+      "accepted_evidence": "analysis/weapon-capture/final-mp-seven-controls-20261006/slot-03/weapon-00",
+      "mesh": {
+        "cases": [
+          "native",
+          "straight",
+          "right",
+          "left45",
+          "unfocused"
+        ],
+        "fresh_pairs": true,
+        "producer_ra": "0x8007E56C",
+        "H": 133,
+        "verify_checks": 9496,
+        "verify_mismatch": 0,
+        "sha256": "8cae226f093169f4f6aa6aba0af53153ad78fa70f63f9dc4c0c52430ee589943"
+      },
+      "aim": {
+        "cases": {
+          "native": {
+            "native_constructors": 2,
+            "pose_stores_per_constructor": 0
+          },
+          "straight": {
+            "native_constructors": 2,
+            "pose_stores_per_constructor": 6
+          },
+          "left45": {
+            "native_constructors": 2,
+            "pose_stores_per_constructor": 6
+          },
+          "unfocused": {
+            "native_constructors": 2,
+            "pose_stores_per_constructor": 0
+          }
+        },
+        "straight_left45_direction_dot": 0.708189,
+        "first_native_motion_observed": true,
+        "sha256": "e48a7b314644193193d691871dee675d75fb998e32a33024336d334f0b3c6c4f"
+      }
+    },
+    {
+      "key": "pistol",
+      "id": 8,
+      "label": "Pistol",
+      "slot": 1,
+      "switches": 0,
+      "faces": 315,
+      "nodes": 14,
+      "accepted_evidence": "analysis/weapon-capture/final-mp-seven-controls-20261006/slot-01/weapon-00",
+      "mesh": {
+        "cases": [
+          "native",
+          "straight",
+          "right",
+          "left45",
+          "unfocused"
+        ],
+        "fresh_pairs": true,
+        "producer_ra": "0x8007E56C",
+        "H": 133,
+        "verify_checks": 236,
+        "verify_mismatch": 0,
+        "sha256": "49ceb903d3d053459ba6748d9d8d3e5c59fa240d95d52d5bd18d5fc36cf55319"
+      },
+      "aim": {
+        "cases": {
+          "native": {
+            "native_constructors": 3,
+            "pose_stores_per_constructor": 0
+          },
+          "straight": {
+            "native_constructors": 3,
+            "pose_stores_per_constructor": 6
+          },
+          "left45": {
+            "native_constructors": 2,
+            "pose_stores_per_constructor": 6
+          },
+          "unfocused": {
+            "native_constructors": 3,
+            "pose_stores_per_constructor": 0
+          }
+        },
+        "straight_left45_direction_dot": 0.708179,
+        "first_native_motion_observed": true,
+        "sha256": "25141b90de5e32336fa2927ca93003682790654d7095b419c71f5b8c6a47ff18"
+      }
+    },
+    {
+      "key": "bar",
+      "id": 6,
+      "label": "BAR",
+      "slot": 1,
+      "switches": 1,
+      "faces": 327,
+      "nodes": 30,
+      "accepted_evidence": "analysis/weapon-capture/final-mp-seven-controls-20261006/slot-01/weapon-01",
+      "mesh": {
+        "cases": [
+          "native",
+          "straight",
+          "right",
+          "left45",
+          "unfocused"
+        ],
+        "fresh_pairs": true,
+        "producer_ra": "0x8007E56C",
+        "H": 133,
+        "verify_checks": 1055,
+        "verify_mismatch": 0,
+        "sha256": "ef6bbeebebea1336b062483f95881151b69f39bc679b8e47c7ec95b8d3d5a40e"
+      },
+      "aim": {
+        "cases": {
+          "native": {
+            "native_constructors": 12,
+            "pose_stores_per_constructor": 0
+          },
+          "straight": {
+            "native_constructors": 10,
+            "pose_stores_per_constructor": 6
+          },
+          "left45": {
+            "native_constructors": 11,
+            "pose_stores_per_constructor": 6
+          },
+          "unfocused": {
+            "native_constructors": 12,
+            "pose_stores_per_constructor": 0
+          }
+        },
+        "straight_left45_direction_dot": 0.708142,
+        "first_native_motion_observed": true,
+        "sha256": "bd5bdbe1f7a906af04b0a067ae8eec02e6f6a7665bd1bee93666252c353baca1"
+      }
+    },
+    {
+      "key": "thompson",
+      "id": 1,
+      "label": "Thompson",
+      "mode": "single-player",
+      "slot": 6,
+      "switches": 0,
+      "faces": 382,
+      "nodes": 32,
+      "accepted_evidence": "analysis/weapon-capture/final-sp-controls-20261006/slot-06/weapon-00",
+      "mesh": {
+        "cases": [
+          "native",
+          "straight",
+          "right",
+          "left45",
+          "unfocused"
+        ],
+        "fresh_pairs": true,
+        "producer_ra": "0x80080F2C",
+        "H": 133,
+        "verify_checks": 3040,
+        "verify_mismatch": 0,
+        "sha256": "f5955e929c53b1dd6c4f8a3f19d19cd5c081cb1b7d9cf0ee0b83a87dbc8afe5d"
+      },
+      "aim": {
+        "cases": {
+          "native": {
+            "native_constructors": 3,
+            "pose_stores_per_constructor": 0
+          },
+          "straight": {
+            "native_constructors": 3,
+            "pose_stores_per_constructor": 6
+          },
+          "left45": {
+            "native_constructors": 4,
+            "pose_stores_per_constructor": 6
+          },
+          "unfocused": {
+            "native_constructors": 3,
+            "pose_stores_per_constructor": 0
+          }
+        },
+        "straight_left45_direction_dot": 0.698262,
+        "first_native_motion_observed": true,
+        "sha256": "9988bc4082bbd3a9c989255080d4a491e7b479a56f49235e344cb603937c2e96"
+      }
+    },
+    {
+      "key": "mp40",
+      "id": 11,
+      "label": "MP40",
+      "slot": 4,
+      "switches": 1,
+      "faces": 309,
+      "nodes": 28,
+      "accepted_evidence": "analysis/weapon-capture/final-mp-shotgun-mp40-controls-20261006/slot-04/weapon-01",
+      "mesh": {
+        "cases": [
+          "native",
+          "straight",
+          "right",
+          "left45",
+          "unfocused"
+        ],
+        "fresh_pairs": true,
+        "producer_ra": "0x8007E56C",
+        "H": 133,
+        "verify_checks": 1222,
+        "verify_mismatch": 0,
+        "sha256": "b5243d9463ab09b747f8151cf732a137d6c5416231dbd7d71b5f6336f66d7c1d"
+      },
+      "aim": {
+        "cases": {
+          "native": {
+            "native_constructors": 8,
+            "pose_stores_per_constructor": 0
+          },
+          "straight": {
+            "native_constructors": 8,
+            "pose_stores_per_constructor": 6
+          },
+          "left45": {
+            "native_constructors": 8,
+            "pose_stores_per_constructor": 6
+          },
+          "unfocused": {
+            "native_constructors": 8,
+            "pose_stores_per_constructor": 0
+          }
+        },
+        "straight_left45_direction_dot": 0.708061,
+        "first_native_motion_observed": true,
+        "sha256": "858e97ca46ed24871eca6fbfc7db9c85cdd364c4d9ff8a0166d9655d89858cbb"
+      }
+    },
+    {
+      "key": "shotgun",
+      "id": 4,
+      "label": "Shotgun",
+      "slot": 4,
+      "switches": 0,
+      "faces": 334,
+      "nodes": 27,
+      "accepted_evidence": "analysis/weapon-capture/final-mp-shotgun-mp40-controls-20261006/slot-04/weapon-00",
+      "mesh": {
+        "cases": [
+          "native",
+          "straight",
+          "right",
+          "left45",
+          "unfocused"
+        ],
+        "fresh_pairs": true,
+        "producer_ra": "0x8007E56C",
+        "H": 133,
+        "verify_checks": 300,
+        "verify_mismatch": 0,
+        "sha256": "e76e3e15dcc905529affe8dd22ffa42fe2f09322899cafa83880e713aa900563"
+      },
+      "aim": {
+        "cases": {
+          "native": {
+            "native_constructors": 12,
+            "pose_stores_per_constructor": 0
+          },
+          "straight": {
+            "native_constructors": 12,
+            "pose_stores_per_constructor": 6
+          },
+          "left45": {
+            "native_constructors": 12,
+            "pose_stores_per_constructor": 6
+          },
+          "unfocused": {
+            "native_constructors": 12,
+            "pose_stores_per_constructor": 0
+          }
+        },
+        "straight_left45_direction_dot": 0.710708,
+        "first_native_motion_observed": true,
+        "sha256": "2326d36f2d77a1aac1b9f585bad019ef2705c9c8594df50317088fe2f84c2667"
+      }
+    },
+    {
+      "key": "scoped-rifle",
+      "id": 5,
+      "label": "Scoped rifle",
+      "slot": 2,
+      "switches": 1,
+      "faces": 317,
+      "nodes": 23,
+      "accepted_evidence": "analysis/weapon-capture/final-mp-seven-controls-20261006/slot-02/weapon-01",
+      "mesh": {
+        "cases": [
+          "native",
+          "straight",
+          "right",
+          "left45",
+          "unfocused"
+        ],
+        "fresh_pairs": true,
+        "producer_ra": "0x8007E56C",
+        "H": 133,
+        "verify_checks": 5756,
+        "verify_mismatch": 0,
+        "sha256": "497db691bd8ec030a438115bf13a334ca03640b342d8f452965839c2447700b3"
+      },
+      "aim": {
+        "cases": {
+          "native": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 0
+          },
+          "straight": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 6
+          },
+          "left45": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 6
+          },
+          "unfocused": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 0
+          }
+        },
+        "straight_left45_direction_dot": 0.708242,
+        "first_native_motion_observed": true,
+        "sha256": "1fc33169e5d3b70d1d9dd0dcecae993a95ca418326d89d915876fd11a1cb358a"
+      }
+    },
+    {
+      "key": "bazooka",
+      "id": 2,
+      "label": "Bazooka",
+      "slot": 1,
+      "switches": 2,
+      "faces": 190,
+      "nodes": 3,
+      "accepted_evidence": "analysis/weapon-capture/final-mp-seven-controls-20261006/slot-01/weapon-02",
+      "mesh": {
+        "cases": [
+          "native",
+          "straight",
+          "right",
+          "left45",
+          "unfocused"
+        ],
+        "fresh_pairs": true,
+        "producer_ra": "0x8007E56C",
+        "H": 133,
+        "verify_checks": 2181,
+        "verify_mismatch": 0,
+        "sha256": "7e96430207faba137ef1ae07b0a34ffa422951ffaece21b8aff487b22d9ae276"
+      },
+      "aim": {
+        "cases": {
+          "native": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 0
+          },
+          "straight": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 6
+          },
+          "left45": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 6
+          },
+          "unfocused": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 0
+          }
+        },
+        "straight_left45_direction_dot": 0.708272,
+        "first_native_motion_observed": true,
+        "sha256": "74430ac7285f70e32b3f057f86ffc90fcc1083c5b8543217662d412444ed594d"
+      }
+    },
+    {
+      "key": "frag-grenade",
+      "id": 3,
+      "label": "Fragmentation grenade",
+      "slot": 1,
+      "switches": 3,
+      "faces": 337,
+      "nodes": 24,
+      "accepted_evidence": "analysis/weapon-capture/final-mp-seven-controls-20261006/slot-01/weapon-03",
+      "mesh": {
+        "cases": [
+          "native",
+          "straight",
+          "right",
+          "left45",
+          "unfocused"
+        ],
+        "fresh_pairs": true,
+        "producer_ra": "0x8007E56C",
+        "H": 133,
+        "verify_checks": 3648,
+        "verify_mismatch": 0,
+        "sha256": "9268a80ff0388ce1cb4136f425c07e0ae1bb77da84c1199c6a1df65e5a378535"
+      },
+      "aim": {
+        "cases": {
+          "native": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 0
+          },
+          "straight": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 6
+          },
+          "left45": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 6
+          },
+          "unfocused": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 0
+          }
+        },
+        "straight_left45_direction_dot": 0.708904,
+        "first_native_motion_observed": true,
+        "sha256": "9665992fb4066fe9205624634a0b3d04e8ffcd89842ddf7a34b65ea248726f97"
+      }
+    },
+    {
+      "key": "stick-grenade",
+      "id": 10,
+      "label": "Stick grenade",
+      "slot": 2,
+      "switches": 3,
+      "faces": 285,
+      "nodes": 22,
+      "accepted_evidence": "analysis/weapon-capture/final-mp-seven-controls-20261006/slot-02/weapon-03",
+      "mesh": {
+        "cases": [
+          "native",
+          "straight",
+          "right",
+          "left45",
+          "unfocused"
+        ],
+        "fresh_pairs": true,
+        "producer_ra": "0x8007E56C",
+        "H": 133,
+        "verify_checks": 7236,
+        "verify_mismatch": 0,
+        "sha256": "3b39d7e94a1c831f35f8548f605f5a29048b6da98d86dafcfd73ee1359e3461a"
+      },
+      "aim": {
+        "cases": {
+          "native": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 0
+          },
+          "straight": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 6
+          },
+          "left45": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 6
+          },
+          "unfocused": {
+            "native_constructors": 1,
+            "pose_stores_per_constructor": 0
+          }
+        },
+        "straight_left45_direction_dot": 0.708634,
+        "first_native_motion_observed": true,
+        "sha256": "5a15d7c8b03401ae8b4d1e6fbda8e726d1f01b3c99278df5ba605044cb0302c6"
+      }
+    }
+  ],
+  "single_player_regression": {
+    "evidence": "analysis/weapon-capture/final-sp-controls-20261006/inventory.json",
+    "weapon_ids": [
+      12,
+      3,
+      1
+    ],
+    "complete": true,
+    "verify_mismatch": 0
+  },
+  "right_eye_watchdog": {
+    "evidence": "analysis/weapon-capture/final-mp-shotgun-mp40-controls-20261006/inventory.json",
+    "weapon_id": 4,
+    "watchdogs": 1,
+    "verify_checks": 2492,
+    "verify_mismatch": 0,
+    "failed_attempt": 56,
+    "failed_eye": 1,
+    "recovered_pair": 1246,
+    "published_valid": true
+  },
+  "launcher": {
+    "evidence": "analysis/weapon-capture/headset-batch-20261006-010510/receipt.json",
+    "cases": 20,
+    "modes": [
+      "native",
+      "tracked"
+    ],
+    "seconds_per_case": 1,
+    "desktop_synthetic": true,
+    "complete": true,
+    "verify_mismatch": 0,
+    "neutral_preparation": true,
+    "fresh_pairs_in_every_case": true,
+    "source_saves_unchanged": true
+  },
+  "source_saves": {
+    "saves/openbios/state_8001DFD4_slot00.pst": "b065e06ee8c8df61249b7f93927ddbbfa45d44e7ad14c74d83f8c2ebd1843093",
+    "saves/openbios/state_8001DFD4_slot01.pst": "da7a545b8678a9a07d0d4f56ea31267ea038cb7be20e82d3f883683de3c73faf",
+    "saves/openbios/state_8001DFD4_slot02.pst": "99d3452e7fe15c29a69e9972c4b04a05a561ebba1a92a3ceb4db3bb43979577d",
+    "saves/openbios/state_8001DFD4_slot03.pst": "978ae915e794464ab69ff7bcbf27600790d402657c065d360fb3de9a1b78a991",
+    "saves/openbios/state_8001DFD4_slot04.pst": "0b1c955ebe6cb5d0d35d99e48cfabff3e94ba8fba90dda67888b4c3af88874bc",
+    "saves/openbios/state_8001DFD4_slot05.pst": "91d964252bb952ff070059adfd4dc19df709665be4fec2682cfdcfb7e77264b3",
+    "saves/openbios/state_8001DFD4_slot06.pst": "83df48f588a9292d48c2007b7f500e01c737f1ba8638ff9e7e1d0f3532986a4e",
+    "saves/openbios/state_8001DFD4_slot09.pst": "aaceb0cf7a24ccb6c29db48c39ecbfff18197953132b1946fbd9baf55308e53e"
+  },
+  "source_saves_unchanged": true,
+  "fixture_limits": [
+    "Slot 3 MP40 mesh passed, but native firing control observed no constructor; batch uses verified slot 4.",
+    "Slot 5 multiplayer Thompson mesh passed, but native firing control observed no constructor; batch uses verified single-player slot 6.",
+    "Causes of those fixture failures are unestablished; native fire logic was not bypassed."
+  ],
+  "remaining_gates": [
+    "Quest grip/size and controller/barrel alignment for each weapon.",
+    "Physical firing and actual damage; recoil/reload/switching/close walls.",
+    "Scoped/special modes, native spread and rocket/grenade collision/flight in gameplay.",
+    "Controller/head/body independence and hardware focus/reconnect recovery.",
+    "All-weapon single-player asset variants and multiplayer head-turn visibility/menu coverage."
+  ]
+}
