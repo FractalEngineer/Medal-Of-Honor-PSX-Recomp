@@ -5,11 +5,15 @@ Follow the latest user request; the backlog is not authorization to implement
 all items or publish a release. Read current local changes before resetting,
 regenerating or committing anything.
 
-Latest accepted fix: the user approved the headset color correction on Quest 3 /
-Virtual Desktop VDXR and requested a PR into game `master`. This branch pins the
-single framework correction `3618bc00381588b7e9ea9b5173e8872470ed0379`, extracted
-from the released `9976567e` base. The PR contains no world-view, visibility or
-trace experiments. See the latest VR_PHASE9_STATUS.md entry for validation.
+Release preparation: the user merged PR #1 (headset color) and PR #2 (head-turn
+world visibility), then requested Windows v0.1.1 before continuing jitter work.
+This release branch starts from master `7ac0509`, with framework `3618bc00`.
+Normal VR selects world geometry using each eye's view; FOV and native sector
+visibility are unchanged. Both fixes were accepted on Quest 3 / VDXR, including
+movement-enabled visibility gameplay. Experimental continuous-pose/tolerance
+branches are excluded. Jitter remains the next TODO; frozen poses stop shaking
+but are diagnostic, while the tolerance-1 candidate improves world/weapon and
+worsens sky/compass. See the latest release receipt for package verification.
 
 ## Current checkpoint and local work
 

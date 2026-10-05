@@ -1,6 +1,7 @@
 # VR alpha follow-up checklist
 
-Date: 2026-10-03. Alpha baseline: game `28b0c55`, framework `5bafeebf`.
+Updated: 2026-10-05. v0.1.1 alpha includes merged master `7ac0509`,
+framework `3618bc00`: accepted headset color and head-turn visibility fixes.
 Target: Quest 3 through Virtual Desktop / VDXR; user IPD 67mm.
 
 This is the current backlog, not a claim that the causes below are established.
@@ -12,10 +13,15 @@ coverage and controls, wrist UI, then calibration and broader release coverage.
 Keep the accepted baseline: genuine per-eye gameplay, normal VR boot without a
 save, usable menus/pause surface, consistent locomotion, accepted rifle grip/
 appearance, and the sound/framerate fix. WorldScale 3 remains provisional.
-The rejected movie bicubic trial stays removed. This checklist does not request
-an alpha tag, release upload, or changes to gameplay yet.
+The rejected movie bicubic trial stays removed. The user authorized v0.1.1
+publication with these two merged fixes before continuing jitter work.
 
 ## 1. World rendering and level correctness - highest priority
+
+- [x] **Head turns lose world tiles in the tested slot-0 scene.** Per-eye
+  AABB tree selection is merged in PR #2 and included in v0.1.1. User accepted
+  movement-enabled Quest 3 / VDXR gameplay on 2026-10-05. Eye FOV and native
+  sector visibility are unchanged; broader coverage remains open below.
 
 - [ ] **Reported: garbled and shaky world, even while stationary.** Reproduce
   in a fixed scene. Compare flat/native, neutral stereo, fixed synthetic head
@@ -25,6 +31,10 @@ an alpha tag, release upload, or changes to gameplay yet.
   transforms, packet interpretation and draw order as hypotheses; do not call
   it tracking jitter or a PSX limitation without a control. Success: stable
   geometry with a fixed pose and no new folding/corruption relative to flat.
+  Frozen render views stop the shaking, but are diagnostic. Continuous-pose
+  experiments were unchanged/possibly worse; tolerance 1 reduced world/weapon
+  shaking while worsening sky/compass. Those separate local candidates remain
+  outside v0.1.1. Investigate draw provenance before accepting a playable fix.
 - [ ] **Reported: floor immediately below the player appears unrendered.**
   Also reproduce the previously captured large black lower-world polygon.
   Determine whether these share a producer: absent geometry, an occluding

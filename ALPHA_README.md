@@ -1,11 +1,15 @@
-# Medal of Honor Recompiled v0.1.0 — Native VR Alpha
+# Medal of Honor Recompiled v0.1.1 — Native VR Alpha
 
 This is a Windows x64 testing release. Flat play is the default; VR is optional.
 Quest 3 through Virtual Desktop with VDXR is the tested headset/runtime setup.
 
+v0.1.1 corrects headset brightness/contrast and prevents head turns from losing
+world tiles in the tested scene. Visibility now uses each eye's view to select
+world geometry; eye FOV and the game's sector visibility remain unchanged.
+
 ## Install and play
 
-1. Download `moh-0.1.0-windows-x64.zip` and extract the entire ZIP to a writable
+1. Download `moh-0.1.1-windows-x64.zip` and extract the entire ZIP to a writable
    folder. Keep the executable, assets, mods and overlay toolchain together.
 2. Supply your own **Medal of Honor SLUS-00974 (NTSC-U)** CUE/BIN image. The
    expected Track 01 size is 742,258,272 bytes, SHA-1
@@ -53,8 +57,11 @@ Menus: left stick navigates; A or right trigger confirms; B goes back.
 
 - Tracked mesh and shot override currently cover the measured rifle only.
   Physical barrel-to-shot alignment and other weapons need validation.
-- Reported world shaking, missing nearby floor, pop-in, missing/transparent
-  Mission 1 ruins tiles and brighter headset color remain under investigation.
+- World shaking remains under investigation. Experimental precision/tolerance
+  candidates are not included in this release.
+- Missing nearby floor, pop-in and missing/transparent Mission 1 ruins tiles
+  need separate validation. Visibility acceptance covers the tested scene;
+  broader sector coverage and near-plane clipping remain open.
 - Wrist HUD and an in-game VR options menu are pending. World scale is provisional.
 - Headset cadence, focus/tracking loss, reconnect, other headsets/runtimes and
   broad mission coverage need more testing.
@@ -70,7 +77,7 @@ reproduction steps and optional captures. Do not attach disc images or BIOS dump
 
 Start with normal boot, menu navigation, movement, rifle combat, pause/resume,
 save/load and exit. Tell us whether the problem also occurs in flat mode.
-The [alpha backlog](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/blob/v0.1.0/docs/reverse/VR_ALPHA_TODO.md)
+The [alpha backlog](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/blob/v0.1.1/docs/reverse/VR_ALPHA_TODO.md)
 lists open tasks. Game-specific work belongs in the game repository; generic
 framework changes are being prepared for separate upstream review.
 
@@ -81,6 +88,7 @@ PolyForm Noncommercial 1.0.0.
 Release verification: an extracted ZIP in a path containing spaces booted through
 briefing into Mission 1 with an empty overlay cache and development tools removed
 from PATH. The bundled TCC toolchain produced native overlays; flat save/load and
-normal exit passed. Quest 3/VDXR acceptance is from the earlier gameplay baseline;
-live headset play was not rechecked during packaging. These are bounded alpha
+normal exit passed. Quest 3/VDXR acceptance covers the merged color and visibility
+fixes, including movement-enabled visibility gameplay on 2026-10-05. Live headset
+play was not repeated during packaging. These are bounded alpha
 checks, not a full playthrough or validation of every weapon/runtime.
