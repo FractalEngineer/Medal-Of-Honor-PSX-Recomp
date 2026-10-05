@@ -1,0 +1,97 @@
+name: VR bug report
+description: Report a problem with the Medal of Honor native VR alpha
+title: "[VR] "
+labels: ["VR"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing the VR alpha! Please fill in the fields below —
+        the more reproducible the report, the faster it can be fixed.
+        One problem per issue. Do **not** attach disc images or BIOS dumps.
+
+  - type: input
+    id: build
+    attributes:
+      label: Build / version
+      description: The release tag (e.g. v0.1.0 alpha) or the git commit for a source build.
+      placeholder: v0.1.0 alpha ZIP
+    validations:
+      required: true
+
+  - type: input
+    id: setup
+    attributes:
+      label: Headset and OpenXR runtime
+      description: Headset model, the active runtime, and how it is connected. Tested setup is Quest 3 with Virtual Desktop / VDXR over Wi-Fi.
+      placeholder: Quest 3, Virtual Desktop / VDXR, Wi-Fi
+    validations:
+      required: true
+
+  - type: input
+    id: host
+    attributes:
+      label: Host PC
+      description: OS version, GPU, and GPU driver version.
+      placeholder: Windows 11, RTX 4070, driver 560.94
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Where does the problem happen?
+      description: Trying flat mode (RunFlat.bat) helps separate VR-only bugs from general ones.
+      options:
+        - VR only
+        - Both VR and flat mode
+        - Flat mode only
+        - Have not tried flat mode
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Mission / level / location
+      description: Where in the game you were when it happened.
+      placeholder: Mission 1 — ruins, just after the briefing
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happens, and what did you expect?
+      description: Describe the actual and expected behavior. Screenshots or video are very welcome — drag them in here.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps from a cold launch, and how reliably it reproduces.
+      placeholder: |
+        1. Launch RunVR.bat and select the CUE
+        2. Wait through the briefing into Mission 1
+        3. Look at ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Logs, screenshots, or diagnostics (optional)
+      description: |
+        Paste console output or attach files. Useful captures:
+        - RunVR.bat / RunFlat.bat console output (including startup errors)
+        - `python psxrecomp/tools/debug_client.py openxr_stats`
+        - `python psxrecomp/tools/debug_client.py video_info`
+      render: text
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else (optional)
+      description: Did it work on an earlier build? Does another headset/runtime behave differently? Anything else you think matters.
