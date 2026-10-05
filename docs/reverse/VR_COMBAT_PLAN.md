@@ -1,5 +1,11 @@
 # Quest combat controls and aiming
 
+2026-10-06 update: gameplay jump moves from left Y to right-stick click at the
+user's request, delivering native Triangle through the existing action map.
+Press/release, activity and menu isolation pass the input regression; movement,
+fire, use, reload, crouch and legacy grip aim keep their bindings. The earlier
+mapping and captures below are historical.
+
 User authorized continuation on 2026-10-02. Movement is accepted; world scale
 stays 3. Wrist HUD and independent rendering cadence follow playable combat.
 

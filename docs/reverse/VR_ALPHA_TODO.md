@@ -13,8 +13,9 @@ The jitter candidate is preserved on `fix/vr-jitter-tolerance` (`04624df`);
 the movement-enabled tolerance test regressed distant-enemy stability relative
 to the integer-view control. Resume that investigation only when requested.
 Weapon work uses `feature/vr-all-weapon-tracking`, based on v0.1.2 master.
-The user's current request is to prepare all weapon controls for a later headset
-batch; [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md) is the launch/test guide.
+The user accepted all ten weapon tracking controls in the headset on 2026-10-06
+and requested integration into master, a current build, and jump on right-stick
+click. [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md) is the launch/test guide.
 
 Unchecked items remain open. Recommended order: rendering/correctness, weapon
 coverage and controls, wrist UI, then calibration and broader release coverage.
@@ -116,9 +117,16 @@ publication with these two merged fixes before continuing jitter work.
   now pass desktop mesh and native shot/first-motion controls. The prepared batch
   runs nine multiplayer cases and single-player Thompson, movement enabled for
   30 seconds each. Native firing was not observed in slot 3 MP40 / slot 5 Thompson
-  controls; verified alternatives are used. Headset grip, firing/damage and
-  special-mode acceptance remain open. See VR_WEAPON_TRACKING.md and the current
+  controls; verified alternatives are used. The user accepted visual tracking for
+  all ten headset controls on 2026-10-06. Firing/damage, special modes and broader
+  single-player assets remain open. See VR_WEAPON_TRACKING.md and the historical
   VR_WEAPON_CONTROLS_RECEIPT.json; keep this item unchecked until those gates pass.
+- [x] **All ten supplied weapon tracking controls: visual acceptance.** Quest 3 /
+  VDXR ten-case batch completed on 2026-10-06; user reported all tracking looks
+  good and requested pushing to master. Broader validation remains above.
+- [x] **Jump on right-stick click.** User-requested gameplay mapping delivers
+  native Triangle. The former left-Y jump binding is removed; menu routing is
+  unchanged. Press/release/activity/focus and combined-input regression pass.
 - [ ] **Reported requirement: disable legacy aiming controls.** Remove the
   temporary right-grip native aim binding and any unwanted legacy camera/zoom
   behavior once tracked aiming coverage is validated. Review special/scoped

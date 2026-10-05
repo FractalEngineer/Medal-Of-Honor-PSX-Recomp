@@ -14,7 +14,10 @@ The user requested all weapon controls ready for a later headset batch. Launch
 See [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md) for recipes and scope. All ten IDs
 have passing desktop mesh/shot controls. Nine batch cases use multiplayer; the
 Thompson uses original single-player slot 6 because native firing was not observed
-from multiplayer slot 5. Hardware acceptance remains pending.
+from multiplayer slot 5. On 2026-10-06 the user completed all ten tracked headset
+controls and reported “all trackings look good”, authorizing integration into
+master and a current build. Visual tracking is accepted. Jump now uses right-stick
+click; native Triangle press/release remains the game action.
 
 ## Native inventory
 
@@ -99,7 +102,10 @@ than the transient current-player camera global. See the batch guide for the
 ## Verification and remaining gates
 
 The current [VR_WEAPON_CONTROLS_RECEIPT.json](VR_WEAPON_CONTROLS_RECEIPT.json)
-records the candidate binary/source hashes and all ten desktop controls. The
+records the tested binary/source hashes, all ten desktop controls and the user's
+headset visual acceptance at `c8280a1`. Its binary hash is historical after the
+right-stick jump rebuild; it must not be rewritten to claim that binary was tested
+in the earlier headset run. The
 older [VR_WEAPON_TRACKING_RECEIPT.json](VR_WEAPON_TRACKING_RECEIPT.json) records
 the 2026-10-05 single-player checkpoint and is retained as historical evidence.
 
@@ -143,9 +149,10 @@ Still open: live firing/damage and pose controls for the other seven IDs in
 single-player; physical grip/barrel alignment for each weapon; recoil/reload,
 switching, close-wall behavior, shotgun spread, rocket collision, both grenade
 types and scoped mode; controller/head/body independence; hardware tracking-loss
-recovery; Quest acceptance. The captured ten IDs are the supplied
+recovery; broader gameplay acceptance. The captured ten IDs are the supplied
 loadouts, not a proof that every special/NPC weapon ID is player-obtainable.
-Keep the TODO unchecked and do not merge/publish this candidate yet. Legacy
+Keep the broader weapon-validation TODO unchecked. The user authorized merging
+and pushing the accepted tracking into master on 2026-10-06. Legacy
 grip/aim bindings remain until tracked coverage and special modes are validated.
 
 The next hardware batch should use movement-enabled 30-second runs, as requested,

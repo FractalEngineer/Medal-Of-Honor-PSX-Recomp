@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-06",
+  "kind": "latest-master Windows build",
+  "version": "0.1.2",
+  "framework": "3618bc00381588b7e9ea9b5173e8872470ed0379",
+  "headset_accepted_tracking_commit": "c8280a1",
+  "headset_tracking_scope": "User accepted visual tracking for all ten supplied weapon controls.",
+  "executable_sha256": "54615cbec0ffb3049855aa0fdea5d770788f383e9160624ff1a9f938ca023d76",
+  "source_sha256": {
+    "vr/moh_vr_input.c": "fb05a20fbfedac379cf30a4cb5d3f5c10478a56536725986055597a0e3c19b93",
+    "vr/test_moh_vr_input.c": "37a6192b9beeef1808de77b18613aa3f91668f800c5a4cd6ef0495c7ce080857",
+    "vr/psx_vr_stereo.c": "b70f2eec7cc2910ae209542e787a80defee64c9cb55cdfbc1a47d962ed503b12",
+    "vr/moh_vr_weapons.h": "97768448da4514e605487c8732dd390dcfa9f381e4b5e55df32cf2347827a672",
+    "vr/moh_vr_aim.c": "37b67803d69a06d14ea0837ed3a56abeab5eb54bb86f632923e5e38fb8e24bde",
+    "scripts/finalize_alpha.py": "1467d22bc671cc5845eb54b58a93f581ac8b3514aeac45ec43887d151e2f4a0e",
+    "scripts/package_release.sh": "e7fbb98c94ee8e8bd1aa214b3e93539e87dae9dbf8c7b40abd3086b47dda31d0"
+  },
+  "input_regression": "gcc -std=c11 -Wall -Wextra -Werror; passed",
+  "jump_control": "Right stick click to native Triangle; left Y released",
+  "native_jump_controls": [
+    {
+      "slot": 0,
+      "multiplayer": false,
+      "native_velocity_writes": [
+        {
+          "pc": "0x8007AC80",
+          "new": "0xFFE60000"
+        }
+      ],
+      "press": "0xEFFF",
+      "release": "0xFFFF",
+      "old_y": "0xFFFF",
+      "verify_checks": 144,
+      "verify_mismatch": 0,
+      "exit_code": 0
+    },
+    {
+      "slot": 4,
+      "multiplayer": true,
+      "native_velocity_writes": [
+        {
+          "pc": "0x80076F58",
+          "new": "0xFFE60000"
+        }
+      ],
+      "press": "0xEFFF",
+      "release": "0xFFFF",
+      "old_y": "0xFFFF",
+      "verify_checks": 128,
+      "verify_mismatch": 0,
+      "exit_code": 0
+    }
+  ],
+  "source_saves_unchanged": true,
+  "jitter_included": false,
+  "package_metadata": "BUILD_INFO.json in the artifact identifies the exact source commit and executable hash.",
+  "package_smoke_evidence": "analysis/weapon-capture/master-build-20261006/package_receipt.json"
+}

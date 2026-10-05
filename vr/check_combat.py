@@ -88,7 +88,7 @@ def main():
         sample('crouch-second-press', {'left_buttons':8}, 0x100)
         release(); assert not int.from_bytes(ram(BASE,4),'little')&2
         load(3)
-        sample('jump', {'left_buttons':2}, 0x1000); release()
+        sample('jump', {'right_buttons':8}, 0x1000); release()
         sample('use', {'right_buttons':1}, 0x8000); release()
         sample('native-aim', {'right_squeeze':1000}, 0x200); release()
         sample('combined', {'right_trigger':1000,'lx':707,'ly':707,'rx':1000}, 0x4000)

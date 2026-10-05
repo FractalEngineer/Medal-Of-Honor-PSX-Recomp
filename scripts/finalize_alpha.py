@@ -23,8 +23,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--build-dir", type=Path, required=True)
     parser.add_argument("--version", required=True)
+    parser.add_argument("--artifact", default="windows-x64")
     args = parser.parse_args()
-    stage = (ROOT / "dist" / "stage-game-windows-x64").resolve()
+    if not re.fullmatch(r"windows-x64(?:-[A-Za-z0-9][A-Za-z0-9.-]*)?", args.artifact):
+        parser.error("Expected a Windows x64 artifact label")
+    stage = (ROOT / "dist" / ("stage-game-" + args.artifact)).resolve()
     if not stage.is_relative_to((ROOT / "dist").resolve()) or not stage.is_dir():
         raise RuntimeError("Expected the shared packager's Windows release stage")
     cache = (args.build_dir / "CMakeCache.txt").read_text(encoding="utf-8")
@@ -62,6 +65,7 @@ def main():
         "version": args.version,
         "channel": "alpha",
         "platform": "windows-x64",
+        "artifact": args.artifact,
         "game_commit": revision(ROOT),
         "framework_commit": revision(ROOT / "psxrecomp"),
         "ui_commit": revision(ROOT / "recomp-ui"),
@@ -77,7 +81,7 @@ def main():
         "See ALPHA_README.md for setup, controls and known limitations.\n",
         encoding="utf-8",
     )
-    output = ROOT / "dist" / f"moh-{args.version}-windows-x64.zip"
+    output = ROOT / "dist" / f"moh-{args.version}-{args.artifact}.zip"
     # Antivirus may briefly hold the ZIP produced by the shared packager.
     for attempt in range(3):
         try:

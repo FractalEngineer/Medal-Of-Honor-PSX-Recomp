@@ -17,8 +17,13 @@ Nine cases use original multiplayer saves; Thompson uses original single-player
 slot 6 because slot 5's native firing control produced no constructor. MP40 uses
 verified slot 4 rather than slot 3. See [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md)
 and [VR_WEAPON_CONTROLS_RECEIPT.json](VR_WEAPON_CONTROLS_RECEIPT.json). This remains
-a local candidate with individual physical calibration, damage and special-mode
-acceptance pending. Jitter stays shelved at `04624df` and is excluded.
+a headset-accepted visual tracking checkpoint at `c8280a1`. On 2026-10-06 the user
+reported all ten tracking controls look good and authorized pushing the changes
+to master and building latest master. Jump now maps to right-stick click.
+Physical damage alignment and special-mode acceptance remain open. Jitter stays
+shelved at `04624df` and is excluded. Current right-stick jump/native writer
+checks and build hashes are in [VR_MASTER_BUILD_RECEIPT.json](VR_MASTER_BUILD_RECEIPT.json);
+packaged BUILD_INFO.json records its exact master revision.
 
 Release v0.1.1: the user merged PR #1 (headset color) and PR #2 (head-turn
 world visibility), then requested this Windows release before continuing jitter work.

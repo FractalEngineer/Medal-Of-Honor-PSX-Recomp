@@ -53,7 +53,7 @@ int main(void) {
     input.trigger[1] = .55f; input.squeeze[1] = .8f;
     input.buttons_active[0] = input.buttons_active[1] = PSX_MOD_XR_CLICKS;
     input.buttons[0] = PSX_MOD_XR_PRIMARY | PSX_MOD_XR_SECONDARY | PSX_MOD_XR_STICK | PSX_MOD_XR_MENU;
-    input.buttons[1] = PSX_MOD_XR_PRIMARY | PSX_MOD_XR_SECONDARY;
+    input.buttons[1] = PSX_MOD_XR_PRIMARY | PSX_MOD_XR_SECONDARY | PSX_MOD_XR_STICK;
     assert(moh_vr_input_map(&input, .2, .65, &response, &pad));
     assert(pad.buttons == (0xffffu ^ 0xf308u)); /* buttons don't depend on stick activity */
     assert(pad.lx == 128 && pad.ly == 128 && pad.rx == 128);
@@ -62,6 +62,14 @@ int main(void) {
     input.focused = 1; input.buttons_active[0] = input.buttons_active[1] = 0;
     input.trigger_active[1] = input.squeeze_active[1] = 0;
     assert(moh_vr_input_map(&input, .2, .65, &response, &pad) && pad.buttons == 0xffff);
+    input.buttons[0] = PSX_MOD_XR_SECONDARY; input.buttons_active[0] = PSX_MOD_XR_CLICKS;
+    input.buttons[1] = PSX_MOD_XR_STICK; input.buttons_active[1] = PSX_MOD_XR_CLICKS;
+    assert(moh_vr_input_map(&input, .2, .65, &response, &pad) && pad.buttons == 0xefff);
+    input.buttons[1] = 0;
+    assert(moh_vr_input_map(&input, .2, .65, &response, &pad) && pad.buttons == 0xffff);
+    input.buttons[1] = PSX_MOD_XR_STICK; input.buttons_active[1] = 0;
+    assert(moh_vr_input_map(&input, .2, .65, &response, &pad) && pad.buttons == 0xffff);
+    assert(moh_vr_menu_input_map(&input, .2, &pad) && pad.buttons == 0xffff);
     input.trigger_active[1] = 1; input.trigger[1] = NAN;
     assert(moh_vr_input_map(&input, .2, .65, &response, &pad) && pad.buttons == 0xffff);
     input.trigger[1] = .54f;

@@ -2,8 +2,10 @@
 
 Prepared on 2026-10-06 on `feature/vr-all-weapon-tracking`, rebased onto master
 `1b4f8ae` (v0.1.2). Framework `3618bc00` and the accepted color correction remain
-the baseline. Experimental jitter code is excluded. This is a local candidate;
-no headset result or release acceptance is implied by a desktop control.
+the baseline. Experimental jitter code is excluded. On 2026-10-06 the user
+completed the ten tracked Quest 3 / VDXR controls and accepted all weapon tracking.
+This establishes visual tracking acceptance; damage alignment and special-mode
+behavior remain separate checks. The changes are integrated into master.
 
 Connect Quest 3 through Virtual Desktop / VDXR, then run from the game root:
 
@@ -23,7 +25,8 @@ Nine controls use multiplayer, with player two facing player one. Thompson uses
 the supplied single-player slot 6, where native firing is verified.
 
 Right trigger fires; hold/release it for grenades. Left stick moves, right stick
-turns, and left X reloads/uses. B cycles weapons, but leave the selected weapon
+turns, right-stick click jumps, and left X reloads/uses. B cycles weapons, but
+leave the selected weapon
 equipped during an individual control. Right grip's existing native aim/zoom
 binding remains; assess scoped behavior separately. The launcher uses the new
 master's 1080p internal-resolution default. It requires Python and the locally

@@ -1,7 +1,11 @@
-# Medal of Honor Recompiled v0.1.1 — Native VR Alpha
+# Medal of Honor Recompiled — Native VR Alpha
 
 This is a Windows x64 testing release. Flat play is the default; VR is optional.
 Quest 3 through Virtual Desktop with VDXR is the tested headset/runtime setup.
+
+Current master adds tracking profiles for all ten supplied weapons, accepted
+visually in the Quest 3 / VDXR batch on 2026-10-06, and maps jump to right-stick
+click. `BUILD_INFO.json` identifies the exact commit of a packaged master build.
 
 v0.1.1 corrects headset brightness/contrast and prevents head turns from losing
 world tiles in the tested scene. Visibility now uses each eye's view to select
@@ -9,7 +13,7 @@ world geometry; eye FOV and the game's sector visibility remain unchanged.
 
 ## Install and play
 
-1. Download `moh-0.1.1-windows-x64.zip` and extract the entire ZIP to a writable
+1. Download the Windows x64 ZIP and extract the entire ZIP to a writable
    folder. Keep the executable, assets, mods and overlay toolchain together.
 2. Supply your own **Medal of Honor SLUS-00974 (NTSC-U)** CUE/BIN image. The
    expected Track 01 size is 742,258,272 bytes, SHA-1
@@ -46,7 +50,7 @@ in the console. These binaries are unsigned.
 | A | Use |
 | B | Cycle weapon |
 | X | Reload / use, according to game context |
-| Y | Jump |
+| Right stick click | Jump |
 | Left stick click | Toggle crouch |
 | Left Menu button | Pause / Start |
 | Right grip | Temporary legacy native aim binding |
@@ -55,8 +59,9 @@ Menus: left stick navigates; A or right trigger confirms; B goes back.
 
 ## Alpha limitations
 
-- Tracked mesh and shot override currently cover the measured rifle only.
-  Physical barrel-to-shot alignment and other weapons need validation.
+- Tracked mesh and shot profiles cover ten supplied weapon types. Their visual
+  tracking was accepted in the headset batch; physical damage alignment,
+  scoped/special behavior and broader single-player assets need further validation.
 - World shaking remains under investigation. Experimental precision/tolerance
   candidates are not included in this release.
 - Missing nearby floor, pop-in and missing/transparent Mission 1 ruins tiles
@@ -77,7 +82,7 @@ reproduction steps and optional captures. Do not attach disc images or BIOS dump
 
 Start with normal boot, menu navigation, movement, rifle combat, pause/resume,
 save/load and exit. Tell us whether the problem also occurs in flat mode.
-The [alpha backlog](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/blob/v0.1.1/docs/reverse/VR_ALPHA_TODO.md)
+The [alpha backlog](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/blob/master/docs/reverse/VR_ALPHA_TODO.md)
 lists open tasks. Game-specific work belongs in the game repository; generic
 framework changes are being prepared for separate upstream review.
 

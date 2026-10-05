@@ -27,7 +27,7 @@
     "bios_stamp_strict": true
   },
   "synthetic_desktop": true,
-  "headset_acceptance": false,
+  "headset_acceptance": true,
   "jitter_included": false,
   "weapons": [
     {
@@ -565,10 +565,23 @@
     "Causes of those fixture failures are unestablished; native fire logic was not bypassed."
   ],
   "remaining_gates": [
-    "Quest grip/size and controller/barrel alignment for each weapon.",
+    "Physical barrel-to-shot and damage alignment for each weapon.",
     "Physical firing and actual damage; recoil/reload/switching/close walls.",
     "Scoped/special modes, native spread and rocket/grenade collision/flight in gameplay.",
     "Controller/head/body independence and hardware focus/reconnect recovery.",
     "All-weapon single-player asset variants and multiplayer head-turn visibility/menu coverage."
-  ]
+  ],
+  "headset_visual_acceptance": {
+    "date": "2026-10-06",
+    "game_commit": "c8280a1",
+    "headset": "Quest 3",
+    "runtime": "Virtual Desktop / VDXR",
+    "user_report": "beautiful; all trackings look good",
+    "scope": "Visual tracking for all ten supplied weapon controls; not separate damage, scoped-mode or reconnect acceptance.",
+    "evidence": "analysis/weapon-capture/headset-batch-20261006-021857/receipt.json",
+    "evidence_sha256": "465d114c9f85c3243640057842edc1c28091e2d578d7111263bb72ad2c6eced4",
+    "tracked_cases": 10,
+    "source_saves_unchanged": true
+  },
+  "candidate_scope": "Historical desktop/headset binary tested before the right-stick jump rebuild. The current build is identified separately."
 }

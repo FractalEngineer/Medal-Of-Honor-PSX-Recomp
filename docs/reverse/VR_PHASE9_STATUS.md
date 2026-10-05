@@ -1376,3 +1376,26 @@ No new headset run was requested or launched. Per-weapon grip/size, physical
 barrel alignment and damage, scoped behavior, recoil/reload, grenade/rocket
 collision, tracking loss and comfortable gameplay remain hardware gates. The
 weapon TODO stays unchecked. See VR_WEAPON_BATCH.md for the next user batch.
+
+
+## 2026-10-06: all tracking accepted; master integration and right-stick jump
+
+The user completed the ten tracked 30-second Quest 3 / Virtual Desktop VDXR
+controls and reported ?all trackings look good?. Raw headset batch
+`analysis/weapon-capture/headset-batch-20261006-021857/receipt.json` is complete
+for all ten cases with binary `29598fd4...`, matching `c8280a1`'s desktop proof.
+Original saves remain unchanged. Visual tracking is accepted; damage alignment,
+scoped/special modes, wider single-player assets and reconnect are separate gates.
+
+User explicitly authorized pushing all accepted changes into master and building
+latest master, plus moving jump to right-stick click. Fetched origin/master
+`1b4f8ae` (v0.1.2), unchanged since the weapon rebase. Game-owned input now maps
+right stick click to native Triangle; left Y no longer jumps. Existing input
+regression passes press/release, inactive/focus handling, simultaneous movement
+and menu isolation. Framework pin remains `3618bc00`; jitter remains shelved.
+
+VERSION is synchronized to the current v0.1.2 baseline. The Windows packager
+accepts a distinct master artifact label, preserving ordinary release labels
+and recording the exact source commit in BUILD_INFO.json. This is a latest-master
+local build, not a new numbered GitHub release. Packaging/build verification
+is recorded separately from the historical headset acceptance.

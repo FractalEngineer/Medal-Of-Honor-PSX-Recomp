@@ -63,5 +63,5 @@ bash "${PACKAGER}" \
 
 if [[ "${ARTIFACT_TAG}" == windows-* ]]; then
   "${PSX_RELEASE_STAGE_PYTHON:-python3}" scripts/finalize_alpha.py \
-    --build-dir "${BUILD_DIR}" --version "$(tr -d '[:space:]' < VERSION)"
+    --build-dir "${BUILD_DIR}" --version "$(tr -d '[:space:]' < VERSION)" --artifact "${ARTIFACT_TAG}"
 fi
