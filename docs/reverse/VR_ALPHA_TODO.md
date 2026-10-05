@@ -18,11 +18,6 @@ publication with these two merged fixes before continuing jitter work.
 
 ## 1. World rendering and level correctness - highest priority
 
-- [x] **Head turns lose world tiles in the tested slot-0 scene.** Per-eye
-  AABB tree selection is merged in PR #2 and included in v0.1.1. User accepted
-  movement-enabled Quest 3 / VDXR gameplay on 2026-10-05. Eye FOV and native
-  sector visibility are unchanged; broader coverage remains open below.
-
 - [ ] **Reported: garbled and shaky world, even while stationary.** Reproduce
   in a fixed scene. Compare flat/native, neutral stereo, fixed synthetic head
   pose, and actual tracked poses. Establish whether vertices/packets change at
@@ -60,6 +55,10 @@ publication with these two merged fixes before continuing jitter work.
   movement-enabled slot-0 gameplay run, on 2026-10-05. Normal VR launch enables
   it; FOV and native PVS masks stay unchanged. See VR_HEAD_VISIBILITY_FIX.md.
   Multi-sector and near-plane coverage remain open.
+- [x] **Head turns lose world tiles in the tested slot-0 scene.** Per-eye
+  AABB tree selection is merged in PR #2 and included in v0.1.1. User accepted
+  movement-enabled Quest 3 / VDXR gameplay on 2026-10-05. Eye FOV and native
+  sector visibility are unchanged; broader coverage remains open above.
 - [ ] **Known gap: stereo coverage across levels and render variants.** Extend
   beyond the measured scenes: terrain, dynamic enemies, animated objects,
   effects and later-area paths. Preserve true parallax for world geometry.

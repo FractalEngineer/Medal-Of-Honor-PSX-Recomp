@@ -2,7 +2,7 @@
 
 <!-- retcomm-readme-metrics -->
 [![GitHub downloads (all assets, all releases)](https://img.shields.io/github/downloads/FractalEngineer/Medal-Of-Honor-PSX-Recomp/total)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases)
-[![Alpha v0.1.0](https://img.shields.io/badge/alpha-v0.1.0-orange)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.0)
+[![Alpha v0.1.1](https://img.shields.io/badge/alpha-v0.1.1-orange)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.1)
 <!-- /retcomm-readme-metrics -->
 
 <!-- retcomm-readme-boxart -->
@@ -19,8 +19,8 @@ Play the original game on a flat display, or opt into the experimental native
 VR alpha with head tracking, per-eye rendering and tracked-rifle controls.
 Flat play is the default; VR is enabled through a separate launcher.
 
-The **v0.1.0 Windows native alpha** is available from this fork's
-[releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.0).
+The **v0.1.1 Windows native alpha** is available from this fork's
+[releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.1).
 See [alpha installation and controls](ALPHA_README.md) before testing.
 
 | | |
@@ -95,11 +95,11 @@ environment when it exits.
 
 ## Experimental VR alpha (Windows)
 
-The gameplay baseline is game `28b0c55` with framework `5bafeebf`; release
-`v0.1.0` adds portable launchers, alpha documentation and packaging. Its framework
-pin is `9976567e`, which refreshes the OpenBIOS generation stamp without changing
-generated BIOS C and fixes Windows dependency packaging. The release links only
-OpenBIOS.
+Release `v0.1.1` adds the accepted headset color and head-turn visibility fixes
+over `v0.1.0`, with framework pin `3618bc00`. World selection follows each eye's
+view; eye FOV and native sector visibility remain unchanged. Both fixes were
+accepted on Quest 3 / Virtual Desktop VDXR. World jitter remains open and its
+experimental candidates are excluded. The release links bundled OpenBIOS only.
 
 ### Setup and launch
 
@@ -184,8 +184,8 @@ For Windows VR, configure the Release build with `-DPSX_OPENXR=ON`, or use
 `RunVR.bat -Build` after preparing the build tools and generated game C. Compiling
 OpenXR support does not automatically enable VR when launching the executable.
 
-Release `v0.1.0` uses the locally verified Windows alpha package. CI builds its
-platform matrix without replacing that tested asset. Subsequent tags `vX.Y.Z`
+Releases `v0.1.0` and `v0.1.1` use locally verified Windows alpha packages. CI builds
+its platform matrix without replacing those tested assets. Other tags `vX.Y.Z`
 (or the *Release builds* workflow) build the
 committed `generated/` C on Linux, Windows and macOS and attach
 `moh-<version>-<platform>.zip`, the compiled game. Locally:

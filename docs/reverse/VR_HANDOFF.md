@@ -5,20 +5,28 @@ Follow the latest user request; the backlog is not authorization to implement
 all items or publish a release. Read current local changes before resetting,
 regenerating or committing anything.
 
-Release preparation: the user merged PR #1 (headset color) and PR #2 (head-turn
-world visibility), then requested Windows v0.1.1 before continuing jitter work.
+Release v0.1.1: the user merged PR #1 (headset color) and PR #2 (head-turn
+world visibility), then requested this Windows release before continuing jitter work.
 This release branch starts from master `7ac0509`, with framework `3618bc00`.
 Normal VR selects world geometry using each eye's view; FOV and native sector
 visibility are unchanged. Both fixes were accepted on Quest 3 / VDXR, including
 movement-enabled visibility gameplay. Experimental continuous-pose/tolerance
 branches are excluded. Jitter remains the next TODO; frozen poses stop shaking
 but are diagnostic, while the tolerance-1 candidate improves world/weapon and
-worsens sky/compass. See the latest release receipt for package verification.
+worsens sky/compass. The clean ZIP cold-boots into Mission 1 without developer
+tools on PATH; bundled overlay compilation, flat VR isolation, save/load and
+normal exit pass. Live headset acceptance comes from the merged-fix tests;
+it was not repeated during packaging. See the latest release receipt.
+
+[v0.1.1 release](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.1)
+and [release notes](VR_RELEASE_V0.1.1.md). Continue the ordered TODO on the local
+`fix/vr-jitter-tolerance` branch; rebase it onto this release's master before
+further changes. Preserve its experimental launcher/build and framework worktree.
 
 ## Current checkpoint and local work
 
 - Game: Medal of Honor PS1, SLUS-00974 (NTSC-U). Release integration is on
-  `master`; `vr-dev` retains the same alpha commit for continued development.
+  `master`; local jitter branches retain the ongoing experiments separately.
   Alpha checkpoint **28b0c558bfc81258aeee1e93451a12ab15c189a1**, pushed to
   `origin` (FractalEngineer/Medal-Of-Honor-PSX-Recomp).
 - Framework: branch `fix/vr-headset-color-release`, current pin

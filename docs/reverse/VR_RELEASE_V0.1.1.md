@@ -20,3 +20,9 @@ near-plane clipping and other headset/runtime combinations still need work.
 The release builds the merged master fixes with framework `3618bc00`, bundled
 OpenBIOS, Windows OpenGL and optional OpenXR. `BUILD_INFO.json` identifies the
 source revisions and executable SHA-256. This is an unsigned testing release.
+
+Package verification: real-GL color checks and the strict visibility fixture
+pass. A fresh extraction in a folder containing spaces cold-booted into Mission 1
+with developer tools removed from PATH. Bundled overlay compilation, flat
+save/load and normal exit passed. Headset acceptance is from the merged-fix
+tests on 2026-10-05; it was not repeated during packaging.
