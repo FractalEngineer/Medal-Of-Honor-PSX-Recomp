@@ -669,9 +669,9 @@ jobs:
   release:
     name: GitHub Release
     needs: [prepare, build]
-    # v0.1.0 and v0.1.1 are published manually with verified Windows alpha ZIPs.
+    # v0.1.0, v0.1.1 and v0.1.2 are published manually with verified Windows alpha ZIPs.
     # CI still builds its platform matrix without replacing that tested asset.
-    if: needs.prepare.outputs.publish == 'true' && !contains(fromJSON('["0.1.0", "0.1.1"]'), needs.prepare.outputs.version)
+    if: needs.prepare.outputs.publish == 'true' && !contains(fromJSON('["0.1.0", "0.1.1", "0.1.2"]'), needs.prepare.outputs.version)
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout (for tagging on workflow_dispatch)
