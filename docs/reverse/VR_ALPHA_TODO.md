@@ -30,8 +30,8 @@ bicubic and jitter experiments are excluded.
   Frozen render views stop the shaking, but are diagnostic. Continuous-pose
   experiments were unchanged/possibly worse; tolerance 1 reduced world/weapon
   shaking while worsening sky/compass. Candidates remain outside the release.
-  `fix/vr-jitter-tolerance` at `04624df` preserves the experiment; its walking
-  test worsened distant-enemy stability.
+  Commit `04624df` in the local retired-branch bundle preserves the experiment;
+  its walking test worsened distant-enemy stability. See the handoff for its path.
   Resume only when requested, then investigate draw provenance before accepting a fix.
 - [ ] **Reported: floor immediately below the player appears unrendered.**
   Also reproduce the previously captured large black lower-world polygon.

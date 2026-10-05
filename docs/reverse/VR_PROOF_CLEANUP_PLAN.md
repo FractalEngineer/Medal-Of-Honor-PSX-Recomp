@@ -5,7 +5,7 @@ Cleanup reclaimed 11.71 GiB. [VR_CLEANUP_RECEIPT.json](VR_CLEANUP_RECEIPT.json)
 records the compact result; full manifests and hashes remain local under
 `analysis/cleanup-20261006/`.
 The published v0.1.3 ZIP, original saves/disc, current Release build, registered
-worktrees, shelved jitter branch/build, Ghidra project and accepted evidence remain.
+worktrees, shelved jitter history/build, Ghidra project and accepted evidence remain.
 
 ## Current layout
 
@@ -23,9 +23,16 @@ worktrees, shelved jitter branch/build, Ghidra project and accepted evidence rem
 - `analysis/archive/20261006/access-restricted/` retains two old readback
   temporary-directory remnants intact. Windows denied access to their children;
   they were moved without changing permissions or deleting unreadable contents.
-- Registered worktrees and branch refs were not deleted. The old release
-  worktree has local changes and provides the verified packaging emitters.
-  Unrelated main-framework edits remain untouched.
+- Registered worktrees remain. After the cleanup, the user requested deletion
+  of every game branch except master. The linked game worktrees were detached
+  at their original commits, preserving local changes and packaging emitters.
+  Unrelated main-framework edits and framework branches remain untouched.
+- Retired game branch refs and complete history were saved in
+  `analysis/archive/20261006/retired-game-branches.bundle` and verified with
+  `git bundle verify` before deleting branch names. SHA-256:
+  `401d39f3883696ccb575fb7ecc113ba2351966d36609ab0849d1a5e68cb94cbd`.
+  The adjacent `retired-game-branches-refs.txt` inventories the archived refs.
+  The earlier cleanup receipt retains its historical pre-deletion branch status.
 
 ## Retrieve historical evidence
 

@@ -15,8 +15,9 @@ original scope and are not current instructions.
   weapon controls, headset color, head-turn visibility and the rebuilt normal launcher.
 - Jump is right-stick click. [ALPHA_README.md](../../ALPHA_README.md) owns the
   current installation and control chart; do not copy old Y-button mappings.
-- Jitter is shelved on `fix/vr-jitter-tolerance` at `04624df`. The tolerance
-  experiment worsened distant-enemy stability; it is not in the release.
+- Jitter is shelved at `04624df`, preserved in the local retired-branch bundle
+  described below. The tolerance experiment worsened distant-enemy stability;
+  it is not in the release.
 - Visual acceptance does not close physical damage alignment, scoped/special
   modes, broader single-player assets, wrist HUD or reconnect/mission coverage.
 
@@ -31,7 +32,7 @@ is still uncalibrated. The rejected bicubic movie experiment stays removed.
 | --- | --- |
 | `build-release/` | Current normal VR and weapon-control build |
 | `psxrecomp/`, `recomp-ui/` | Clean pinned source dependencies for that build |
-| `build-release-011/` | Retained registered worktree with local changes and verified packaging emitters; not a game-launch target |
+| `build-release-011/` | Retained detached worktree with local changes and verified packaging emitters; not a game-launch target |
 | `build-vr-jitter/` | Shelved experiment; do not use for ordinary play |
 | `dist/moh-0.1.3-windows-x64.zip` | Exact published Windows artifact |
 | `analysis/weapon-capture/` | Current accepted weapon/release evidence and Ghidra project |
@@ -55,6 +56,12 @@ its registration guard because `test_openxr_color_gl.c` is driven by
 `run_openxr_color_gl.py` but is not listed by the CMake registration checker.
 Keep the working emitters until that fixture is properly registered/classified;
 do not disable the guard or patch the pinned checkout to bypass it.
+
+Master is the only active local/remote game branch. Retired branch history is
+archived locally in `analysis/archive/20261006/retired-game-branches.bundle`;
+`retired-game-branches-refs.txt` lists the archived names and commits. The two
+linked game worktrees are detached at their original commits, with local changes
+preserved. Framework-repository branches were not changed.
 
 ## Launch and rebuild
 
