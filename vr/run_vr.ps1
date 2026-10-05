@@ -21,6 +21,11 @@ param(
     [double]$TurnGain = 0.65,
     [switch]$HideHud,
     [switch]$Verify,
+    # Fresh checkouts/release packages have no settings.toml, so without this the
+    # runtime renders at the default (low) internal resolution. PSX_INTERNAL_RESOLUTION
+    # overrides every config layer for one run (native/720p/1080p/1440p/4k/5k/8k/display).
+    [ValidateSet('native', '720p', '1080p', '1440p', '4k', '5k', '8k', 'display')]
+    [string]$InternalResolution = '1080p',
     [switch]$Build,
     [string]$BuildDirectory = 'build-release',
     [string]$DiscPath = '',
@@ -58,6 +63,7 @@ $vrVariables = @{
     PSX_VSYNC = $(if ($Desktop) { [Environment]::GetEnvironmentVariable('PSX_VSYNC','Process') } else { [string][int]$DesktopVSyncDiagnostic.IsPresent });
     PSX_VR_OPENXR = [string][int](-not $Desktop);
     PSX_VR_STEREO = '1'; PSX_VR_PROBE = '0'; PSX_VR_INTERP = '0';
+    PSX_INTERNAL_RESOLUTION = $InternalResolution;
     # Accepted eye-view visibility for normal VR; keep desktop diagnostics native.
     PSX_VR_HEAD_FRUSTUM = [string][int]((-not $Desktop) -and (-not $NoHeadFrustumDiagnostic));
     PSX_VR_MOVEMENT = [string][int]((-not $NoMovement) -and ((-not $Desktop) -or $MovementDiagnostic));
