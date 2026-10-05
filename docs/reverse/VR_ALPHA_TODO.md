@@ -222,3 +222,14 @@ processes after tests. Commit/push at the user's authorized checkpoints.
 Reference: VR_PHASE9_STATUS.md, VR_LAUNCH_RECEIPT.json, VR_FULL_BOOT_PLAN.md,
 VR_HEADSET_PLAN.md, VR_WEAPON_AIM_PLAN.md and VR_WEAPON_VISUAL_RECEIPT.json.
 Older pending entries must be read with their later acceptance/correction notes.
+
+
+## 2026-10-06 ? v0.1.3 publication
+
+The user accepted the rebuilt normal launcher and authorized a new release.
+Version 0.1.3 includes the all-weapon tracking checkpoint and right-stick-click
+jump, retaining the color/visibility fixes and 1080p default. The old local
+`build-release` target was corrected; it had differed from the current batch
+and ZIP builds. See [VR_RELEASE_V0.1.3.md](VR_RELEASE_V0.1.3.md). Broader damage,
+special-mode, single-player asset, HUD and reconnect gates remain open;
+no new jitter candidate is included.

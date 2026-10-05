@@ -48,6 +48,24 @@ and [release notes](VR_RELEASE_V0.1.1.md). Continue the current weapon task
 on `feature/vr-all-weapon-tracking`. Preserve the shelved jitter branch,
 experimental launcher/build and framework worktrees for later investigation.
 
+## v0.1.3 release checkpoint - 2026-10-06
+
+The user accepted the refreshed default `RunVR.bat` build and explicitly
+requested publishing it as a new release. Version 0.1.3 carries the accepted
+all-weapon tracking profiles, right-stick-click jump, headset color/head-turn
+visibility fixes and 1080p default. See [release notes](VR_RELEASE_V0.1.3.md).
+
+Important local build distinction: repository `RunVR.bat` defaults to
+`build-release`, whereas the weapon batch defaults to `build-vr-weapons`.
+The former was stale at v0.1.0 even after the latter and the master snapshot ZIP
+were rebuilt. Refresh the actual normal launcher target as well as diagnostic
+builds. It was rebuilt against clean framework `3618bc00` / UI `5de138a8` and
+accepted by the user; the earlier ZIP already contained the color correction.
+Diagnostic evidence is under `analysis/weapon-capture/default-launch-refresh-20261006`.
+Release packaging uses the refreshed `build-release` target. Save/load smoke
+checks must pass an explicit isolated `--memcard-dir`; never write diagnostic
+states into the user's original save directory. Jitter remains excluded.
+
 ## Current checkpoint and local work
 
 - Game: Medal of Honor PS1, SLUS-00974 (NTSC-U). Release integration is on
