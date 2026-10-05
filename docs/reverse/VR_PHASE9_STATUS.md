@@ -1296,3 +1296,30 @@ readback and clean owned-process closure with XR and stereo disabled.
 Separate native-menu perceptual acceptance and additional headset/runtime
 combinations remain unverified; their source-owned GL paths passed. This is a
 PR for the accepted fix, not a merge or new alpha release.
+
+
+## 2026-10-05: jitter shelved; all-weapon tracking candidate
+
+The user moved active work from jitter to weapons. Preserve the rebased jitter
+experiment at game `fix/vr-jitter-tolerance` / `04624df`; the movement test's
+distant-enemy flicker was better in the integer-view control. No jitter candidate
+is accepted or included in v0.1.1. Weapon work starts from master `b3033cc` on
+`feature/vr-all-weapon-tracking`, with framework `3618bc00`.
+
+Copied-save native inventory covers slots 0?6 and 9: multiplayer 1?5, single-player
+0/6/9. Ten weapon IDs are observed. `player+256` resolves the first-person model
+in both modes; `input+84` is loadout index, `input+85` is weapon ID. The candidate
+adds measured node/face/vertex profiles, retains animated gun parts, removes arms
+inside eye rollback, and extends the shared single-player shot seam to validated
+weapon/actor pairs. Local captured-RAM Ghidra analysis confirms native dispatch
+and grenade launch behavior. Source saves remain untouched.
+
+Strict OpenBIOS Release build passes. Compiled profiles match 60 captured native
+meshes for all ten IDs and reject malformed indices. Synthetic mesh motion and
+zero-mismatch restoration pass for rifle/Thompson/fragmentation grenade. Native
+shot/first-motion controls pass for rifle/Thompson and delayed grenade release,
+including unfocused fallback. Grenade synthetic samples must refresh throughout
+the delayed launch; a one-time sample expires before release. No physical hit,
+all-weapon gameplay, scoped-mode or headset acceptance claim follows from these
+controls. Other seven live single-player paths and hardware calibration remain
+open. See VR_WEAPON_TRACKING.md and VR_WEAPON_SET_RECEIPT.json for exact receipts.

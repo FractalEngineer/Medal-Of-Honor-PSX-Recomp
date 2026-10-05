@@ -1,0 +1,222 @@
+{
+  "date": "2026-10-05",
+  "branch": "feature/vr-all-weapon-tracking",
+  "base": "b3033cc",
+  "framework": "3618bc00381588b7e9ea9b5173e8872470ed0379",
+  "candidate": "build-vr-weapons\\Medal_of_Honor__Recompiled.exe",
+  "candidate_sha256": "148dc4f6488bc8533ba4dbbd1b7fcb12d6c984286c651f1874dc79aaed2869d8",
+  "source_sha256": {
+    "vr\\psx_vr_stereo.c": "dbc3dcd4dbef77b8a41ca130b38684c603b25dc281e84e50824203f19bf654d8",
+    "vr\\moh_vr_weapons.h": "97768448da4514e605487c8732dd390dcfa9f381e4b5e55df32cf2347827a672",
+    "vr\\moh_vr_aim.c": "37b67803d69a06d14ea0837ed3a56abeab5eb54bb86f632923e5e38fb8e24bde"
+  },
+  "implemented_weapon_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    10,
+    11,
+    12
+  ],
+  "profile_fixture": {
+    "complete": true,
+    "native_meshes_checked": 60,
+    "profiles": {
+      "12": {
+        "faces": 280,
+        "selected_faces": 174,
+        "gun_node": 22,
+        "node_count": 23,
+        "captured_source": "analysis\\weapon-capture\\native-inventory-20261005-final\\slot-09\\weapon-02\\snapshot.json"
+      },
+      "3": {
+        "faces": 337,
+        "selected_faces": 86,
+        "gun_node": 23,
+        "node_count": 24,
+        "captured_source": "analysis\\weapon-capture\\native-inventory-20261005-final\\slot-09\\weapon-01\\snapshot.json"
+      },
+      "8": {
+        "faces": 315,
+        "selected_faces": 115,
+        "gun_node": 13,
+        "node_count": 14,
+        "captured_source": "analysis\\weapon-capture\\native-inventory-20261005-final\\slot-02\\weapon-04\\snapshot.json"
+      },
+      "6": {
+        "faces": 327,
+        "selected_faces": 190,
+        "gun_node": 26,
+        "node_count": 30,
+        "captured_source": "analysis\\weapon-capture\\native-inventory-20261005-final\\slot-02\\weapon-02\\snapshot.json"
+      },
+      "2": {
+        "faces": 190,
+        "selected_faces": 190,
+        "gun_node": 2,
+        "node_count": 3,
+        "captured_source": "analysis\\weapon-capture\\native-inventory-20261005-final\\slot-04\\weapon-02\\snapshot.json"
+      },
+      "5": {
+        "faces": 317,
+        "selected_faces": 211,
+        "gun_node": 22,
+        "node_count": 23,
+        "captured_source": "analysis\\weapon-capture\\native-inventory-20261005-final\\slot-03\\weapon-01\\snapshot.json"
+      },
+      "10": {
+        "faces": 285,
+        "selected_faces": 112,
+        "gun_node": 21,
+        "node_count": 22,
+        "captured_source": "analysis\\weapon-capture\\native-inventory-20261005-final\\slot-05\\weapon-03\\snapshot.json"
+      },
+      "11": {
+        "faces": 309,
+        "selected_faces": 200,
+        "gun_node": 24,
+        "node_count": 28,
+        "captured_source": "analysis\\weapon-capture\\native-inventory-20261005-final\\slot-04\\weapon-01\\snapshot.json"
+      },
+      "4": {
+        "faces": 334,
+        "selected_faces": 169,
+        "gun_node": 26,
+        "node_count": 27,
+        "captured_source": "analysis\\weapon-capture\\native-inventory-20261005-final\\slot-05\\weapon-02\\snapshot.json"
+      },
+      "1": {
+        "faces": 382,
+        "selected_faces": 191,
+        "gun_node": 26,
+        "node_count": 32,
+        "captured_source": "analysis\\weapon-capture\\native-inventory-20261005-final\\slot-06\\weapon-03\\snapshot.json"
+      }
+    },
+    "scope": "Captured layouts and malformed-index rejection; no live pose or damage claim"
+  },
+  "synthetic_mesh_inventory": "analysis\\weapon-capture\\tracked-mesh-controls-20261005\\inventory.json",
+  "synthetic_native_aim": [
+    {
+      "path": "analysis\\weapon-capture\\tracked-aim-controls-20261005\\slot-00\\weapon-00\\aim_controls.json",
+      "weapon_id": 12,
+      "cases": [
+        "native",
+        "straight",
+        "left45",
+        "unfocused"
+      ],
+      "constructor_writes": [
+        0,
+        6,
+        6,
+        0
+      ],
+      "directions": [
+        [
+          0.9488853435137666,
+          0.01529234637694859,
+          -0.31525029580802716
+        ],
+        [
+          0.9383564564965253,
+          0.010736807468548326,
+          -0.34550236108696547
+        ],
+        [
+          0.9085240319847118,
+          0.007473969066540897,
+          0.4177657514596367
+        ],
+        [
+          0.9489012077440968,
+          0.01533303240167389,
+          -0.3152005648141569
+        ]
+      ]
+    },
+    {
+      "path": "analysis\\weapon-capture\\tracked-aim-controls-20261005b\\slot-06\\weapon-00\\aim_controls.json",
+      "weapon_id": 1,
+      "cases": [
+        "native",
+        "straight",
+        "left45",
+        "unfocused"
+      ],
+      "constructor_writes": [
+        0,
+        6,
+        6,
+        0
+      ],
+      "directions": [
+        [
+          -0.11184868539556027,
+          0.010714916079910815,
+          0.9936674806738345
+        ],
+        [
+          -0.0796307277817905,
+          0.007530092461635035,
+          0.9967959896089378
+        ],
+        [
+          -0.7562152318384747,
+          -0.0015039706288894463,
+          0.6543212217312147
+        ],
+        [
+          -0.11184868539556027,
+          0.010714916079910815,
+          0.9936674806738345
+        ]
+      ]
+    },
+    {
+      "path": "analysis\\weapon-capture\\tracked-grenade-aim-controls-20261005c\\slot-06\\weapon-01\\aim_controls.json",
+      "weapon_id": 3,
+      "cases": [
+        "native",
+        "straight",
+        "left45",
+        "unfocused"
+      ],
+      "constructor_writes": [
+        0,
+        6,
+        6,
+        0
+      ],
+      "directions": [
+        [
+          -0.07213385952175126,
+          0.06483942428921462,
+          0.9952851628394445
+        ],
+        [
+          -0.07696891185708601,
+          0.06481592577438822,
+          0.9949244606368591
+        ],
+        [
+          -0.7569607781670649,
+          0.0631458417657614,
+          0.6504021701873425
+        ],
+        [
+          -0.07213385952175126,
+          0.06483942428921462,
+          0.9952851628394445
+        ]
+      ]
+    }
+  ],
+  "source_saves_unchanged": true,
+  "headset_acceptance": false,
+  "remaining": "Live single-player controls for the other seven IDs, per-weapon calibration, barrel/hit alignment, scoped mode, reload/animation/collision and headset validation remain open."
+}

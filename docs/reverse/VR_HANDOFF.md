@@ -11,17 +11,22 @@ This release branch starts from master `7ac0509`, with framework `3618bc00`.
 Normal VR selects world geometry using each eye's view; FOV and native sector
 visibility are unchanged. Both fixes were accepted on Quest 3 / VDXR, including
 movement-enabled visibility gameplay. Experimental continuous-pose/tolerance
-branches are excluded. Jitter remains the next TODO; frozen poses stop shaking
-but are diagnostic, while the tolerance-1 candidate improves world/weapon and
-worsens sky/compass. The clean ZIP cold-boots into Mission 1 without developer
+branches are excluded. The user explicitly shelved jitter on 2026-10-05
+and moved the active task to all-weapon tracking. `fix/vr-jitter-tolerance`
+retains its rebased v0.1.1 experiment and test results at `04624df`.
+The 30-second movement tests found distant-enemy flickering/shapes worse in
+the tolerance candidate; the integer-view control was better. No playable
+jitter fix is accepted. Weapon work starts from master `b3033cc` on local
+`feature/vr-all-weapon-tracking`; see [VR_WEAPON_TRACKING.md](VR_WEAPON_TRACKING.md).
+The clean ZIP cold-boots into Mission 1 without developer
 tools on PATH; bundled overlay compilation, flat VR isolation, save/load and
 normal exit pass. Live headset acceptance comes from the merged-fix tests;
 it was not repeated during packaging. See the latest release receipt.
 
 [v0.1.1 release](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.1)
-and [release notes](VR_RELEASE_V0.1.1.md). Continue the ordered TODO on the local
-`fix/vr-jitter-tolerance` branch; rebase it onto this release's master before
-further changes. Preserve its experimental launcher/build and framework worktree.
+and [release notes](VR_RELEASE_V0.1.1.md). Continue the current weapon task
+on `feature/vr-all-weapon-tracking`. Preserve the shelved jitter branch,
+experimental launcher/build and framework worktrees for later investigation.
 
 ## Current checkpoint and local work
 
@@ -46,7 +51,8 @@ further changes. Preserve its experimental launcher/build and framework worktree
   Use `git log -1 -- docs/reverse/VR_HANDOFF.md` to identify the release docs commit.
 - Main framework has a pre-existing untracked `.commandcode/` directory; it
   was excluded from the checkpoint. Do not silently add or remove unrelated work.
-- No game is running from the completed tests. Close owned games when done.
+- Close owned games after tests. An unrelated user-launched flat game may be
+  running; diagnostic captures use their own port 4372 and copied save directory.
 
 Local repositories:
 

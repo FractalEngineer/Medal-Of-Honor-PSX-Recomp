@@ -1,0 +1,131 @@
+{
+  "documented_date": "2026-10-04",
+  "game_branch": "develop",
+  "framework_branch": "develop",
+  "source": "User reports slot 0 is the direct in-game single-player scene; multiplayer weapon sets start at slot 1, with players facing each other. Switch weapons and fire; ammo may be replenished when zero. Exact slot/weapon mapping is not yet live-verified.",
+  "archive": "analysis/vr-proof/alpha-followup-original-saves/<sha256>/<original filename>",
+  "rules": [
+    "Never overwrite source saves for experiments.",
+    "Verify savestate_status after loading.",
+    "Ammo changes are temporary diagnostic edits to measured player/weapon fields only; preserve damage and native firing logic."
+  ],
+  "slots": [
+    {
+      "slot": 0,
+      "path": "saves/openbios/state_8001DFD4_slot00.pst",
+      "bytes": 1892438,
+      "sha256": "b065e06ee8c8df61249b7f93927ddbbfa45d44e7ad14c74d83f8c2ebd1843093",
+      "reported_role": "single-player gameplay",
+      "weapon_names": null,
+      "observed_mode": "single-player",
+      "observed_weapon_cycle": [
+        12,
+        3
+      ]
+    },
+    {
+      "slot": 1,
+      "path": "saves/openbios/state_8001DFD4_slot01.pst",
+      "bytes": 1772020,
+      "sha256": "da7a545b8678a9a07d0d4f56ea31267ea038cb7be20e82d3f883683de3c73faf",
+      "reported_role": "multiplayer weapon-set reference; verify on load",
+      "weapon_names": null,
+      "observed_mode": "multiplayer",
+      "observed_weapon_cycle": [
+        8,
+        6,
+        2,
+        3
+      ]
+    },
+    {
+      "slot": 2,
+      "path": "saves/openbios/state_8001DFD4_slot02.pst",
+      "bytes": 1730806,
+      "sha256": "99d3452e7fe15c29a69e9972c4b04a05a561ebba1a92a3ceb4db3bb43979577d",
+      "reported_role": "multiplayer weapon-set reference; verify on load",
+      "weapon_names": null,
+      "observed_mode": "multiplayer",
+      "observed_weapon_cycle": [
+        8,
+        5,
+        6,
+        10
+      ]
+    },
+    {
+      "slot": 3,
+      "path": "saves/openbios/state_8001DFD4_slot03.pst",
+      "bytes": 1729785,
+      "sha256": "978ae915e794464ab69ff7bcbf27600790d402657c065d360fb3de9a1b78a991",
+      "reported_role": "multiplayer weapon-set reference; verify on load",
+      "weapon_names": null,
+      "observed_mode": "multiplayer",
+      "observed_weapon_cycle": [
+        12,
+        5,
+        11,
+        3
+      ]
+    },
+    {
+      "slot": 4,
+      "path": "saves/openbios/state_8001DFD4_slot04.pst",
+      "bytes": 1729576,
+      "sha256": "0b1c955ebe6cb5d0d35d99e48cfabff3e94ba8fba90dda67888b4c3af88874bc",
+      "reported_role": "multiplayer weapon-set reference; verify on load",
+      "weapon_names": null,
+      "observed_mode": "multiplayer",
+      "observed_weapon_cycle": [
+        4,
+        11,
+        2,
+        3
+      ]
+    },
+    {
+      "slot": 5,
+      "path": "saves/openbios/state_8001DFD4_slot05.pst",
+      "bytes": 1725001,
+      "sha256": "91d964252bb952ff070059adfd4dc19df709665be4fec2682cfdcfb7e77264b3",
+      "reported_role": "multiplayer weapon-set reference; verify on load",
+      "weapon_names": null,
+      "observed_mode": "multiplayer",
+      "observed_weapon_cycle": [
+        12,
+        1,
+        4,
+        10
+      ]
+    },
+    {
+      "slot": 6,
+      "path": "saves/openbios/state_8001DFD4_slot06.pst",
+      "bytes": 1914483,
+      "sha256": "83df48f588a9292d48c2007b7f500e01c737f1ba8638ff9e7e1d0f3532986a4e",
+      "reported_role": "multiplayer weapon-set reference; verify on load",
+      "weapon_names": null,
+      "observed_mode": "single-player",
+      "observed_weapon_cycle": [
+        1,
+        3,
+        12
+      ]
+    },
+    {
+      "slot": 9,
+      "path": "saves/openbios/state_8001DFD4_slot09.pst",
+      "bytes": 1884925,
+      "sha256": "aaceb0cf7a24ccb6c29db48c39ecbfff18197953132b1946fbd9baf55308e53e",
+      "reported_role": "multiplayer weapon-set reference; verify on load",
+      "weapon_names": null,
+      "observed_mode": "single-player",
+      "observed_weapon_cycle": [
+        12,
+        3
+      ]
+    }
+  ],
+  "live_verified_date": "2026-10-05",
+  "active_weapon_branch": "feature/vr-all-weapon-tracking"
+}

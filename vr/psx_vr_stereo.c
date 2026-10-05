@@ -28,8 +28,8 @@
  *   PSX_VR_UNITS_PER_METER=N provisional metric mapping (default 48/.067)
  *   PSX_VR_WORLD_SCALE=N divisor on units/meter (default 1; Quest profile 3)
  *   PSX_VR_OPENXR=1      headset mode; compile PSX_OPENXR and set host PSX_OPENXR=1
- *   PSX_VR_WEAPON_AIM=1 experimental player rifle shot override
- *   PSX_VR_WEAPON_POSE=1 tracked rifle mesh prototype, render-only
+ *   PSX_VR_WEAPON_AIM=1 experimental player weapon shot override
+ *   PSX_VR_WEAPON_POSE=1 tracked weapon meshes, render-only
  *   PSX_VR_WEAPON_MODEL_UNITS_PER_METER=N / PSX_VR_WEAPON_PIVOT=x,y,z
  *                        provisional rifle scale/pivot (defaults 850 / 80,150,100)
  *   PSX_VR_MOVEMENT=0|1  Quest movement source (default on for XR, off otherwise)
@@ -60,6 +60,7 @@
 #include <math.h>
 #include "moh_vr_input.h"
 #include "moh_vr_aim.h"
+#include "moh_vr_weapons.h"
 #include "moh_vr_frustum.h"
 
 #define FUN_80084718 0x80084718u
@@ -693,7 +694,7 @@ static int vr_controller_source(PSXModControllerState *pad) {
     return moh_vr_input_map(&input, g_move_deadzone, g_turn_gain, &response, pad);
 }
 /* Constructor calls the native basis builder after auto-aim/pose selection.
- * Restrict this to measured player-owned rifle id5110, never NPC shots/replay.
+ * Restrict this to measured player-owned weapon/actor pairs, never NPC shots/replay.
  * With invalid or stale tracking the native shot pose is retained. */
 static void vr_shot_basis_entry(CPUState *cpu,uint32_t address) {
     (void)address;
@@ -704,10 +705,14 @@ static void vr_shot_basis_entry(CPUState *cpu,uint32_t address) {
     if(shot<0x80000000u || shot>=0x801ff000u || shot!=cpu->gpr[16] ||
        owner!=g_camera_owner || owner!=psx_mod_read_word(0x8009d654u) ||
        owner<0x80000000u || owner>=0x801ff000u ||
-       psx_mod_read_word(owner+8u)!=1u || psx_mod_read_word(shot+8u)!=5110u ||
+       psx_mod_read_word(owner+8u)!=1u ||
        psx_mod_read_word(0x8004551cu)!=0x0c01a9dbu || /* JAL 8006A76C */
        psx_mod_read_word(0x80045520u)!=0xae200044u ||
        psx_mod_read_word(0x8006a76cu)!=0x27bdffb8u)return;
+    uint32_t input=psx_mod_read_word(owner+904u);
+    if(input<0x80000000u || input>0x801fffaau)return;
+    unsigned shot_id=moh_vr_weapon_shot_id(psx_mod_read_byte(input+85u));
+    if(!shot_id || psx_mod_read_word(shot+8u)!=shot_id)return;
     PSXModOpenXRHands hands={0};hands.struct_size=sizeof hands;
     int32_t position[3],angles[2];
     if(!psx_mod_openxr_hands(&hands) ||
@@ -721,7 +726,8 @@ static void vr_shot_basis_entry(CPUState *cpu,uint32_t address) {
      * Speed, damage, ammo, owner, collision and the transition countdown stay native. */
 }
 
-/* The measured held-rifle render object is embedded at player input+784.
+/* Native player+256 names the held first-person object. Single-player
+ * embeds it at input+784; weapon selection uses input+85, not loadout slot.
  * Wrap its geometry draw so authored H compensation can be scoped to this
  * object, restoring the eye view before any subsequent world/HUD draw. */
 static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
@@ -731,8 +737,10 @@ static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
     if(player<0x80000000u || player>=0x801ff000u || psx_mod_read_word(player+8)!=1)return 0;
     uint32_t input=psx_mod_read_word(player+904);
     if(input<0x80000000u || input>=0x801ff000u || cpu->gpr[4]!=input+784u ||
-       psx_mod_read_byte(input+84u)!=0 || /* measured rifle slot/index */
+       cpu->gpr[4]!=psx_mod_read_word(player+256u) ||
        cpu->gte_ctrl[26]!=133u)return 0;
+    const MOHVRWeaponProfile *profile=moh_vr_weapon_profile(psx_mod_read_byte(input+85u));
+    if(!profile)return 0;
     PSXModOpenXRHands h={0};h.struct_size=sizeof h;
     if(!psx_mod_openxr_hands(&h) || !h.focused || !h.origin_valid || h.age_ms>150)return 0;
     const PSXModTrackedPose *grip=&h.pose[1][PSX_MOD_XR_GRIP_POSE];
@@ -751,16 +759,27 @@ static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
     if(cpu->gte_ctrl[5] || cpu->gte_ctrl[6] || cpu->gte_ctrl[7])return 0;
     uint32_t header=psx_mod_read_word(cpu->gpr[4]+124u);
     if(header<0x80000000u || header>=0x801ff000u)return 0;
-    uint32_t faces=psx_mod_read_word(header),count=psx_mod_read_word(header+4u),rifle_faces=0;
-    if(faces<0x80000000u || faces>=0x801fc000u || count!=280u)return 0;
+    uint32_t faces=psx_mod_read_word(header),count=psx_mod_read_word(header+4u),gun_faces=0;
+    if(count!=profile->faces || faces<0x80000000u || faces>0x80200000u-count*28u)return 0;
+    uint32_t nodes_header=psx_mod_read_word(cpu->gpr[4]+128u);
+    if(nodes_header<0x80000000u || nodes_header>0x801ffff8u ||
+       psx_mod_read_word(nodes_header+4u)!=profile->node_count)return 0;
+    uint32_t nodes=psx_mod_read_word(nodes_header);
+    if(nodes<0x80000000u || nodes>0x80200000u-profile->node_count*8u)return 0;
+    for(unsigned n=profile->gun_node;n<profile->node_count;n++)
+        if(psx_mod_read_word(nodes+n*8u+4u)!=profile->vertices[n-profile->gun_node])return 0;
     for(uint32_t i=0;i<count;i++) {
         uint32_t a=faces+i*28u;
-        if(psx_mod_read_byte(a+23u)==22 && psx_mod_read_byte(a+25u)==22 && psx_mod_read_byte(a+27u)==22) {
-            if(psx_mod_read_byte(a+22u)>=136 || psx_mod_read_byte(a+24u)>=136 || psx_mod_read_byte(a+26u)>=136)return 0;
-            rifle_faces++;
+        uint8_t ns[3],vs[3];
+        for(unsigned k=0;k<3;k++) {
+            vs[k]=psx_mod_read_byte(a+22u+k*2u);
+            ns[k]=psx_mod_read_byte(a+23u+k*2u);
         }
+        int selected=moh_vr_weapon_face(profile,ns,vs);
+        if(selected<0)return 0;
+        if(selected)gun_faces++;
     }
-    if(rifle_faces!=174u)return 0;
+    if(gun_faces!=profile->gun_faces)return 0;
     g_weapon_render_entity=cpu->gpr[4];g_weapon_outer=1;
     PSXModRenderView view=g_eye_view[g_stereo_eye];
     /* Uniformly enlarge camera coordinates AND the eye displacement. Ratios
@@ -769,16 +788,18 @@ static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
     for(int i=0;i<3;i++)view.translation[i]=(int32_t)llround(view.translation[i]*g_weapon_projection_scale);
     if(g_authored_focal)view.projection_h_ref=133;
     if(!psx_mod_render_view(&view)){g_weapon_outer=0;return 0;}
-    /* Measured rifle asset: node 22 is the gun (136 vertices, 174 GT3 faces).
-     * Other faces skin the original first-person arms. Do not move those
-     * arms around a controller pivot: retain only the rifle face group.
-     * Compact inside this eye transaction; original asset RAM is restored. */
+    /* Keep the measured weapon assembly, including animated gun parts,
+     * and remove native arms inside this eye's rollback transaction. */
     {
         uint32_t kept=0;
         for(uint32_t i=0;i<count;i++) {
             uint32_t a=faces+i*28u;
-            if(psx_mod_read_byte(a+23u)!=22 || psx_mod_read_byte(a+25u)!=22 ||
-               psx_mod_read_byte(a+27u)!=22)continue;
+            uint8_t ns[3],vs[3];
+            for(unsigned k=0;k<3;k++) {
+                vs[k]=psx_mod_read_byte(a+22u+k*2u);
+                ns[k]=psx_mod_read_byte(a+23u+k*2u);
+            }
+            if(moh_vr_weapon_face(profile,ns,vs)!=1)continue;
             if(kept!=i)for(uint32_t k=0;k<28;k+=4)
                 psx_mod_write_word(faces+kept*28u+k,psx_mod_read_word(a+k));
             kept++;

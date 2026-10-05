@@ -7,6 +7,12 @@ Target: Quest 3 through Virtual Desktop / VDXR; user IPD 67mm.
 This is the current backlog, not a claim that the causes below are established.
 **Reported** means user-observed; **known gap** means implementation or validation
 is incomplete; **proposal** needs a choice before changing the accepted behavior.
+Latest user priority: shelf jitter and implement tracking for all weapons.
+The jitter candidate is preserved on `fix/vr-jitter-tolerance` (`04624df`);
+the movement-enabled tolerance test regressed distant-enemy stability relative
+to the integer-view control. Resume that investigation only when requested.
+Weapon work uses `feature/vr-all-weapon-tracking`, based on v0.1.1 master.
+
 Unchecked items remain open. Recommended order: rendering/correctness, weapon
 coverage and controls, wrist UI, then calibration and broader release coverage.
 
@@ -100,9 +106,11 @@ publication with these two merged fixes before continuing jitter work.
   Test equip/switch, mesh and grip, muzzle/shot alignment, ammo, fire/release,
   reload, recoil, animations, sound and damage. Cover grenades/projectiles and
   scoped/special aim behavior where present; do not assume firearm ray logic.
-  Current measured shot override is guarded to player-owned rifle id 5110;
-  rifle-only face handling uses the measured node-22 layout. Generalize by
-  measured weapon layouts/producers, with explicit fallback for unsupported ones.
+  Native inventory now identifies ten weapon IDs across multiplayer slots 1?5.
+  The local candidate adds guarded mesh profiles for all ten, retaining animated
+  gun parts, and weapon/actor pairs for the common shot constructor. Rifle,
+  Thompson and fragmentation-grenade synthetic mesh controls pass; remaining
+  gameplay/hardware coverage is open. See VR_WEAPON_TRACKING.md and its receipt.
 - [ ] **Reported requirement: disable legacy aiming controls.** Remove the
   temporary right-grip native aim binding and any unwanted legacy camera/zoom
   behavior once tracked aiming coverage is validated. Review special/scoped

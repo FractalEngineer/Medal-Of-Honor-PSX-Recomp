@@ -1,10 +1,11 @@
-"""Bounded synthetic rifle aiming controls; no headset alignment claim.
+"""Bounded synthetic weapon aiming controls; no headset alignment claim.
 
-Launch run_vr.ps1 -Desktop -MovementDiagnostic -WeaponAimDiagnostic -Slot 5.
+Launch run_vr.ps1 -Desktop -MovementDiagnostic -WeaponAimDiagnostic -Slot 0.
 Bulk traces stay in the supplied ignored directory. Requires framework PC filters.
 """
 import argparse
 import math
+import time
 from pathlib import Path
 from capture_stereo import command, save
 from check_movement import load, wait_frames
@@ -15,9 +16,11 @@ def signed(value):
     return v - 2**32 if v >= 2**31 else v
 
 
-def control(out, slot, name, pose, turn):
+def control(out, slot, name, pose, turn, equip=None, release_frames=12, arena_end=0x800ef000):
     command('openxr_hands_override', clear=1)
     load(slot)
+    if equip is not None:
+        equip()
     if turn:
         command('openxr_input_override', rx=turn)
         wait_frames(20)
@@ -30,11 +33,22 @@ def control(out, slot, name, pose, turn):
     command('wtrace_clear')
     # Shot allocation varies, including after a body turn. Covers the measured
     # actor arena, excluding GPU packet memory and stack traffic.
-    command('wtrace_range', lo='0x800b0000', hi='0x800ef000')
+    command('wtrace_range', lo='0x800b0000', hi=hex(arena_end))
     command('openxr_input_override', right_trigger=1000)
-    interval = wait_frames(24)
+    def wait_with_pose(n):
+        if pose is None:
+            return wait_frames(n)
+        first = command('frame')['frame']
+        deadline = time.monotonic()+30
+        while (frame := command('frame')['frame']) < first+n:
+            if time.monotonic()>deadline:
+                raise TimeoutError('Fresh synthetic pose window')
+            command('openxr_hands_override',hand='right',pose='aim',**pose)
+            time.sleep(.04)
+        return {'first':first,'last':frame}
+    interval = wait_with_pose(24)
     command('openxr_input_override', clear=1)
-    wait_frames(12)
+    wait_with_pose(release_frames)
     command('wtrace_range', lo='0', hi='0')
     traces = {}
     for label, lo, hi in [('seam', 0x80045514, 0x80045524),
@@ -77,7 +91,7 @@ def control(out, slot, name, pose, turn):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('directory', type=Path)
-    p.add_argument('--slot', type=int, default=5)
+    p.add_argument('--slot', type=int, default=0)
     args = p.parse_args()
     out = args.directory.resolve()
     out.mkdir(parents=True, exist_ok=True)
