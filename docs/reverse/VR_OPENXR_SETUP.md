@@ -36,6 +36,34 @@ executable SHA256 and actual CMake framework-root provenance. It defaults to slo
 use Release without verification for worn-headset tests. The script restores its
 parent environment and clears old offset/fault/synthetic-pose controls.
 
+### Other OpenXR runtimes
+
+VDXR is the default and fully tested runtime. The launcher can pin one installed
+runtime for a single launch through the loader's process-scoped `XR_RUNTIME_JSON`
+override, without changing the system's active runtime or the registry:
+
+```powershell
+.\RunVR-VDXR.bat        # Virtual Desktop (VDXR)
+.\RunVR-Oculus.bat      # Meta Quest Link / Air Link
+.\RunVR-SteamVR.bat     # SteamVR
+```
+
+Each wrapper calls `RunVR.bat -Runtime <name>`; any other arguments still pass
+through. The names resolve to the runtimes' default install manifests, and
+`-RuntimeJson <path>` selects an explicit manifest. `-Runtime current` (default)
+leaves the active runtime alone. The build renders with Windows OpenGL, so the
+chosen runtime must expose `XR_KHR_opengl_enable`; a Direct3D-only runtime (for
+example Windows Mixed Reality) will not start.
+
+Runtime status: **SteamVR/OpenXR** launches, delivers controller poses and
+renders correctly with the compiled submission (no orientation override needed).
+**Oculus / Meta Quest Link is untested**: the runtime loads and passes the
+OpenGL check, but `xrGetSystem` returns `-35`
+(`XR_ERROR_FORM_FACTOR_UNAVAILABLE`) while the Quest is streamed through Virtual
+Desktop rather than Quest Link. Connect with the Meta Quest app's Link/Air Link
+and retest. Runtimes other than VDXR/SteamVR, and their color handling, remain
+unverified — see the compatibility-matrix task in the backlog.
+
 ## Controls and inspection
 
 | Control | Meaning |
@@ -48,6 +76,8 @@ parent environment and clears old offset/fault/synthetic-pose controls.
 | `-NoMovement` | Disable the Quest input source and retain ordinary game input |
 | `-MoveDeadzone 0.2` | Radial movement deadzone; scalar turn deadzone, rescaled |
 | `-TurnGain 0.65` | Right horizontal axis gain; native game controls the turn rate |
+| `-Runtime vdxr\|oculus\|steamvr` | Pin an installed OpenXR runtime for this launch; default `current` |
+| `-RuntimeJson <path>` | Explicit OpenXR runtime manifest; overrides `-Runtime` |
 | `-Desktop -MovementDiagnostic` | Enable the source for explicitly synthetic TCP input controls |
 
 Effective mapping is `base_units_per_meter / WorldScale`. At profile 3 this is

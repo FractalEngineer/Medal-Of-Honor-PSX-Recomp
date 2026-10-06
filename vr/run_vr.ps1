@@ -26,6 +26,13 @@ param(
     # overrides every config layer for one run (native/720p/1080p/1440p/4k/5k/8k/display).
     [ValidateSet('native', '720p', '1080p', '1440p', '4k', '5k', '8k', 'display')]
     [string]$InternalResolution = '1080p',
+    # Force one installed OpenXR runtime for this launch. The pinned loader reads
+    # a process-scoped XR_RUNTIME_JSON override, so the active system runtime and
+    # the registry are left untouched. The runtime must expose OpenGL for this
+    # build (XR_KHR_opengl_enable); 'current' uses whatever is already active.
+    [ValidateSet('current', 'vdxr', 'oculus', 'steamvr')]
+    [string]$Runtime = 'current',
+    [string]$RuntimeJson = '',
     [switch]$Build,
     [string]$BuildDirectory = 'build-release',
     [string]$DiscPath = '',
@@ -40,6 +47,39 @@ $vrExe = Join-Path $vrBuild 'Medal_of_Honor__Recompiled.exe'
 if (-not $Build -and (Test-Path -LiteralPath (Join-Path $vrRoot 'Medal_of_Honor__Recompiled.exe'))) {
     $vrExe = Join-Path $vrRoot 'Medal_of_Honor__Recompiled.exe'
 }
+
+function Resolve-VRRuntimeJson {
+    param([string]$Name, [string]$ExplicitPath)
+    if ($ExplicitPath) {
+        if (-not (Test-Path -LiteralPath $ExplicitPath)) {
+            throw "OpenXR runtime manifest not found: $ExplicitPath"
+        }
+        return (Resolve-Path -LiteralPath $ExplicitPath).Path
+    }
+    if (-not $Name -or $Name -eq 'current') { return $null }
+    $vrPf = $env:ProgramFiles
+    $vrPf86 = ${env:ProgramFiles(x86)}
+    $vrLocal = $env:LOCALAPPDATA
+    $vrCandidates = @()
+    if ($Name -eq 'vdxr') {
+        if ($vrPf) { $vrCandidates += (Join-Path $vrPf 'Virtual Desktop Streamer\OpenXR\virtualdesktop-openxr.json') }
+        if ($vrPf86) { $vrCandidates += (Join-Path $vrPf86 'Virtual Desktop Streamer\OpenXR\virtualdesktop-openxr.json') }
+        if ($vrLocal) { $vrCandidates += (Join-Path $vrLocal 'Programs\VirtualDesktopStreamer\OpenXR\virtualdesktop-openxr.json') }
+    } elseif ($Name -eq 'oculus') {
+        # Quest Link ships under "Meta Horizon" now; older installs used "Oculus".
+        if ($vrPf) { $vrCandidates += (Join-Path $vrPf 'Meta Horizon\Support\oculus-runtime\oculus_openxr_64.json') }
+        if ($vrPf) { $vrCandidates += (Join-Path $vrPf 'Oculus\Support\oculus-runtime\oculus_openxr_64.json') }
+    } elseif ($Name -eq 'steamvr') {
+        if ($vrPf86) { $vrCandidates += (Join-Path $vrPf86 'Steam\steamapps\common\SteamVR\steamxr_win64.json') }
+        if ($vrPf) { $vrCandidates += (Join-Path $vrPf 'Steam\steamapps\common\SteamVR\steamxr_win64.json') }
+    }
+    foreach ($vrCandidate in $vrCandidates) {
+        if (Test-Path -LiteralPath $vrCandidate) { return (Resolve-Path -LiteralPath $vrCandidate).Path }
+    }
+    throw ("No $Name OpenXR runtime manifest found. Install it or pass -RuntimeJson <path>. Tried: " + ($vrCandidates -join '; '))
+}
+$vrRuntimeJson = Resolve-VRRuntimeJson -Name $Runtime -ExplicitPath $RuntimeJson
+if ($vrRuntimeJson) { Write-Host "OpenXR runtime: $Runtime -> $vrRuntimeJson" }
 
 function Get-VRStartupStatus {
     $client = New-Object System.Net.Sockets.TcpClient
@@ -64,6 +104,9 @@ $vrVariables = @{
     PSX_VR_OPENXR = [string][int](-not $Desktop);
     PSX_VR_STEREO = '1'; PSX_VR_PROBE = '0'; PSX_VR_INTERP = '0';
     PSX_INTERNAL_RESOLUTION = $InternalResolution;
+    # Process-scoped runtime override; restored with the rest in the finally block.
+    # Native-only (no XR_RUNTIME_JSON) leaves any inherited value untouched.
+    XR_RUNTIME_JSON = $(if ($vrRuntimeJson) { $vrRuntimeJson } else { [Environment]::GetEnvironmentVariable('XR_RUNTIME_JSON','Process') });
     # Accepted eye-view visibility for normal VR; keep desktop diagnostics native.
     PSX_VR_HEAD_FRUSTUM = [string][int]((-not $Desktop) -and (-not $NoHeadFrustumDiagnostic));
     PSX_VR_MOVEMENT = [string][int]((-not $NoMovement) -and ((-not $Desktop) -or $MovementDiagnostic));
@@ -162,7 +205,7 @@ try {
             if ($vrLastStatus.failures -gt 0) { break }
             Start-Sleep -Milliseconds 200
         }
-        if (-not $vrReady) { throw ('VR startup failed; no headset frames submitted. Check the active OpenXR runtime. Status: ' + ($vrLastStatus | ConvertTo-Json -Compress)) }
+        if (-not $vrReady) { throw ('VR startup failed; no headset frames submitted. This build needs an OpenGL-capable OpenXR runtime (check the active runtime, or pass -Runtime). Status: ' + ($vrLastStatus | ConvertTo-Json -Compress)) }
     }
     if ($Seconds -gt 0) {
         $null = $vrProcess.WaitForExit($Seconds * 1000)

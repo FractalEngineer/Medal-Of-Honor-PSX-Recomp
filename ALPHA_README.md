@@ -1,7 +1,8 @@
 # Medal of Honor Recompiled — Native VR Alpha
 
 This is a Windows x64 testing release. Flat play is the default; VR is optional.
-Quest 3 through Virtual Desktop with VDXR is the tested headset/runtime setup.
+Quest 3 through Virtual Desktop with VDXR is the tested headset/runtime setup;
+SteamVR/OpenXR also renders correctly. Oculus / Meta Quest Link is untested.
 
 v0.1.3 adds tracking profiles for all ten supplied weapons, accepted
 visually in the Quest 3 / VDXR batch on 2026-10-06, and maps jump to right-stick
@@ -23,6 +24,13 @@ world geometry; eye FOV and the game's sector visibility remain unchanged.
 4. For **VR**, connect your headset, activate the intended OpenXR runtime
    (VDXR for the tested setup), and run `RunVR.bat`. Select your CUE when asked.
    The BIN files stay beside your CUE in their existing location.
+
+To pin a specific runtime instead, run `RunVR-VDXR.bat`, `RunVR-SteamVR.bat` or
+`RunVR-Oculus.bat` (Meta Quest Link / Air Link). Each selects the runtime for
+that launch only and leaves the system's active runtime unchanged. VDXR and
+SteamVR are tested; **Oculus / Meta Quest Link is untested** — it needs the Quest
+connected through the Quest Link app. This build renders with OpenGL, so a
+Direct3D-only runtime (for example Windows Mixed Reality) will not start.
 
 The launchers remember the disc beside the executable. Normal VR boot includes
 videos, menus and briefing; gameplay switches to per-eye rendering. No test save,
@@ -68,8 +76,8 @@ Menus: left stick navigates; A or right trigger confirms; B goes back.
   need separate validation. Visibility acceptance covers the tested scene;
   broader sector coverage and near-plane clipping remain open.
 - Wrist HUD and an in-game VR options menu are pending. World scale is provisional.
-- Headset cadence, focus/tracking loss, reconnect, other headsets/runtimes and
-  broad mission coverage need more testing.
+- Headset cadence, focus/tracking loss, reconnect, broad mission coverage and
+  Oculus / Meta Quest Link (untested) need more testing.
 - Windows OpenGL is the alpha rendering target. This release does not advertise
   Vulkan or Linux/macOS VR support.
 
