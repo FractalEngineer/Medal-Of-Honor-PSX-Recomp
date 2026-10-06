@@ -26,8 +26,6 @@ static uint32_t combat_buttons(const PSXModOpenXRInput *input) {
     if (right & PSX_MOD_XR_STICK) pressed |= 0x1000; /* right click: Triangle/jump */
     if (left & PSX_MOD_XR_STICK) pressed |= 0x0100; /* left click: L2/crouch toggle */
     if (left & PSX_MOD_XR_MENU) pressed |= 0x0008; /* Menu: Start */
-    if (input->squeeze_active[1] && isfinite(input->squeeze[1]) &&
-        input->squeeze[1] >= .55f && input->squeeze[1] <= 1) pressed |= 0x0200; /* right grip: R2/native aim */
     return 0xffffu ^ pressed;
 }
 int moh_vr_menu_input_map(const PSXModOpenXRInput *input,double deadzone,
