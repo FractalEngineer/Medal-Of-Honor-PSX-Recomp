@@ -21,16 +21,21 @@ world geometry; eye FOV and the game's sector visibility remain unchanged.
    `faebe91db711f804e1a6a38613c804b2c370f340`. No game data or retail BIOS dump
    is included. The package includes the redistributable OpenBIOS and its notice.
 3. For **flat play**, run `RunFlat.bat` and select your disc in the launcher.
-4. For **VR**, connect your headset, activate the intended OpenXR runtime
-   (VDXR for the tested setup), and run `RunVR.bat`. Select your CUE when asked.
-   The BIN files stay beside your CUE in their existing location.
+4. For **VR**, connect your headset and run the launcher for the runtime you
+   want — the runtime is chosen by which launcher you run, and the system's
+   active runtime is left unchanged. Select your CUE when asked; the BIN files
+   stay beside your CUE in their existing location.
 
-To pin a specific runtime instead, run `RunVR-VDXR.bat`, `RunVR-SteamVR.bat` or
-`RunVR-Oculus.bat` (Meta Quest Link / Air Link). Each selects the runtime for
-that launch only and leaves the system's active runtime unchanged. VDXR and
-SteamVR are tested; **Oculus / Meta Quest Link is untested** — it needs the Quest
-connected through the Quest Link app. This build renders with OpenGL, so a
-Direct3D-only runtime (for example Windows Mixed Reality) will not start.
+   ```powershell
+   .\RunVR-VDXR.bat        # Virtual Desktop (VDXR)
+   .\RunVR-SteamVR.bat     # SteamVR
+   .\RunVR-Oculus.bat      # Meta Quest Link / Air Link
+   ```
+
+   VDXR and SteamVR are tested; **Oculus / Meta Quest Link is untested** — it
+   needs the Quest connected through the Quest Link app. This build renders with
+   OpenGL, so a Direct3D-only runtime (for example Windows Mixed Reality) will
+   not start.
 
 The launchers remember the disc beside the executable. Normal VR boot includes
 videos, menus and briefing; gameplay switches to per-eye rendering. No test save,
@@ -41,7 +46,7 @@ can take time. Saves are stored in `saves/`; keep them when replacing a build.
 For an explicit disc path:
 
 ```powershell
-.\RunVR.bat -DiscPath "C:\Games\Medal of Honor\medal-of-honor.cue"
+.\RunVR-VDXR.bat -DiscPath "C:\Games\Medal of Honor\medal-of-honor.cue"
 ```
 
 Run until you close the game. If VR startup fails, check that the headset is

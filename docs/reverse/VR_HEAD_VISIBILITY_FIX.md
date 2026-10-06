@@ -22,8 +22,8 @@ remain visible for downstream native clipping. Writes occur within the existing
 stereo rollback transaction. Retain the existing entry instrumentation through
 one function filter; duplicate entry/filter registration would replace it.
 
-Normal RunVR.bat enables PSX_VR_HEAD_FRUSTUM=1. For the prior selector use
-RunVR.bat -NoHeadFrustumDiagnostic. Desktop/native play remains unchanged.
+Normal VR launch enables PSX_VR_HEAD_FRUSTUM=1. For the prior selector pass
+-NoHeadFrustumDiagnostic to the launcher. Desktop/native play remains unchanged.
 
 Evidence: source-owned frustum/tree fixtures cover forward/behind, rotation,
 leaning, plane crossing, saturation, PVS/order, invalid RAM, cycles and queue

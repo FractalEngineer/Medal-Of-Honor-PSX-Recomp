@@ -42,7 +42,7 @@ is still uncalibrated. The rejected bicubic movie experiment stays removed.
 
 All normal and weapon launchers now default to `build-release`; an explicit
 `-BuildDirectory` still selects a candidate. Previously the batch used
-`build-vr-weapons` while normal RunVR used a stale v0.1.0 build. Check the actual
+`build-vr-weapons` while the normal VR launcher used a stale v0.1.0 build. Check the actual
 executable path and build provenance, not just the Git revision.
 
 Do not remove registered game/framework worktrees or pre-existing framework
@@ -65,16 +65,16 @@ preserved. Framework-repository branches were not changed.
 
 ## Launch and rebuild
 
-Connect VDXR and run `RunVR.bat`; use `RunFlat.bat` for ordinary flat play.
-No save is needed for normal VR boot. Future live gameplay checks default to
-30 seconds with movement enabled, after asking whether the headset is ready.
+Choose the runtime by which launcher you run — `RunVR-VDXR.bat` (Virtual Desktop
+VDXR), `RunVR-SteamVR.bat` or `RunVR-Oculus.bat` (Meta Quest Link / Air Link);
+use `RunFlat.bat` for ordinary flat play. Each launcher selects that runtime for
+the launch and leaves the system's active runtime unchanged. No save is needed
+for normal VR boot. Future live gameplay checks default to 30 seconds with
+movement enabled, after asking whether the headset is ready.
 
 ```powershell
-.\RunVR.bat
-.\RunVR.bat -Build
-.\RunVRWeaponBatch.bat -Weapon mp40
-.\RunVRWeaponBatch.bat -Mode compare
-.\RunVRWeaponBatch.bat -Desktop -Verify -Seconds 1
+.\RunVR-VDXR.bat
+.\RunVR-VDXR.bat -Build
 ```
 
 [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md) owns the diagnostic recipes. These

@@ -48,10 +48,12 @@ override, without changing the system's active runtime or the registry:
 .\RunVR-SteamVR.bat     # SteamVR
 ```
 
-Each wrapper calls `RunVR.bat -Runtime <name>`; any other arguments still pass
-through. The names resolve to the runtimes' default install manifests, and
-`-RuntimeJson <path>` selects an explicit manifest. `-Runtime current` (default)
-leaves the active runtime alone. The build renders with Windows OpenGL, so the
+Each launcher runs `vr/run_vr.ps1 -Runtime <name>` with the accepted VR settings
+and tracked-weapon controls; any other arguments still pass through. The names
+resolve to the runtimes' default install manifests, and `-RuntimeJson <path>`
+selects an explicit manifest. The runtime is chosen by which launcher you run
+(`RunVR-VDXR.bat`, `RunVR-SteamVR.bat` or `RunVR-Oculus.bat`), so the system's
+active runtime is left untouched. The build renders with Windows OpenGL, so the
 chosen runtime must expose `XR_KHR_opengl_enable`; a Direct3D-only runtime (for
 example Windows Mixed Reality) will not start.
 

@@ -207,7 +207,7 @@ bicubic and jitter experiments are excluded.
   exit and sustained performance. Include differing controller layouts and
   action availability; document unsupported features and required remapping.
 - [ ] Verify the alpha from a clean checkout/build or intended distribution:
-  pinned dependencies, RunVR.bat paths, no required save, normal exit and clear
+  pinned dependencies, launcher paths, no required save, normal exit and clear
   unavailable-XR startup behavior. Record executable/config provenance and the
   limitations testers should expect. Alpha publishing itself is a separate task.
 - [ ] Prepare upstream PRs for settled generic framework changes using

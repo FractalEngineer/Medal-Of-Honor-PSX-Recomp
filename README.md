@@ -91,7 +91,7 @@ launches retain flat rendering and normal controller input. VR environment
 overrides should be absent for flat play; the VR wrapper restores its process
 environment when it exits.
 
-`RunVR.bat -Desktop` is a stereo diagnostic mode, not the ordinary flat launch.
+`RunVR-VDXR.bat -Desktop` is a stereo diagnostic mode, not the ordinary flat launch.
 
 ## Experimental VR alpha (Windows)
 
@@ -102,8 +102,11 @@ Virtual Desktop with **VDXR** is the tested setup.
 
 ### Setup and launch
 
-Download the Windows release and extract the entire ZIP. Connect your headset,
-activate your OpenXR runtime, and double-click `RunVR.bat`. Select your own
+Download the Windows release and extract the entire ZIP. Connect your headset
+and double-click the launcher for your runtime: `RunVR-VDXR.bat` (Virtual
+Desktop VDXR), `RunVR-SteamVR.bat` or `RunVR-Oculus.bat` (Meta Quest Link / Air
+Link). Each selects that runtime for the launch and leaves the system's active
+runtime unchanged. Select your own
 **SLUS-00974 (NTSC-U)** CUE/BIN image when prompted; the launcher remembers its
 location. Keep the BIN files beside the CUE.
 
@@ -115,7 +118,7 @@ in the console. Keep your `saves/` folder when updating.
 To select a disc explicitly:
 
 ```powershell
-.\RunVR.bat -DiscPath "C:\Games\Medal of Honor\medal-of-honor.cue"
+.\RunVR-VDXR.bat -DiscPath "C:\Games\Medal of Honor\medal-of-honor.cue"
 ```
 
 Use `RunFlat.bat` for ordinary flat play. See
@@ -166,8 +169,9 @@ cmake --build build-release --target psx-runtime
 ```
 
 For Windows VR, configure the Release build with `-DPSX_OPENXR=ON`, or use
-`RunVR.bat -Build` after preparing the build tools and generated game C. Compiling
-OpenXR support does not automatically enable VR when launching the executable.
+`RunVR-VDXR.bat -Build` after preparing the build tools and generated game C.
+Compiling OpenXR support does not automatically enable VR when launching the
+executable.
 
 Releases `v0.1.0` through `v0.1.3` use locally verified Windows alpha packages. CI builds
 its platform matrix without replacing those tested assets. Other tags `vX.Y.Z`
