@@ -4,9 +4,11 @@ This is a Windows x64 testing release. Flat play is the default; VR is optional.
 Quest 3 through Virtual Desktop with VDXR is the tested headset/runtime setup;
 SteamVR/OpenXR also renders correctly. Oculus / Meta Quest Link is untested.
 
-v0.1.3 adds tracking profiles for all ten supplied weapons, accepted
-visually in the Quest 3 / VDXR batch on 2026-10-06, and maps jump to right-stick
-click. `BUILD_INFO.json` identifies the exact source commit and executable hash.
+v0.1.4 adds a barrel laser sight and one-stick aiming for the mounted machine
+gun. v0.1.3 added tracking profiles for all ten supplied weapons, accepted
+visually in the Quest 3 / VDXR batch on 2026-10-06, and mapped jump to
+right-stick click. `BUILD_INFO.json` identifies the exact source commit and
+executable hash.
 
 v0.1.1 corrects headset brightness/contrast and prevents head turns from losing
 world tiles in the tested scene. Visibility now uses each eye's view to select

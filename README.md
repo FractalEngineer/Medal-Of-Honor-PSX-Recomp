@@ -2,7 +2,7 @@
 
 <!-- retcomm-readme-metrics -->
 [![GitHub downloads (all assets, all releases)](https://img.shields.io/github/downloads/FractalEngineer/Medal-Of-Honor-PSX-Recomp/total)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases)
-[![Alpha v0.1.3](https://img.shields.io/badge/alpha-v0.1.3-orange)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.3)
+[![Alpha v0.1.4](https://img.shields.io/badge/alpha-v0.1.4-orange)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.4)
 <!-- /retcomm-readme-metrics -->
 
 <!-- retcomm-readme-boxart -->
@@ -19,8 +19,8 @@ Play the original game on a flat display, or opt into the experimental native
 VR alpha with head tracking, per-eye rendering and tracked-weapon controls.
 Flat play is the default; VR is enabled through a separate launcher.
 
-The **v0.1.3 Windows native alpha** is available from this fork's
-[releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.3).
+The **v0.1.4 Windows native alpha** is available from this fork's
+[releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.4).
 See [alpha installation and controls](ALPHA_README.md) before testing.
 
 | | |
@@ -95,7 +95,7 @@ environment when it exits.
 
 ## Experimental VR alpha (Windows)
 
-The current [v0.1.3 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.3)
+The current [v0.1.4 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.4)
 includes controller tracking for all ten weapon types, right-stick-click jump,
 headset color and head-turn visibility fixes, a tracked-weapon barrel laser that
 ends on the surface it hits, and a 1080p default. Quest 3 through

@@ -39,7 +39,8 @@ def main():
         raise RuntimeError("The alpha must link only the bundled OpenBIOS backend")
     if (stage / "psx_game_version.txt").read_text().strip() != args.version:
         raise RuntimeError("Release version does not match the executable build stamp")
-    for name in ("RunFlat.bat", "RunVR.bat", "ALPHA_README.md", "vr/run_vr.ps1"):
+    for name in ("RunFlat.bat", "RunVR-VDXR.bat", "RunVR-SteamVR.bat", "RunVR-Oculus.bat",
+                 "ALPHA_README.md", "vr/run_vr.ps1"):
         target = stage / name
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / name, target)
@@ -76,7 +77,8 @@ def main():
     (stage / "BUILD_INFO.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
     (stage / "README.txt").write_text(
         "Medal of Honor Recompiled " + args.version + " — Native VR Alpha\n"
-        "Flat: RunFlat.bat. VR: connect headset/OpenXR runtime, then RunVR.bat.\n"
+        "Flat: RunFlat.bat. VR: connect headset/OpenXR runtime, then run the\n"
+        "launcher for that runtime (RunVR-VDXR.bat / RunVR-SteamVR.bat / RunVR-Oculus.bat).\n"
         "Select your own SLUS-00974 CUE/BIN image. No game data is included.\n"
         "See ALPHA_README.md for setup, controls and known limitations.\n",
         encoding="utf-8",
