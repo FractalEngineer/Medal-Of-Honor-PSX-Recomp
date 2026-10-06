@@ -19,6 +19,7 @@ def main():
     parser.add_argument('inventory',type=Path)
     parser.add_argument('directory',type=Path)
     parser.add_argument('--compiler',default='C:/Strawberry/c/bin/gcc.exe')
+    parser.add_argument('--expected-ids',type=int,nargs='+',default=[1,2,3,4,5,6,8,10,11,12])
     args=parser.parse_args()
     out=args.directory.resolve()
     out.mkdir(parents=True,exist_ok=False)
@@ -70,10 +71,10 @@ def main():
             results[wid]={'faces':n,'selected_faces':selected,'gun_node':p.gun_node,
                           'node_count':p.node_count,'captured_source':str(path)}
             count+=1
-    assert set(results)=={1,2,3,4,5,6,8,10,11,12},results.keys()
+    assert set(results)==set(args.expected_ids),results.keys()
     (out/'receipt.json').write_text(json.dumps({'complete':True,'native_meshes_checked':count,
         'profiles':results,'scope':'Captured layouts and malformed-index rejection; no live pose or damage claim'},indent=2)+'\n',newline='\n')
-    print(f'PASS: {count} captured native meshes, all 10 profiles, malformed gun indices rejected')
+    print(f'PASS: {count} captured native meshes, {len(results)} profiles, malformed gun indices rejected')
 
 
 if __name__=='__main__':

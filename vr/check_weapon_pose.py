@@ -12,11 +12,13 @@ from capture_stereo import command, save
 from check_movement import load, wait_frames
 
 
-def capture(out, name, pose, multiplayer=False):
+def capture(out, name, pose, multiplayer=False, input_override=None):
     directory = out / name
     directory.mkdir()
     command('openxr_hands_override', clear=1)
     def refresh_pose():
+        if input_override is not None:
+            command('openxr_input_override', **input_override)
         if pose is None:
             return
         command('openxr_hands_override', hand='right', pose='grip',

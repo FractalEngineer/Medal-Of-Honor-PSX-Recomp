@@ -802,8 +802,8 @@ static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
     if(!moh_vr_matrix_inverse(w,inverse) ||
        !vr_pose_to_transform(q,p,h.origin_orientation_xyzw,h.origin_position_m,
                              g_units_per_meter*g_weapon_projection_scale,r,t))return 0;
-    if(!moh_vr_weapon_transform(inverse,r,t,g_units_per_meter*g_weapon_projection_scale/g_weapon_model_units_per_meter,
-                               g_weapon_pivot,g_weapon_draw_rotation,g_weapon_draw_translation))return 0;
+    if(!moh_vr_weapon_transform(inverse,r,t,g_units_per_meter*g_weapon_projection_scale/g_weapon_model_units_per_meter *
+                               moh_vr_weapon_model_scale(profile),g_weapon_pivot,g_weapon_draw_rotation,g_weapon_draw_translation))return 0;
     /* Current measured weapon TR is zero; decline another transform contract. */
     if(cpu->gte_ctrl[5] || cpu->gte_ctrl[6] || cpu->gte_ctrl[7])return 0;
     uint32_t header=psx_mod_read_word(cpu->gpr[4]+124u);

@@ -1,6 +1,6 @@
 # VR handoff
 
-Updated: 2026-10-06. Start here, then read [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md).
+Updated: 2026-10-07. Start here, then read [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md).
 The todo list is the single backlog; historical plans and receipts retain their
 original scope and are not current instructions.
 
@@ -79,8 +79,12 @@ No save is needed for normal VR boot. Future live gameplay checks default to
 
 [VR_WEAPON_BATCH.md](VR_WEAPON_BATCH.md) owns the diagnostic recipes. These
 source-only controls require Python. Nine cases use original multiplayer saves;
-Thompson uses single-player slot 6. MP40 uses slot 4 because its native firing
-control passed there. The multiplayer bench is not general multiplayer VR support.
+Thompson uses the preserved original slot-6 fixture listed in the batch guide.
+Current source slot 6 contains passport and silenced pistol. Their tracking,
+restored suppressor and 3x passport scale were approved for integration into
+master on 2026-10-07; the published v0.1.3 ZIP still contains the original ten
+profiles. MP40 uses slot 4 because its
+native firing control passed there. The multiplayer bench is not general multiplayer VR support.
 
 Original saves: 0 is single-player, 1-5 multiplayer, 6 and 9 single-player.
 Slots 7/8 are absent. Slot contents can change when the user saves again; verify

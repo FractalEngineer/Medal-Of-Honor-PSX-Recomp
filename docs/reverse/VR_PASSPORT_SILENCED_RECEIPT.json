@@ -1,0 +1,153 @@
+{
+  "date": "2026-10-07",
+  "source_base": "274ac38",
+  "candidate_status": "Superseded: user reported missing suppressor and passport too small",
+  "framework": "3618bc00381588b7e9ea9b5173e8872470ed0379",
+  "executable": "build-release/Medal_of_Honor__Recompiled.exe",
+  "executable_sha256": "c7335b7ca21f214e04d7c178d524291daba8aeef48d609774bcd1d335314ddc9",
+  "profile_header_sha256": "f0877e296f056f4ceb6d5368c2e7d61e48bb1a8c95a4b1c23e137e40a5a4a18e",
+  "slot_6_sha256": "bf43453fc0ddebfeec74b078a064e61fdbc1651ce21b5cc4fce1bb1c2968bc51",
+  "source_saves_unchanged": true,
+  "native_code_validation": [
+    {
+      "start": "0x8007b350",
+      "end_exclusive": "0x8007b418",
+      "sha256": "77c6fbfe44ea0a6c692d69e8eef36e2ad451aaffe97f304bf844d56196ef98b5",
+      "matches_ghidra_reference": true
+    },
+    {
+      "start": "0x8007d5c8",
+      "end_exclusive": "0x8007dd4c",
+      "sha256": "b08ca77ebf4046cfb8d2f0884f44d0198960cc46f2d81dda96cc511a87da77e2",
+      "matches_ghidra_reference": true
+    }
+  ],
+  "items": [
+    {
+      "id": 7,
+      "label": "Passport",
+      "pose_cases": [
+        "native",
+        "straight",
+        "right",
+        "left45",
+        "unfocused"
+      ],
+      "fresh_pairs": [
+        69,
+        95,
+        121,
+        163,
+        223
+      ],
+      "rollback_checks": 274,
+      "rollback_mismatches": 0,
+      "raw_pose_receipt": "analysis/weapon-capture/passport-silenced-final-controls-20261006/slot-06/weapon-00/pose_controls.json",
+      "activation": "Native right trigger show/use animation; both covers retained",
+      "damage_actor_profile": null,
+      "diagnostic_ammo_edits": false
+    },
+    {
+      "id": 9,
+      "label": "Silenced pistol",
+      "pose_cases": [
+        "native",
+        "straight",
+        "right",
+        "left45",
+        "unfocused"
+      ],
+      "fresh_pairs": [
+        343,
+        403,
+        463,
+        523,
+        583
+      ],
+      "rollback_checks": 298,
+      "rollback_mismatches": 0,
+      "raw_pose_receipt": "analysis/weapon-capture/passport-silenced-final-controls-20261006/slot-06/weapon-01/pose_controls.json",
+      "shot_cases": [
+        {
+          "case": "native",
+          "native_constructors": 2,
+          "pose_stores_per_constructor": [
+            0,
+            0
+          ],
+          "first_motion_direction": [
+            -0.9960156322374275,
+            0.050427481526799815,
+            -0.0735522225737716
+          ]
+        },
+        {
+          "case": "straight",
+          "native_constructors": 2,
+          "pose_stores_per_constructor": [
+            6,
+            6
+          ],
+          "first_motion_direction": [
+            -0.997108494149533,
+            0.010692331288404038,
+            -0.07523513106567932
+          ]
+        },
+        {
+          "case": "left45",
+          "native_constructors": 2,
+          "pose_stores_per_constructor": [
+            6,
+            6
+          ],
+          "first_motion_direction": [
+            -0.6519807910941081,
+            0.00748286196366766,
+            -0.758198558967988
+          ]
+        },
+        {
+          "case": "unfocused",
+          "native_constructors": 2,
+          "pose_stores_per_constructor": [
+            0,
+            0
+          ],
+          "first_motion_direction": [
+            -0.9960156322374275,
+            0.050427481526799815,
+            -0.0735522225737716
+          ]
+        }
+      ],
+      "raw_aim_receipt": "analysis/weapon-capture/passport-silenced-final-controls-20261006/slot-06/weapon-01/aim_controls.json"
+    }
+  ],
+  "previous_profile_regression": {
+    "native_meshes": 60,
+    "ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      8,
+      10,
+      11,
+      12
+    ],
+    "receipt": "analysis/weapon-capture/twelve-profile-regression-20261006/receipt.json"
+  },
+  "native_tracked_batch_smoke": {
+    "complete": true,
+    "cases": 6,
+    "raw_receipt": "analysis/weapon-capture/passport-silenced-isolated-batch-20261006/receipt.json",
+    "includes_preserved_thompson_fixture": true,
+    "explicit_memcard_dir": true
+  },
+  "headset_acceptance": false,
+  "scope": "Synthetic mesh/shot response and rollback; no headset grip, live damage or passport NPC interaction acceptance",
+  "superseded_by": "docs/reverse/VR_PASSPORT_SILENCED_REVISION_RECEIPT.json"
+}

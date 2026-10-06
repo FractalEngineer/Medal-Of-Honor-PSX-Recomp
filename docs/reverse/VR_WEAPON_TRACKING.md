@@ -1,8 +1,10 @@
 # Weapon tracking implementation
 
-Current status: integrated into master and published in v0.1.3. Normal and
-weapon-control launchers use `build-release`; the measurements below retain
-their historical binary/branch provenance.
+Current status: the original ten weapon profiles shipped in v0.1.3. Passport
+and silenced-pistol tracking, including the restored suppressor and 3x passport
+scale, were approved for integration into master on 2026-10-07. Normal and
+weapon-control launchers use `build-release`; the published ZIP remains v0.1.3.
+Measurements below retain their historical binary/branch provenance.
 
 2026-10-05: the user shelved jitter and moved weapon tracking forward. Work is
 on `feature/vr-all-weapon-tracking`, refreshed onto v0.1.2 master `1b4f8ae` on
@@ -22,6 +24,40 @@ from multiplayer slot 5. On 2026-10-06 the user completed all ten tracked headse
 controls and reported “all trackings look good”, authorizing integration into
 master and a current build. Visual tracking is accepted. Jump now uses right-stick
 click; native Triangle press/release remains the game action.
+
+## Passport and silenced-pistol integration (2026-10-07)
+
+The user replaced source slot 6 with a paused single-player checkpoint: passport
+ID 7 is equipped; one native Circle switch selects silenced pistol ID 9. Historical
+slot-6 inventory below describes the earlier Thompson loadout. The batch preserves
+that older fixture separately and never replaces the current source save.
+
+The passport profile retains both articulated covers (nodes 13/14, 16/20 vertices,
+68 faces of 317, 15 total nodes). Its native show/use animation remains driven by
+the right trigger; it receives no projectile profile or diagnostic ammo edits.
+The user reported the passport too small and the silenced pistol missing its
+suppressor. Passport now applies a 3x model scale around the existing grip pivot;
+other profiles keep their scale. The original silenced-pistol model contains the
+suppressor in a disconnected component within arm node 11: vertices 7-18 and
+115-120, 23 faces. Retaining that island plus node 13 (57 vertices, 71 faces)
+restores all 94 weapon faces while excluding the arm. It shares the existing
+pistol calibration, but cannot share its mesh guard.
+Ghidra confirms ID 9 shares the native 5110 firearm constructor; ID 7 follows the
+passport-specific action branch in `8007B350`, without creating a damage actor.
+
+Both candidates pass native/straight/translated/rotated/unfocused desktop mesh
+controls with fresh eye PNGs and nonzero rollback verification, zero mismatches.
+Silenced-pistol native/straight/45-degree/unfocused shot controls observe native
+construction and first motion; tracking writes six pose fields only while focused.
+All ten previous mesh profiles still match the 60 retained native captures.
+Revised receipt: [VR_PASSPORT_SILENCED_REVISION_RECEIPT.json](VR_PASSPORT_SILENCED_REVISION_RECEIPT.json).
+Current isolated controls:
+`analysis/weapon-capture/silencer-passport-revision-20261007/final-build-controls/`.
+The initial receipt retains the earlier binary and measurements.
+The user approved the revised changes for commit and push on 2026-10-07.
+The rebuilt `build-release` includes both profiles. Recorded verification is
+desktop; live interaction/damage checks remain open. See the batch guide for
+two-item or individual 30-second movement-enabled checks.
 
 ## Native inventory
 

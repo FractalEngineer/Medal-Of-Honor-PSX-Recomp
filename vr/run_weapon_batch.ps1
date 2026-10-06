@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('all','rifle','pistol','bar','thompson','mp40','shotgun','scoped-rifle','bazooka','frag-grenade','stick-grenade')]
+    [ValidateSet('all','rifle','pistol','bar','thompson','mp40','shotgun','scoped-rifle','bazooka','frag-grenade','stick-grenade','passport','silenced-pistol')]
     [string]$Weapon = 'all',
     [ValidateSet('tracked','native','compare')][string]$Mode = 'tracked',
     [ValidateRange(1,300)][int]$Seconds = 30,

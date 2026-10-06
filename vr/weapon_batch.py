@@ -1,4 +1,4 @@
-"""Movement-enabled per-weapon controls; default ten tracked runs of 30 seconds.
+"""Movement-enabled per-weapon controls; default twelve tracked runs of 30 seconds.
 
 Uses isolated copied saves and TCP 4372. Desktop mode supplies synthetic hands;
 headset mode uses real tracking. Neither mode records user acceptance automatically.
@@ -64,6 +64,17 @@ def main():
             raise RuntimeError(f'TCP {args.port} is occupied; no existing game will be touched')
     sources = sorted((ROOT/'saves/openbios').glob('*.pst'))
     hashes = {str(p):sha256(p.read_bytes()).hexdigest() for p in sources}
+    fixtures = {}
+    for w in weapons:
+        if 'save_fixture' in w:
+            fixture = (ROOT/w['save_fixture']).resolve()
+            if not fixture.is_relative_to(ROOT) or not fixture.is_file():
+                raise FileNotFoundError(f'Missing preserved save for {w["key"]}: {fixture}')
+            digest = sha256(fixture.read_bytes()).hexdigest()
+            if digest != w['save_sha256']:
+                raise RuntimeError(f'Preserved save hash mismatch: {fixture}')
+            fixtures[w['key']] = fixture
+            hashes[str(fixture)] = digest
     for w in weapons:
         if not any(p.name.endswith(f"_slot{w['slot']:02}.pst") for p in sources):
             raise FileNotFoundError(f"Original slot {w['slot']} missing")
@@ -127,6 +138,9 @@ def main():
                 shutil.copyfile(ROOT/'game.toml',session/'game.toml')
                 for p in sources:
                     shutil.copyfile(p,session/'saves/openbios'/p.name)
+                fixture = fixtures.get(weapon['key'])
+                if fixture is not None:
+                    shutil.copyfile(fixture, session/'saves/openbios'/f'state_8001DFD4_slot{weapon["slot"]:02}.pst')
                 env = {k:v for k,v in os.environ.items() if not k.startswith('PSX_')}
                 env.update(PSX_OPENXR=str(int(not args.desktop)), PSX_VR_OPENXR=str(int(not args.desktop)),
                            PSX_VR_STEREO='1', PSX_VR_MOVEMENT='1', PSX_VR_HEAD_FRUSTUM='1',
@@ -136,9 +150,12 @@ def main():
                            PSX_VR_WEAPON_PIVOT='80,150,100', PSX_VR_WEAPON_PROJECTION_SCALE='16',
                            PSX_VR_DESKTOP_FOV=str(int(args.desktop)), PSX_INTERNAL_RESOLUTION=args.internal_resolution,
                            PSX_RENDER_PASS_VERIFY=str(int(args.verify)), PSX_DEV_INPUT='0', PSX_VSYNC='0')
-                case = {'weapon':weapon,'mode':mode,'ready':False,'complete':False}
+                save_source = fixture or next(p for p in sources if p.name.endswith(f'_slot{weapon["slot"]:02}.pst'))
+                case = {'weapon':weapon,'mode':mode,'ready':False,'complete':False,
+                        'save_source':str(save_source),'save_sha256':hashes[str(save_source)]}
                 receipt['cases'].append(case)
-                process = subprocess.Popen([str(exe),'--no-launcher','--game','game.toml','--disc',str(disc),'--debug-port',str(args.port)],
+                process = subprocess.Popen([str(exe),'--no-launcher','--game','game.toml','--disc',str(disc),
+                                            '--memcard-dir',str(session/'saves'),'--debug-port',str(args.port)],
                                            cwd=session, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                            creationflags=subprocess.CREATE_NO_WINDOW)
                 try:
@@ -172,6 +189,8 @@ def main():
                             raise TimeoutError('Save load')
                         time.sleep(.1)
                     frames(60)
+                    from weapon_state import resume_if_paused
+                    case['resumed_pause'] = resume_if_paused(command, frames)
                     for unused in range(weapon['switches']):
                         command('press',buttons=0xffff^0x2000,frames=4)
                         frames(75)
@@ -195,7 +214,8 @@ def main():
                     command('clear_input')
                     frames(16)
                     case['ammo_changes'] = []
-                    for field, amount in (('clip_address',1),('reserve_address',20)):
+                    ammo_fields = (('clip_address',1),('reserve_address',20)) if weapon.get('damage',True) else ()
+                    for field, amount in ammo_fields:
                         addr = case['state'][field]
                         ammo = int.from_bytes(bytes.fromhex(command('read_ram',addr=addr,len=2)['hex']),'little',signed=True)
                         if ammo==0:

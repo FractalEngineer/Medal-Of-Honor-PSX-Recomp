@@ -141,7 +141,8 @@ def main():
         return result
 
     process = subprocess.Popen([str(exe), '--no-launcher', '--game', 'game.toml', '--disc',
-        str(ROOT/'Input/medal-of-honor/medal-of-honor.cue'), '--debug-port', str(args.port)],
+        str(ROOT/'Input/medal-of-honor/medal-of-honor.cue'),
+        '--memcard-dir',str(session/'saves'), '--debug-port', str(args.port)],
         cwd=session, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         creationflags=subprocess.CREATE_NO_WINDOW)
     try:
@@ -173,8 +174,10 @@ def main():
                     raise TimeoutError('State did not load')
                 time.sleep(.1)
             save(directory/'load.json', status)
-            frames(30)
-            row = {'slot':slot, 'captures':[]}
+            frames(60)
+            from weapon_state import resume_if_paused
+            resumed = resume_if_paused(command, frames)
+            row = {'slot':slot, 'resumed_pause':resumed, 'captures':[]}
             seen = set()
             for index in range(args.switches+1):
                 capture = directory/f'weapon-{index:02}'
@@ -198,20 +201,24 @@ def main():
                     controls = []
                     for label, pose in [('native', None), ('straight', {}), ('right', {'px_mm':350}),
                                         ('left45', {'qy':382683,'qw':923880}), ('unfocused', {'focused':0})]:
-                        controls.append(check_weapon_pose.capture(capture,label,pose,multiplayer=mp))
+                        controls.append(check_weapon_pose.capture(capture,label,pose,multiplayer=mp,
+                            input_override={'right_trigger':1000} if controlled['weapon_id']==7 else None))
                     rows = {r['case']:r for r in controls}
-                    assert rows['straight']['producer']['V0'] != rows['right']['producer']['V0']
-                    assert rows['straight']['producer']['V0'] != rows['left45']['producer']['V0']
+                    assert rows['straight']['producer_vertices'] != rows['right']['producer_vertices']
+                    assert rows['straight']['producer_vertices'] != rows['left45']['producer_vertices']
                     command('openxr_hands_override',clear=1)
+                    command('openxr_input_override',clear=1)
                     restore = command('render_pass_stats')
                     assert restore['verify_mismatch'] == 0, restore
                     save(capture/'pose_controls.json', {'synthetic':True,'controls':controls,'restore':restore})
                     print('Pose controls passed:',controlled['weapon_id'],flush=True)
-                if args.aim_check and can_control and selected_control:
+                # Passport has native activation but no damage actor to aim.
+                if args.aim_check and can_control and selected_control and controlled['weapon_id'] != 7:
                     import check_weapon_aim, check_movement
                     check_weapon_aim.command = check_movement.command = command
                     expected_weapon = controlled['weapon_id']
                     def equip():
+                        resume_if_paused(command, frames)
                         for unused in range(index):
                             command('press',buttons=0xffff^0x2000,frames=4)
                             frames(75)

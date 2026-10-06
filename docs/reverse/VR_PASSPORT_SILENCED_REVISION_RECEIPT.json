@@ -1,0 +1,164 @@
+{
+  "date": "2026-10-07",
+  "source_base": "274ac38",
+  "status": "User approved integration into master; desktop verification recorded",
+  "supersedes": "docs/reverse/VR_PASSPORT_SILENCED_RECEIPT.json",
+  "executable": "build-release/Medal_of_Honor__Recompiled.exe",
+  "executable_sha256": "1e48d83c9e0cf3aa26412422e8a152697b85f76dc79f2086fbc67e7415fa6e19",
+  "profile_header_sha256": "8b70a98505678eaf25112a2c8e9387259147d72a640f52499a02eb6713954a7a",
+  "silenced_pistol": {
+    "native_faces": 296,
+    "retained_faces": 94,
+    "pistol_node": 13,
+    "suppressor_node": 11,
+    "suppressor_faces": 23,
+    "suppressor_vertex_ranges": [
+      [
+        7,
+        18
+      ],
+      [
+        115,
+        120
+      ]
+    ],
+    "suppressor_face_indices": [
+      0,
+      1,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      287,
+      288,
+      289,
+      290,
+      291,
+      292,
+      293
+    ],
+    "discovery": "Disconnected cylinder component within native arm node 11; original model retained, no replacement asset",
+    "plot": "analysis/weapon-capture/silencer-passport-revision-20261007/native_parts.png"
+  },
+  "passport": {
+    "scale_multiplier": 3,
+    "scale_about": "Existing controller grip pivot",
+    "other_weapon_scale_changed": false
+  },
+  "source_saves_unchanged": true,
+  "controls": [
+    {
+      "weapon_id": 7,
+      "cases": [
+        "native",
+        "straight",
+        "right",
+        "left45",
+        "unfocused"
+      ],
+      "rollback_checks": 470,
+      "rollback_mismatches": 0,
+      "raw_pose_receipt": "analysis/weapon-capture/silencer-passport-revision-20261007/final-build-controls/slot-06/weapon-00/pose_controls.json",
+      "model_scale_multiplier": 3,
+      "fresh_pairs": [
+        68,
+        93,
+        124,
+        171,
+        216
+      ]
+    },
+    {
+      "weapon_id": 9,
+      "cases": [
+        "native",
+        "straight",
+        "right",
+        "left45",
+        "unfocused"
+      ],
+      "rollback_checks": 496,
+      "rollback_mismatches": 0,
+      "raw_pose_receipt": "analysis/weapon-capture/silencer-passport-revision-20261007/final-build-controls/slot-06/weapon-01/pose_controls.json",
+      "model_scale_multiplier": 1,
+      "shot_cases": [
+        {
+          "case": "native",
+          "native_constructors": 2,
+          "pose_stores": [
+            0,
+            0
+          ],
+          "first_motion_direction": [
+            -0.9960156322374275,
+            0.050427481526799815,
+            -0.0735522225737716
+          ]
+        },
+        {
+          "case": "straight",
+          "native_constructors": 1,
+          "pose_stores": [
+            6
+          ],
+          "first_motion_direction": [
+            -0.9971042881180686,
+            0.010740249307796185,
+            -0.07528403324321896
+          ]
+        },
+        {
+          "case": "left45",
+          "native_constructors": 1,
+          "pose_stores": [
+            6
+          ],
+          "first_motion_direction": [
+            -0.6519807910941081,
+            0.00748286196366766,
+            -0.758198558967988
+          ]
+        },
+        {
+          "case": "unfocused",
+          "native_constructors": 1,
+          "pose_stores": [
+            0
+          ],
+          "first_motion_direction": [
+            -0.9960156322374275,
+            0.050427481526799815,
+            -0.0735522225737716
+          ]
+        }
+      ],
+      "fresh_pairs": [
+        355,
+        415,
+        475,
+        535,
+        595
+      ],
+      "raw_aim_receipt": "analysis/weapon-capture/silencer-passport-revision-20261007/final-build-controls/slot-06/weapon-01/aim_controls.json"
+    }
+  ],
+  "previous_profiles": {
+    "native_meshes": 60,
+    "receipt": "analysis/weapon-capture/silencer-passport-revision-20261007/previous-profiles/receipt.json"
+  },
+  "headset_acceptance": false,
+  "user_integration_approval": {
+    "date": "2026-10-07",
+    "statement": "brilliant; commit and push all"
+  }
+}

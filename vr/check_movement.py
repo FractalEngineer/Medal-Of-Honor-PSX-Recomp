@@ -37,6 +37,8 @@ def load(slot):
             raise TimeoutError('slot load')
         time.sleep(.05)
     wait_frames(60)  # let the measured post-load input guard expire
+    from weapon_state import resume_if_paused
+    resume_if_paused(command, wait_frames)
 
 
 def snapshot(out, name):

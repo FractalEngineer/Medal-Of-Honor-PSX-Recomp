@@ -1,6 +1,6 @@
 # VR alpha follow-up checklist
 
-Updated: 2026-10-06. Baseline: published v0.1.3 (`c72ddc95`), framework
+Updated: 2026-10-07. Baseline: published v0.1.3 (`c72ddc95`), framework
 `3618bc00`, Quest 3 / Virtual Desktop VDXR. Current build/layout and evidence
 are in [VR_HANDOFF.md](VR_HANDOFF.md); controls are in
 [ALPHA_README.md](../../ALPHA_README.md). This is the single active backlog.
@@ -114,6 +114,17 @@ bicubic and jitter experiments are excluded.
   all ten headset controls on 2026-10-06. Firing/damage, special modes and broader
   single-player assets remain open. See VR_WEAPON_TRACKING.md and the historical
   VR_WEAPON_CONTROLS_RECEIPT.json; keep this item unchecked until those gates pass.
+- [ ] **Passport and silenced pistol: headset acceptance.** The user replaced
+  slot 6 with a paused passport/silenced-pistol checkpoint. Guarded mesh profiles
+  cover IDs 7 and 9; passport keeps native show/use animation without projectiles
+  or ammo edits, and silenced pistol uses the native 5110 shot path. Desktop mesh
+  and pistol shot controls pass. Test 30 seconds each with movement enabled;
+  assess passport activation and grip, then pistol alignment/reload/hits.
+  User feedback: initial passport too small; initial pistol omitted suppressor.
+  Revised candidate restores the native suppressor and enlarges passport 3x;
+  repeat desktop controls pass. User approved integration into master on
+  2026-10-07; live retest remains open. See VR_WEAPON_BATCH.md.
+  The original Thompson fixture is preserved separately.
 - [x] **All ten supplied weapon tracking controls: visual acceptance.** Quest 3 /
   VDXR ten-case batch completed on 2026-10-06; user reported all tracking looks
   good and requested pushing to master. Broader validation remains above.
