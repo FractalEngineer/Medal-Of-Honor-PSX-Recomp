@@ -114,7 +114,7 @@ static uint32_t inverse_axis(const MOHVRAnalogResponse *response,
 }
 int moh_vr_input_map(const PSXModOpenXRInput *input, double deadzone,
                     double turn_gain, const MOHVRAnalogResponse *response,
-                    PSXModControllerState *pad) {
+                    int merged_y, PSXModControllerState *pad) {
     if (!pad) return 0;
     memset(pad, 0, sizeof *pad); pad->struct_size = sizeof *pad;
     pad->buttons = 0xffff;
@@ -124,18 +124,32 @@ int moh_vr_input_map(const PSXModOpenXRInput *input, double deadzone,
     if (!isfinite(deadzone) || deadzone < 0 || deadzone >= 1 ||
         !isfinite(turn_gain) || turn_gain < 0 || turn_gain > 2 ||
         !valid_response(response)) return 0;
+    /* The native left stick is LX (turn) + LY (move/aim). LX comes off the right
+     * hand and LY off the left, so any mode that aims with the left stick - a
+     * machine gun - splits its two axes across both hands. The right stick's Y
+     * is otherwise unused (only its X turns), so in merged mode it drives LY as
+     * well, larger magnitude winning: one hand then owns both axes. */
+    double ly = 0;
+    int have_ly = 0;
     if (input->active[0]) {
         double x = finite_axis(input->stick[0][0]);
         double y = finite_axis(input->stick[0][1]);
         double length = hypot(x, y);
         if (length > deadzone) {
             double magnitude = (fmin(1, length) - deadzone) / (1 - deadzone);
-            pad->ly = inverse_axis(response, 1, -y * magnitude / length);
+            ly = -y * magnitude / length;
+            have_ly = 1;
             pad->rx = inverse_axis(response, 2, x * magnitude / length);
         }
     }
-    if (input->active[1])
+    if (input->active[1]) {
         pad->lx = inverse_axis(response, 0,
                               scalar_deadzone(input->stick[1][0], deadzone) * turn_gain);
+        if (merged_y) {
+            double right_y = -scalar_deadzone(input->stick[1][1], deadzone);
+            if (fabs(right_y) > fabs(ly)) { ly = right_y; have_ly = 1; }
+        }
+    }
+    if (have_ly) pad->ly = inverse_axis(response, 1, ly);
     return 1;
 }

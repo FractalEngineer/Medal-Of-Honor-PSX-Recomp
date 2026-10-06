@@ -12,9 +12,12 @@ typedef struct MOHVRAnalogResponse {
 /* Mirrors FUN_80075E7C's calibrated signed response, before input-state gains. */
 int32_t moh_vr_analog_response(const MOHVRAnalogResponse *response,
                              unsigned axis, uint32_t byte);
+/* merged_y: the right stick's otherwise-unused Y also drives LY (move/aim), so
+ * one hand controls both axes of the native left stick - needed when a machine
+ * gun aims with that stick. */
 int moh_vr_input_map(const PSXModOpenXRInput *input, double deadzone,
                     double turn_gain, const MOHVRAnalogResponse *response,
-                    PSXModControllerState *pad);
+                    int merged_y, PSXModControllerState *pad);
 /* Native menu buttons/D-pad, independent of gameplay calibration tables. */
 int moh_vr_menu_input_map(const PSXModOpenXRInput *input,double deadzone,
                          PSXModControllerState *pad);

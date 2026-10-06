@@ -37,6 +37,9 @@ param(
     [string]$BuildDirectory = 'build-release',
     [string]$DiscPath = '',
     [int]$Slot = -1,
+    # Both axes of the native left stick from one hand (PSX_VR_ONE_STICK):
+    # -1 leaves the default (off), 2 = always, for the mounted machine gun.
+    [int]$OneStick = -1,
     [string]$CaptureDirectory = '',
     [int]$Seconds = 0
 )
@@ -114,6 +117,7 @@ $vrVariables = @{
     PSX_VR_WEAPON_POSE = [string][int]$WeaponPoseDiagnostic.IsPresent;
     # Barrel laser: raycast the level tree so the beam ends on the first surface.
     PSX_VR_LASER_RAY = '1'; PSX_VR_LASER_DOT = '2';
+    PSX_VR_ONE_STICK = $(if ($OneStick -ge 0) { [string]$OneStick } else { $null });
     PSX_VR_WEAPON_MODEL_UNITS_PER_METER = $WeaponModelUnitsPerMeter.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_WEAPON_PROJECTION_SCALE = $WeaponProjectionScale.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_MENU_SURFACE = [string][int](-not $NoMenuSurfaceDiagnostic);

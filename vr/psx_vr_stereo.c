@@ -45,6 +45,11 @@
  *   PSX_VR_MOVEMENT=0|1  Quest movement source (default on for XR, off otherwise)
  *   PSX_VR_MOVE_DEADZONE=N radial move/scalar turn deadzone (default .2)
  *   PSX_VR_TURN_GAIN=N   decoded turn response gain (default .65; native game rate)
+ *   PSX_VR_ONE_STICK=0|1|2 both axes of the native left stick from one hand:
+ *                        0 off, 2 always, 1 only while a carried machine gun is
+ *                        equipped. Holding the LEFT GRIP always merges them too
+ *                        (aim the mounted gun with one hand); the right stick's
+ *                        Y is otherwise inert.
  *   PSX_VR_AUTHORED_FOCAL=0 disable guest H/400 ratio for XR projection control
  *   PSX_VR_TEXT=0 / PSX_VR_HUD_ICON=0 omit measured text/icon draw calls
  *   PSX_VR_HEAD_YAW=degrees / PSX_VR_HEAD_POSITION=x,y,z synthetic desktop pose
@@ -126,6 +131,8 @@ static int32_t g_offset; /* PSX_VR_OFFSET */
 static void vr_nested_watchdog(CPUState* cpu);
 static void vr_laser_draw(void);
 static void vr_m3_mul(const double m[9],const double v[3],double out[3]);
+static int g_one_stick; /* PSX_VR_ONE_STICK: 0 off, 1 auto on machine guns, 2 always */
+static int vr_machine_gun(void);
 
 static int16_t vr_rd(uint32_t ent, int axis) {
     return (int16_t)psx_mod_read_half(ent + 0x98 + (uint32_t)axis * 2);
@@ -769,6 +776,19 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
     g_in_pass = 0;
 }
 
+/* A machine gun (Thompson/BAR/MP40) aims with the native left stick, and our
+ * mapping splits that stick's two axes across the two hands. See moh_vr_input_map. */
+static int vr_machine_gun(void) {
+    uint32_t player=vr_weapon_player();
+    if(player<0x80000000u||player>=0x801ff000u)return 0;
+    uint32_t input=psx_mod_read_word(player+904u);
+    if(input<0x80000000u||input>=0x801ff000u)return 0;
+    switch(psx_mod_read_byte(input+85u)) {
+    case 1: case 6: case 11: return 1; /* Thompson, BAR, MP40 */
+    default: return 0;
+    }
+}
+
 static int vr_controller_source(PSXModControllerState *pad) {
     PSXModOpenXRInput input;
     memset(&input,0,sizeof input);input.struct_size=sizeof input;
@@ -796,7 +816,14 @@ static int vr_controller_source(PSXModControllerState *pad) {
     }
     for (unsigned i = 0; i < sizeof response.curve; ++i)
         response.curve[i] = psx_mod_read_byte((mp?0x8009a19cu:0x8009e3acu) + i);
-    return moh_vr_input_map(&input, g_move_deadzone, g_turn_gain, &response, pad);
+    /* One-stick merge. On a mounted gun the game aims with the native left
+     * stick, whose two axes this mapping splits across the hands. Hold the
+     * left grip to aim with one hand - a deliberate action, so the right
+     * stick's Y stays inert in ordinary play. */
+    int merged=g_one_stick==2 || (g_one_stick==1 && vr_machine_gun()) ||
+               (input.squeeze_active[0] && isfinite(input.squeeze[0]) &&
+                input.squeeze[0] >= .55f);
+    return moh_vr_input_map(&input, g_move_deadzone, g_turn_gain, &response, merged, pad);
 }
 /* Constructor calls the native basis builder after auto-aim/pose selection.
  * Restrict this to measured player-owned weapon/actor pairs, never NPC shots/replay.
@@ -1215,6 +1242,9 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if (g_movement < 0) g_movement = g_openxr;
     if ((e = getenv("PSX_VR_MOVE_DEADZONE"))) g_move_deadzone = strtod(e,NULL);
     if ((e = getenv("PSX_VR_TURN_GAIN"))) g_turn_gain = strtod(e,NULL);
+    g_one_stick = 0;
+    if ((e = getenv("PSX_VR_ONE_STICK"))) g_one_stick = atoi(e);
+    if(g_one_stick<0 || g_one_stick>2) g_one_stick=0;
     if (!isfinite(g_move_deadzone) || g_move_deadzone < 0 || g_move_deadzone > .9) g_move_deadzone = .2;
     if (!isfinite(g_turn_gain) || g_turn_gain < 0 || g_turn_gain > 2) g_turn_gain = .65;
     if ((e = getenv("PSX_VR_HEAD_YAW"))) g_head_yaw = strtod(e, NULL);

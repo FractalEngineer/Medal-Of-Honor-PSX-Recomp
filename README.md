@@ -97,7 +97,8 @@ environment when it exits.
 
 The current [v0.1.3 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.3)
 includes controller tracking for all ten weapon types, right-stick-click jump,
-headset color and head-turn visibility fixes, and a 1080p default. Quest 3 through
+headset color and head-turn visibility fixes, a tracked-weapon barrel laser that
+ends on the surface it hits, and a 1080p default. Quest 3 through
 Virtual Desktop with **VDXR** is the tested setup.
 
 ### Setup and launch
@@ -138,9 +139,17 @@ limitations.
 | Right stick click | Jump |
 | Left stick click | Toggle crouch |
 | Left Menu button | Pause / Start |
-| Right grip | Native aim binding; hold for the barrel laser |
+| Right grip | Hold to show the barrel laser (ends on the surface it hits) |
+| Left grip | Hold to aim a mounted machine gun with one stick |
 
 In menus, the left stick navigates, A or right trigger confirms, and B goes back.
+
+The barrel laser is a laser sight on the tracked weapon: **hold the right grip**
+and the beam runs from the muzzle to whatever it hits, with a dot marking the
+impact. It appears for firearms only.
+
+A mounted machine gun aims with a single stick: **hold the left grip** and one
+hand covers both traverse and elevation. Let go and normal movement returns.
 
 ### Report issues and contribute
 

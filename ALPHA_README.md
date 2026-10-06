@@ -67,15 +67,17 @@ in the console. These binaries are unsigned.
 | Left stick click | Toggle crouch |
 | Left Menu button | Pause / Start |
 | Right grip | Hold to show the barrel laser (ends on the surface it hits) |
+| Left grip | Hold to aim a mounted machine gun with one stick |
 
 Menus: left stick navigates; A or right trigger confirms; B goes back.
 
-The experimental barrel laser is a solid beam from the tracked weapon, shown
-while the right grip is held. It raycasts the level's own triangles, so the beam
-ends on the first surface ahead and marks the impact with a dot; with nothing in
-range it falls back to a fixed-distance beam. It appears for firearms only — the
-passport and other non-firing items show none. The muzzle alignment is
-provisional and needs a headset pass.
+The barrel laser is a laser sight on the tracked weapon: **hold the right grip**
+and the beam runs from the muzzle to whatever it hits, with a dot marking the
+impact. It appears for firearms only — the passport and other non-firing items
+show none. The muzzle alignment is provisional and needs a headset pass.
+
+A mounted machine gun aims with a single stick: **hold the left grip** and one
+hand covers both traverse and elevation. Let go and normal movement returns.
 
 ## Alpha limitations
 
