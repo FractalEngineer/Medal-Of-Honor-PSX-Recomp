@@ -25,6 +25,15 @@ controls and reported “all trackings look good”, authorizing integration int
 master and a current build. Visual tracking is accepted. Jump now uses right-stick
 click; native Triangle press/release remains the game action.
 
+## Barrel laser
+
+The tracked-weapon barrel laser raycasts the level's own triangles so the beam
+ends on the first surface ahead and marks the impact with a dot; with nothing in
+range it keeps the previous fixed-distance beam and shows no dot. It is aimed by
+the rendered weapon's own affine (mesh axis/sign) and is firearms-only — the
+passport and other non-firing items show none. The muzzle alignment is
+provisional. See [VR_LASER_RAYCAST_PLAN.md](VR_LASER_RAYCAST_PLAN.md).
+
 ## Passport and silenced-pistol integration (2026-10-07)
 
 The user replaced source slot 6 with a paused single-player checkpoint: passport

@@ -112,6 +112,8 @@ $vrVariables = @{
     PSX_VR_MOVEMENT = [string][int]((-not $NoMovement) -and ((-not $Desktop) -or $MovementDiagnostic));
     PSX_VR_WEAPON_AIM = [string][int]($WeaponAimDiagnostic -or $WeaponPoseDiagnostic);
     PSX_VR_WEAPON_POSE = [string][int]$WeaponPoseDiagnostic.IsPresent;
+    # Barrel laser: raycast the level tree so the beam ends on the first surface.
+    PSX_VR_LASER_RAY = '1'; PSX_VR_LASER_DOT = '2';
     PSX_VR_WEAPON_MODEL_UNITS_PER_METER = $WeaponModelUnitsPerMeter.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_WEAPON_PROJECTION_SCALE = $WeaponProjectionScale.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_MENU_SURFACE = [string][int](-not $NoMenuSurfaceDiagnostic);

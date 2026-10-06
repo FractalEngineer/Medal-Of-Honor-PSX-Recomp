@@ -66,15 +66,16 @@ in the console. These binaries are unsigned.
 | Right stick click | Jump |
 | Left stick click | Toggle crouch |
 | Left Menu button | Pause / Start |
-| Right grip | Native aim binding; hold to show the barrel laser |
+| Right grip | Hold to show the barrel laser (ends on the surface it hits) |
 
 Menus: left stick navigates; A or right trigger confirms; B goes back.
 
-The experimental barrel laser is a fixed-distance beam from the tracked weapon,
-bright at the muzzle and fading to black at the tip, shown while the right grip
-is held. It appears for firearms only — the passport and other non-firing items
-show none. Its length and muzzle alignment are provisional and need a headset
-pass.
+The experimental barrel laser is a solid beam from the tracked weapon, shown
+while the right grip is held. It raycasts the level's own triangles, so the beam
+ends on the first surface ahead and marks the impact with a dot; with nothing in
+range it falls back to a fixed-distance beam. It appears for firearms only — the
+passport and other non-firing items show none. The muzzle alignment is
+provisional and needs a headset pass.
 
 ## Alpha limitations
 
