@@ -33,6 +33,11 @@
  *   PSX_VR_WEAPON_MP_CONTROL=1 opt-in player-one multiplayer weapon test view
  *   PSX_VR_WEAPON_MODEL_UNITS_PER_METER=N / PSX_VR_WEAPON_PIVOT=x,y,z
  *                        provisional rifle scale/pivot (defaults 850 / 80,150,100)
+ *   PSX_VR_LASER=0|1     barrel laser, held on the right grip (default: on with
+ *                        PSX_VR_WEAPON_POSE; firearms only, not the passport)
+ *   PSX_VR_LASER_RANGE_M=N / PSX_VR_LASER_ORIGIN_M=N beam length / start offset
+ *   PSX_VR_LASER_AXIS=0|1|2 / PSX_VR_LASER_SIGN=+1|-1 model barrel direction
+ *   PSX_VR_LASER_MUZZLE=x,y,z model-space muzzle offset from the pivot
  *   PSX_VR_MOVEMENT=0|1  Quest movement source (default on for XR, off otherwise)
  *   PSX_VR_MOVE_DEADZONE=N radial move/scalar turn deadzone (default .2)
  *   PSX_VR_TURN_GAIN=N   decoded turn response gain (default .65; native game rate)
@@ -114,6 +119,7 @@ static uint32_t g_target;/* PSX_VR_TARGET, 0 = all */
 static int g_axis;       /* PSX_VR_AXIS */
 static int32_t g_offset; /* PSX_VR_OFFSET */
 static void vr_nested_watchdog(CPUState* cpu);
+static void vr_laser_draw(void);
 
 static int16_t vr_rd(uint32_t ent, int axis) {
     return (int16_t)psx_mod_read_half(ent + 0x98 + (uint32_t)axis * 2);
@@ -302,6 +308,20 @@ static double g_weapon_projection_scale=16; /* Precision units, never physical s
 static double g_weapon_pivot[3]={80,150,100}; /* Provisional native grip pivot. */
 static double g_weapon_draw_rotation[9],g_weapon_draw_translation[3];
 static uint32_t g_weapon_render_entity;
+/* Barrel laser: fixed-distance Gouraud beam drawn from the tracked weapon,
+ * held on the right grip, for firearms only (passport and other shot_id 0
+ * weapons are excluded). Placement reuses the weapon's own camera affine so
+ * the beam matches the rendered mesh, then projects with the same per-eye
+ * focal/centre the GTE used. Tunable so a headset pass can align the muzzle. */
+static int g_laser;
+static double g_laser_range_m=25, g_laser_origin_m=.35;
+static double g_laser_muzzle[3]={0,0,0}; /* model-space offset from the pivot */
+static int g_laser_axis=2;               /* model axis the barrel points along */
+static double g_laser_sign=1;            /* +1/-1 for that axis */
+static int g_laser_valid;                /* placement captured for this eye */
+static double g_laser_M[9],g_laser_C[3],g_laser_scale,g_laser_pivot[3];
+static int32_t g_laser_ofx,g_laser_ofy,g_laser_fx,g_laser_fy,g_laser_cx,g_laser_cy;
+static uint32_t g_laser_h,g_laser_href;
 static double g_camera_inverse[9], g_camera_tr[3];
 static uint64_t g_camera_cycle;
 static uint32_t g_camera_owner;
@@ -565,6 +585,7 @@ static int vr_pass_fn(CPUState* cpu, void* user, uint32_t alpha_q16) {
 
 static int vr_stereo_fn(CPUState* cpu, void* user, uint32_t eye) {
     g_weapon_outer=g_weapon_inner=0;
+    g_laser_valid=0;
     g_stereo_eye = eye;
     if (g_stereo_success && eye == PSX_MOD_EYE_RIGHT &&
         g_stereo_fault == 1 && !g_stereo_fault_done) {
@@ -575,7 +596,10 @@ static int vr_stereo_fn(CPUState* cpu, void* user, uint32_t eye) {
      * seam replaces its value per eye, affects RTPS/RTPT before division, and
      * restores automatically after the eye (including longjmp rollback). */
     if (!psx_mod_render_view(&g_eye_view[eye])) return 0;
-    return user ? vr_draw_scene(cpu, user) : 0;
+    if (!user) return 0;
+    int rendered = vr_draw_scene(cpu, user);
+    if (rendered) vr_laser_draw();
+    return rendered;
 }
 
 static void vr_vsync_entry(CPUState* cpu, uint32_t address) {
@@ -775,6 +799,85 @@ static void vr_shot_basis_entry(CPUState *cpu,uint32_t address) {
      * Speed, damage, ammo, owner, collision and the transition countdown stay native. */
 }
 
+/* Capture this eye's weapon camera affine (model -> camera), so the laser can
+ * be placed exactly like the rendered mesh. The model point E maps to the
+ * camera as C + M * scale * (E - pivot), matching MAC = Rpose*(Rguest*V) +
+ * Tpose with the plugin's V = b + A*E. Reused from vr_weapon_geometry_filter. */
+static void vr_laser_capture(CPUState* cpu,const PSXModRenderView* view,
+                             const double r[9],const double t[3],double scale) {
+    double R[9],M[9],C[3];
+    for(int i=0;i<9;i++)R[i]=view->rotation_q12[i]/4096.0;
+    for(int i=0;i<3;i++) {
+        C[i]=view->translation[i];
+        for(int j=0;j<3;j++) {
+            M[i*3+j]=R[i*3]*r[j]+R[i*3+1]*r[3+j]+R[i*3+2]*r[6+j];
+            C[i]+=R[i*3+j]*t[j];
+        }
+    }
+    memcpy(g_laser_M,M,sizeof M);memcpy(g_laser_C,C,sizeof C);
+    g_laser_scale=scale;memcpy(g_laser_pivot,g_weapon_pivot,sizeof g_laser_pivot);
+    g_laser_ofx=(int32_t)cpu->gte_ctrl[24];g_laser_ofy=(int32_t)cpu->gte_ctrl[25];
+    g_laser_fx=view->fx_q16;g_laser_fy=view->fy_q16;
+    g_laser_cx=view->cx_delta_q16;g_laser_cy=view->cy_delta_q16;
+    g_laser_h=(uint32_t)cpu->gte_ctrl[26]&0xffffu;g_laser_href=view->projection_h_ref;
+    g_laser_valid=1;
+}
+
+/* Replicate the GTE's projected X/Y (gte.cpp projection path): IR1/IR2 are the
+ * saturated camera coordinates, SZ3 the camera Z, and the render view supplies
+ * the focal lengths and centre deltas. Screen is native 512x240, so the 11-bit
+ * GP0 line coordinate range is enough. */
+static int vr_laser_project(const double P[3],int* sx,int* sy) {
+    if(!isfinite(P[0])||!isfinite(P[1])||!isfinite(P[2])||P[2]<=1.0)return 0;
+    long ir1=lround(P[0]),ir2=lround(P[1]),sz=lround(P[2]);
+    if(ir1<-32768)ir1=-32768;if(ir1>32767)ir1=32767;
+    if(ir2<-32768)ir2=-32768;if(ir2>32767)ir2=32767;
+    if(sz<1)sz=1;if(sz>65535)sz=65535;
+    long x16=(long)g_laser_ofx+(long)g_laser_cx+ir1*(long)g_laser_fx/sz;
+    long y16=(long)g_laser_ofy+(long)g_laser_cy+ir2*(long)g_laser_fy/sz;
+    if(g_laser_href) {
+        if(!g_laser_h)return 0;
+        x16=x16*(long)g_laser_h/(long)g_laser_href;
+        y16=y16*(long)g_laser_h/(long)g_laser_href;
+    }
+    long x=x16>>16,y=y16>>16;
+    if(x<-1023)x=-1023;if(x>1023)x=1023;
+    if(y<-1023)y=-1023;if(y>1023)y=1023;
+    *sx=(int)x;*sy=(int)y;return 1;
+}
+
+/* One Gouraud line per eye, bright at the muzzle fading to black at the tip.
+ * Held on the right grip; firearms only. No collision or impact dot. */
+static void vr_laser_draw(void) {
+    if(!g_laser || !g_laser_valid) return;
+    PSXModOpenXRInput in;memset(&in,0,sizeof in);in.struct_size=sizeof in;
+    if(!psx_mod_openxr_input(&in)) return;
+    if(!in.squeeze_active[1] || !(in.squeeze[1]>=.55f && in.squeeze[1]<=1)) return;
+    uint32_t player=vr_weapon_player();
+    if(player<0x80000000u || player>=0x801ff000u) return;
+    uint32_t input=psx_mod_read_word(player+904u);
+    if(input<0x80000000u || input>=0x801ff000u) return;
+    if(!moh_vr_weapon_shot_id(psx_mod_read_byte(input+85u))) return; /* no passport */
+    double d[3]={0,0,0};d[g_laser_axis]=g_laser_sign;
+    double dir[3],e[3],o[3],p1[3];
+    for(int i=0;i<3;i++)
+        dir[i]=g_laser_M[i*3]*d[0]+g_laser_M[i*3+1]*d[1]+g_laser_M[i*3+2]*d[2];
+    for(int i=0;i<3;i++)e[i]=g_laser_pivot[i]+g_laser_muzzle[i];
+    for(int i=0;i<3;i++) {
+        o[i]=g_laser_C[i];
+        for(int j=0;j<3;j++)o[i]+=g_laser_M[i*3+j]*(g_laser_scale*(e[j]-g_laser_pivot[j]));
+    }
+    double unit=g_units_per_meter*g_weapon_projection_scale;
+    for(int i=0;i<3;i++)o[i]+=dir[i]*(g_laser_origin_m*unit);
+    for(int i=0;i<3;i++)p1[i]=o[i]+dir[i]*(g_laser_range_m*unit);
+    int sx0,sy0,sx1,sy1;
+    if(!vr_laser_project(o,&sx0,&sy0)||!vr_laser_project(p1,&sx1,&sy1))return;
+    psx_mod_write_word(0x1f801810u,0x500000ffu); /* shaded line, bright red */
+    psx_mod_write_word(0x1f801810u,((uint32_t)(sy0&0xffff)<<16)|(uint32_t)(sx0&0xffff));
+    psx_mod_write_word(0x1f801810u,0x00000000u); /* black tip: fade out */
+    psx_mod_write_word(0x1f801810u,((uint32_t)(sy1&0xffff)<<16)|(uint32_t)(sx1&0xffff));
+}
+
 /* Native player+256 names the held first-person object. Single-player
  * embeds it at input+784; weapon selection uses input+85, not loadout slot.
  * Wrap its geometry draw so authored H compensation can be scoped to this
@@ -802,8 +905,9 @@ static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
     if(!moh_vr_matrix_inverse(w,inverse) ||
        !vr_pose_to_transform(q,p,h.origin_orientation_xyzw,h.origin_position_m,
                              g_units_per_meter*g_weapon_projection_scale,r,t))return 0;
-    if(!moh_vr_weapon_transform(inverse,r,t,g_units_per_meter*g_weapon_projection_scale/g_weapon_model_units_per_meter *
-                               moh_vr_weapon_model_scale(profile),g_weapon_pivot,g_weapon_draw_rotation,g_weapon_draw_translation))return 0;
+    double weapon_scale=g_units_per_meter*g_weapon_projection_scale/g_weapon_model_units_per_meter *
+                        moh_vr_weapon_model_scale(profile);
+    if(!moh_vr_weapon_transform(inverse,r,t,weapon_scale,g_weapon_pivot,g_weapon_draw_rotation,g_weapon_draw_translation))return 0;
     /* Current measured weapon TR is zero; decline another transform contract. */
     if(cpu->gte_ctrl[5] || cpu->gte_ctrl[6] || cpu->gte_ctrl[7])return 0;
     uint32_t header=psx_mod_read_word(cpu->gpr[4]+124u);
@@ -837,6 +941,7 @@ static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
     for(int i=0;i<3;i++)view.translation[i]=(int32_t)llround(view.translation[i]*g_weapon_projection_scale);
     if(g_authored_focal)view.projection_h_ref=133;
     if(!psx_mod_render_view(&view)){g_weapon_outer=0;return 0;}
+    vr_laser_capture(cpu,&view,r,t,weapon_scale);
     /* Keep the measured weapon assembly, including animated gun parts,
      * and remove native arms inside this eye's rollback transaction. */
     {
@@ -936,6 +1041,22 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_OPENXR"))) g_openxr = atoi(e) != 0;
     if ((e = getenv("PSX_VR_HEAD_FRUSTUM"))) g_head_frustum = !strcmp(e,"1");
     if ((e = getenv("PSX_VR_WEAPON_POSE"))) g_weapon_pose = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_LASER"))) g_laser = atoi(e) != 0; else g_laser = g_weapon_pose;
+    if ((e = getenv("PSX_VR_LASER_RANGE_M"))) g_laser_range_m = strtod(e,NULL);
+    if ((e = getenv("PSX_VR_LASER_ORIGIN_M"))) g_laser_origin_m = strtod(e,NULL);
+    if ((e = getenv("PSX_VR_LASER_AXIS"))) g_laser_axis = atoi(e);
+    if ((e = getenv("PSX_VR_LASER_SIGN"))) g_laser_sign = strtod(e,NULL);
+    if ((e = getenv("PSX_VR_LASER_MUZZLE"))) {
+        double x,y,z;
+        if(sscanf(e,"%lf,%lf,%lf",&x,&y,&z)==3 && isfinite(x) && isfinite(y) && isfinite(z) &&
+           fabs(x)<32767 && fabs(y)<32767 && fabs(z)<32767) {
+            g_laser_muzzle[0]=x;g_laser_muzzle[1]=y;g_laser_muzzle[2]=z;
+        }
+    }
+    if(!isfinite(g_laser_range_m) || g_laser_range_m<1 || g_laser_range_m>500) g_laser_range_m=25;
+    if(!isfinite(g_laser_origin_m) || g_laser_origin_m<0 || g_laser_origin_m>10) g_laser_origin_m=.35;
+    if(g_laser_axis<0 || g_laser_axis>2) g_laser_axis=2;
+    g_laser_sign = (!isfinite(g_laser_sign) || g_laser_sign==0) ? 1 : (g_laser_sign<0 ? -1 : 1);
     if ((e = getenv("PSX_VR_WEAPON_MP_CONTROL"))) g_mp_control = !strcmp(e,"1");
     if ((e = getenv("PSX_VR_MENU_SURFACE"))) g_menu_surface=atoi(e)!=0;
     if ((e = getenv("PSX_VR_MENU_DISTANCE"))) g_menu_distance=strtod(e,NULL);

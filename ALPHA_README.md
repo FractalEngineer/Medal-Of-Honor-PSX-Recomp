@@ -66,9 +66,15 @@ in the console. These binaries are unsigned.
 | Right stick click | Jump |
 | Left stick click | Toggle crouch |
 | Left Menu button | Pause / Start |
-| Right grip | Temporary legacy native aim binding |
+| Right grip | Native aim binding; hold to show the barrel laser |
 
 Menus: left stick navigates; A or right trigger confirms; B goes back.
+
+The experimental barrel laser is a fixed-distance beam from the tracked weapon,
+bright at the muzzle and fading to black at the tip, shown while the right grip
+is held. It appears for firearms only — the passport and other non-firing items
+show none. Its length and muzzle alignment are provisional and need a headset
+pass.
 
 ## Alpha limitations
 

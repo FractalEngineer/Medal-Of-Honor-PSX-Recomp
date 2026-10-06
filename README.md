@@ -138,7 +138,7 @@ limitations.
 | Right stick click | Jump |
 | Left stick click | Toggle crouch |
 | Left Menu button | Pause / Start |
-| Right grip | Native aim binding |
+| Right grip | Native aim binding; hold for the barrel laser |
 
 In menus, the left stick navigates, A or right trigger confirms, and B goes back.
 
