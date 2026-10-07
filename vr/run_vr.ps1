@@ -18,7 +18,7 @@ param(
     [switch]$NoMenuSurfaceDiagnostic,
     [ValidateRange(0,3)][int]$StereoFaultDiagnostic = 0,
     [double]$MoveDeadzone = 0.2,
-    [double]$TurnGain = 0.65,
+    [double]$TurnGain = 0.78,
     [switch]$HideHud,
     [switch]$Verify,
     # Fresh checkouts/release packages have no settings.toml, so without this the

@@ -96,7 +96,7 @@ environment when it exits.
 ## Experimental VR alpha (Windows)
 
 The current [v0.1.4 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.4)
-includes controller tracking for all ten weapon types, right-stick-click jump,
+includes controller tracking for all ten weapon types, left-stick-click jump,
 headset color and head-turn visibility fixes, a tracked-weapon barrel laser that
 ends on the surface it hits, and a 1080p default. Quest 3 through
 Virtual Desktop with **VDXR** is the tested setup.
@@ -136,8 +136,8 @@ limitations.
 | A | Use |
 | B | Cycle weapon |
 | X | Reload / use, according to game context |
-| Right stick click | Jump |
-| Left stick click | Toggle crouch |
+| Right stick click | Toggle crouch |
+| Left stick click | Jump |
 | Left Menu button | Pause / Start |
 | Right grip | Hold to show the barrel laser (ends on the surface it hits) |
 | Left grip | Hold to aim a mounted machine gun with one stick |

@@ -44,7 +44,7 @@
  *   PSX_VR_LASER_BRIGHT=N beam/dot red 1..255 (default 160; lower = fainter)
  *   PSX_VR_MOVEMENT=0|1  Quest movement source (default on for XR, off otherwise)
  *   PSX_VR_MOVE_DEADZONE=N radial move/scalar turn deadzone (default .2)
- *   PSX_VR_TURN_GAIN=N   decoded turn response gain (default .65; native game rate)
+ *   PSX_VR_TURN_GAIN=N   decoded turn response gain (default .78; native game rate +20%)
  *   PSX_VR_ONE_STICK=0|1|2 both axes of the native left stick from one hand:
  *                        0 off, 2 always, 1 only while a carried machine gun is
  *                        equipped. Holding the LEFT GRIP always merges them too
@@ -419,7 +419,7 @@ static unsigned g_draw_mask = 15u; /* diagnostic call exclusion, not HUD labels 
 static int g_icon_visible = 1, g_text_visible = 1;
 static int g_openxr;
 static int g_movement = -1;
-static double g_move_deadzone = .2, g_turn_gain = .65;
+static double g_move_deadzone = .2, g_turn_gain = .78;
 static int g_authored_focal = 1, g_desktop_fov;
 static double g_head_yaw, g_head_position[3];
 static PSXModRenderView g_eye_view[2];
@@ -1246,7 +1246,7 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_ONE_STICK"))) g_one_stick = atoi(e);
     if(g_one_stick<0 || g_one_stick>2) g_one_stick=0;
     if (!isfinite(g_move_deadzone) || g_move_deadzone < 0 || g_move_deadzone > .9) g_move_deadzone = .2;
-    if (!isfinite(g_turn_gain) || g_turn_gain < 0 || g_turn_gain > 2) g_turn_gain = .65;
+    if (!isfinite(g_turn_gain) || g_turn_gain < 0 || g_turn_gain > 2) g_turn_gain = .78;
     if ((e = getenv("PSX_VR_HEAD_YAW"))) g_head_yaw = strtod(e, NULL);
     if (!isfinite(g_head_yaw) || fabs(g_head_yaw)>180) g_head_yaw=0;
     if ((e = getenv("PSX_VR_HEAD_POSITION"))) {

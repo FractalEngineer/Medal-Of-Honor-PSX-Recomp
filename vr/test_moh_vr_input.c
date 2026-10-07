@@ -65,7 +65,7 @@ int main(void) {
     assert(moh_vr_input_map(&input, .2, .65, &response, 0, &pad) && pad.buttons == 0xffff);
     input.buttons[0] = PSX_MOD_XR_SECONDARY; input.buttons_active[0] = PSX_MOD_XR_CLICKS;
     input.buttons[1] = PSX_MOD_XR_STICK; input.buttons_active[1] = PSX_MOD_XR_CLICKS;
-    assert(moh_vr_input_map(&input, .2, .65, &response, 0, &pad) && pad.buttons == 0xefff);
+    assert(moh_vr_input_map(&input, .2, .65, &response, 0, &pad) && pad.buttons == 0xfeff);
     input.buttons[1] = 0;
     assert(moh_vr_input_map(&input, .2, .65, &response, 0, &pad) && pad.buttons == 0xffff);
     input.buttons[1] = PSX_MOD_XR_STICK; input.buttons_active[1] = 0;

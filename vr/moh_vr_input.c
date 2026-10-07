@@ -23,8 +23,8 @@ static uint32_t combat_buttons(const PSXModOpenXRInput *input) {
     if (right & PSX_MOD_XR_PRIMARY) pressed |= 0x8000; /* A: Square/use */
     if (right & PSX_MOD_XR_SECONDARY) pressed |= 0x2000; /* B: Circle/next weapon/back */
     if (left & PSX_MOD_XR_PRIMARY) pressed |= 0x8000; /* X: Square/reload/use context */
-    if (right & PSX_MOD_XR_STICK) pressed |= 0x1000; /* right click: Triangle/jump */
-    if (left & PSX_MOD_XR_STICK) pressed |= 0x0100; /* left click: L2/crouch toggle */
+    if (right & PSX_MOD_XR_STICK) pressed |= 0x0100; /* right click: L2/crouch toggle */
+    if (left & PSX_MOD_XR_STICK) pressed |= 0x1000; /* left click: Triangle/jump */
     if (left & PSX_MOD_XR_MENU) pressed |= 0x0008; /* Menu: Start */
     return 0xffffu ^ pressed;
 }

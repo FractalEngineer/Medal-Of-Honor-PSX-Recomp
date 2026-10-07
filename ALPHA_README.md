@@ -5,10 +5,10 @@ Quest 3 through Virtual Desktop with VDXR is the tested headset/runtime setup;
 SteamVR/OpenXR also renders correctly. Oculus / Meta Quest Link is untested.
 
 v0.1.4 adds a barrel laser sight and one-stick aiming for the mounted machine
-gun. v0.1.3 added tracking profiles for all ten supplied weapons, accepted
-visually in the Quest 3 / VDXR batch on 2026-10-06, and mapped jump to
-right-stick click. `BUILD_INFO.json` identifies the exact source commit and
-executable hash.
+gun, and swaps the stick clicks (left clicks jump, right clicks crouch).
+v0.1.3 added tracking profiles for all ten supplied weapons, accepted
+visually in the Quest 3 / VDXR batch on 2026-10-06. `BUILD_INFO.json` identifies
+the exact source commit and executable hash.
 
 v0.1.1 corrects headset brightness/contrast and prevents head turns from losing
 world tiles in the tested scene. Visibility now uses each eye's view to select
@@ -65,8 +65,8 @@ in the console. These binaries are unsigned.
 | A | Use |
 | B | Cycle weapon |
 | X | Reload / use, according to game context |
-| Right stick click | Jump |
-| Left stick click | Toggle crouch |
+| Right stick click | Toggle crouch |
+| Left stick click | Jump |
 | Left Menu button | Pause / Start |
 | Right grip | Hold to show the barrel laser (ends on the surface it hits) |
 | Left grip | Hold to aim a mounted machine gun with one stick |
