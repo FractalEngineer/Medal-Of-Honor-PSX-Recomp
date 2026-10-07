@@ -40,6 +40,10 @@ param(
     # Both axes of the native left stick from one hand (PSX_VR_ONE_STICK):
     # -1 leaves the default (off), 2 = always, for the mounted machine gun.
     [int]$OneStick = -1,
+    # Near plane in SZ units for the VR eye-projection vertex pin
+    # (PSX_VR_NEAR_PIN). -1 leaves the framework default (64); 0 disables the pin
+    # so the near-geometry hole can be compared in the headset.
+    [int]$NearPin = -1,
     [string]$CaptureDirectory = '',
     [int]$Seconds = 0
 )
@@ -118,6 +122,7 @@ $vrVariables = @{
     # Barrel laser: raycast the level tree so the beam ends on the first surface.
     PSX_VR_LASER_RAY = '1'; PSX_VR_LASER_DOT = '2';
     PSX_VR_ONE_STICK = $(if ($OneStick -ge 0) { [string]$OneStick } else { $null });
+    PSX_VR_NEAR_PIN = $(if ($NearPin -ge 0) { [string]$NearPin } else { $null });
     PSX_VR_WEAPON_MODEL_UNITS_PER_METER = $WeaponModelUnitsPerMeter.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_WEAPON_PROJECTION_SCALE = $WeaponProjectionScale.ToString([Globalization.CultureInfo]::InvariantCulture);
     PSX_VR_MENU_SURFACE = [string][int](-not $NoMenuSurfaceDiagnostic);
