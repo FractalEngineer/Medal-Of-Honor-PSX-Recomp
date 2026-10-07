@@ -111,6 +111,15 @@ def main():
                     for v, node in zip((22,24,26), group):
                         maxima[node] = max(maxima.get(node, 0), byte(a+v))
                 result.update(node_groups=dict(nodes), mixed_faces=mixed, node_vertex_max=maxima)
+            nodes_header = word(entity+128)
+            if valid(nodes_header, 8):
+                node_count = word(nodes_header+4)
+                node_table = word(nodes_header)
+                counts = {}
+                if node_count <= 64 and valid(node_table, node_count*8):
+                    for n in range(node_count):
+                        counts[n] = word(node_table+n*8+4)
+                result.update(node_count=node_count, node_vertex_counts=counts)
             return result
         players = []
         single_player = valid(word(0x8009d654), 908)

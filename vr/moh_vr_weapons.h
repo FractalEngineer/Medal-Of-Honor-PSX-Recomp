@@ -14,6 +14,7 @@ typedef struct {
 } MOHVRWeaponProfile;
 
 static const MOHVRWeaponProfile moh_vr_weapon_profiles[] = {
+    {  0, 13, 14, 348,  89, {65}},            /* Luger pistol */
     { 1, 26, 32, 382, 191, {101,0,0,6,0,16}}, /* Thompson */
     { 2,  2,  3, 190, 190, {139}},            /* Bazooka */
     { 3, 23, 24, 337,  86, {45}},             /* Fragmentation grenade */
@@ -41,7 +42,7 @@ static inline unsigned moh_vr_weapon_shot_id(unsigned id) {
     case 1: case 4: case 6: case 11: return 5111;
     case 2: return 5105;
     case 3: case 10: return 5107;
-    case 5: case 8: case 9: case 12: return 5110;
+    case 0: case 5: case 8: case 9: case 12: return 5110;
     default: return 0;
     }
 }
