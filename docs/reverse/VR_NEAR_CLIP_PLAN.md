@@ -106,9 +106,31 @@ arrives. The ring closes that gap: it stores each projection's `SXY0`/`SXY1`/
 incoming triangle's three screen coordinates against a ring entry recovers that
 entry's camera-space vertices, which is what the clip needs.
 
-This correlation is the risky part of the design: it has to be unambiguous (a
-repeated vertex triple must not bind to the wrong entry) and cheap enough to sit
-in the submit path. Validate it on captured geometry before anything ships.
+Do not search the whole ring. Only a projection whose vertex fell behind the
+plane is interesting, and those are rare, so RTPS records just those into a short
+side list as it runs — the projected screen coordinates plus the camera-space
+vertices — with a bounded length and the entry dropped when it is consumed or
+ages out. Submit then checks the incoming triangle's three screen coordinates
+against that short list instead of 256K entries. The list is small enough to scan
+and small enough that a repeated vertex triple cannot plausibly bind to the wrong
+entry once the match also has to agree on all three corners.
+
+That is the piece to build first, and it is observable on its own: at submit,
+report the hit rate and every ambiguous match over captured geometry. If the
+matches are clean, the clip is a small addition on top; if they are not, the
+whole submit-time approach is wrong and the pin stays as the answer.
+
+## Submit-side hook points (located)
+
+- `gp0_execute_command()` (`gpu.c:5793`) decodes every GP0 command. Drawing
+  primitives are the `opcode >= 0x20 && opcode <= 0x7F` branch (`gpu.c:5839`),
+  which is where every triangle passes with its vertices already in screen space.
+- `ws_census_record()` (`gpu.c:5744`) is an existing always-on per-primitive
+  recorder — frame, first vertex, camera, draw area — and is a working model for
+  the capture side of this change, including how it is bounded and read back.
+- The renderer entry points are the `gr_draw_*_triangle` wrappers
+  (`gpu_render.c:118-137`) over the software, GL and Vulkan backends. Clip above
+  them so every backend gets it once, rather than three times.
 
 ## Verification required before it is trusted
 
