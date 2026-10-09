@@ -1,7 +1,7 @@
 [submodule "psxrecomp"]
 	path = psxrecomp
 	url = https://github.com/FractalEngineer/psxrecomp.git
-	branch = master
+	branch = feat/vr-desktop-mirror
 [submodule "recomp-ui"]
 	path = recomp-ui
 	url = https://github.com/RetroPortingToolKit/recomp-ui.git
