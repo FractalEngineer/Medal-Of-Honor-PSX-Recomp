@@ -1,7 +1,7 @@
 [submodule "psxrecomp"]
 	path = psxrecomp
 	url = https://github.com/FractalEngineer/psxrecomp.git
-	branch = vr-dev
+	branch = master
 [submodule "recomp-ui"]
 	path = recomp-ui
 	url = https://github.com/RetroPortingToolKit/recomp-ui.git
