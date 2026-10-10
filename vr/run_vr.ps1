@@ -33,6 +33,10 @@ param(
     [ValidateSet('current', 'vdxr', 'oculus', 'steamvr')]
     [string]$Runtime = 'current',
     [string]$RuntimeJson = '',
+    # Run with no headset: SteamVR's null HMD driver serves a real OpenXR session.
+    # Implies -Runtime steamvr and manages SteamVR's start and stop. Requires Steam
+    # and SteamVR, and SteamVR must be closed first.
+    [switch]$Headless,
     [switch]$Build,
     [string]$BuildDirectory = 'build-release',
     [string]$DiscPath = '',
@@ -44,6 +48,11 @@ param(
     [int]$Seconds = 0
 )
 $ErrorActionPreference = 'Stop'
+if ($Headless) {
+    if ($Desktop) { throw '-Headless runs through OpenXR and cannot be combined with -Desktop.' }
+    if ($RuntimeJson) { throw '-Headless drives SteamVR; do not also pass -RuntimeJson.' }
+    $Runtime = 'steamvr'
+}
 $vrRoot = Split-Path $PSScriptRoot -Parent
 $vrBuild = Join-Path $vrRoot $BuildDirectory
 $vrExe = Join-Path $vrBuild 'Medal_of_Honor__Recompiled.exe'
@@ -139,6 +148,9 @@ $vrVariables = @{
 }
 $vrOldEnvironment = @{}
 $vrProcess = $null
+$vrSteamVrSettings = $null
+$vrSteamVrOriginal = $null
+$vrSteamVrStarted = $false
 Push-Location $vrRoot
 try {
     # A capture must not accidentally inspect an older game on the same TCP port.
@@ -186,6 +198,38 @@ try {
         $vrOldEnvironment[$vrKey] = [Environment]::GetEnvironmentVariable($vrKey,'Process')
         [Environment]::SetEnvironmentVariable($vrKey,$vrVariables[$vrKey],'Process')
     }
+    if ($Headless) {
+        $vrSteamPath = (Get-ItemProperty -Path 'HKCU:\SOFTWARE\Valve\Steam' -Name SteamPath -ErrorAction SilentlyContinue).SteamPath
+        if (-not $vrSteamPath -or -not (Test-Path -LiteralPath $vrSteamPath)) {
+            foreach ($vrCandidate in 'C:\Program Files (x86)\Steam', 'C:\Program Files\Steam') {
+                if (Test-Path -LiteralPath $vrCandidate) { $vrSteamPath = $vrCandidate; break }
+            }
+        }
+        if (-not $vrSteamPath) { throw 'Steam install not found. Install Steam and SteamVR for -Headless.' }
+        $vrSteamVrStartup = Join-Path $vrSteamPath 'steamapps\common\SteamVR\bin\win64\vrstartup.exe'
+        $vrSteamVrSettings = Join-Path $vrSteamPath 'config\steamvr.vrsettings'
+        if (-not (Test-Path -LiteralPath $vrSteamVrStartup)) { throw "SteamVR not found at $vrSteamVrStartup. Install SteamVR." }
+        if (-not (Test-Path -LiteralPath $vrSteamVrSettings)) { throw "steamvr.vrsettings not found at $vrSteamVrSettings. Start SteamVR once to create it." }
+        if (Get-Process vrserver -ErrorAction SilentlyContinue) { throw 'SteamVR is already running. Close it before -Headless so the null driver is loaded on start.' }
+        $vrSteamVrOriginal = [IO.File]::ReadAllText($vrSteamVrSettings)
+        if ($vrSteamVrOriginal -notmatch 'driver_null') {
+            $vrSteamInsert = "`r`n   `"driver_null`" : {`r`n      `"enable`" : true`r`n   },"
+            [IO.File]::WriteAllText($vrSteamVrSettings, ($vrSteamVrOriginal -replace '^\s*\{', ('{' + $vrSteamInsert)), (New-Object Text.UTF8Encoding($false)))
+            Write-Host 'SteamVR null HMD driver enabled for this run.'
+        }
+        Start-Process -FilePath $vrSteamVrStartup | Out-Null
+        $vrSteamVrStarted = $true
+        $vrSteamVrDeadline = (Get-Date).AddSeconds(60)
+        while ((Get-Date) -lt $vrSteamVrDeadline) {
+            if ((Get-Process vrserver -ErrorAction SilentlyContinue) -and
+                (Get-Process vrcompositor -ErrorAction SilentlyContinue)) { break }
+            Start-Sleep -Milliseconds 500
+        }
+        if (-not (Get-Process vrcompositor -ErrorAction SilentlyContinue)) {
+            throw 'SteamVR did not start for -Headless. Check the SteamVR logs and that the null driver is present.'
+        }
+        Write-Host 'SteamVR is up on the null HMD (no headset).'
+    }
     $vrProcess = Start-Process -FilePath $vrExe -ArgumentList '--no-launcher','--game','game.toml','--disc',('"' + $DiscPath + '"') -WorkingDirectory $vrRoot -WindowStyle Hidden -PassThru
     if ($CaptureDirectory) {
         $vrSaveSlot = if ($Slot -ge 0) {$Slot} else {3}
@@ -225,6 +269,20 @@ try {
     }
     foreach ($vrKey in $vrOldEnvironment.Keys) {
         [Environment]::SetEnvironmentVariable($vrKey,$vrOldEnvironment[$vrKey],'Process')
+    }
+    if ($Headless) {
+        if ($vrSteamVrStarted) {
+            Get-Process vrserver, vrcompositor, vrmonitor, vrdashboard, vrwebhelper -ErrorAction SilentlyContinue |
+                Stop-Process -Force -ErrorAction SilentlyContinue
+            $vrSteamVrDeadline = (Get-Date).AddSeconds(15)
+            while ((Get-Date) -lt $vrSteamVrDeadline -and (Get-Process vrserver -ErrorAction SilentlyContinue)) {
+                Start-Sleep -Milliseconds 500
+            }
+        }
+        if ($vrSteamVrSettings -and $vrSteamVrOriginal) {
+            [IO.File]::WriteAllText($vrSteamVrSettings, $vrSteamVrOriginal, (New-Object Text.UTF8Encoding($false)))
+        }
+        Write-Host 'SteamVR settings restored and SteamVR stopped.'
     }
     Pop-Location
 }

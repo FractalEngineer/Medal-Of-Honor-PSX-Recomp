@@ -66,6 +66,28 @@ Desktop rather than Quest Link. Connect with the Meta Quest app's Link/Air Link
 and retest. Runtimes other than VDXR/SteamVR, and their color handling, remain
 unverified — see the compatibility-matrix task in the backlog.
 
+### Headless (no headset)
+
+`-Headless` runs the VR path with no headset attached. SteamVR ships a null HMD
+driver and serves a real OpenXR session without a device; the launcher enables
+that driver for the run (it implies `-Runtime steamvr`), starts SteamVR, then
+restores `steamvr.vrsettings` and stops the SteamVR it started. Steam and
+SteamVR must be installed, SteamVR must be closed first, and `-Desktop` cannot
+be combined with it.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File vr/run_vr.ps1 -Headless -Seconds 60
+```
+
+A headless run reaches the same state as a headset run: `openxr_stats` reports
+`running` with `submitted > 0` and `runtime` = `SteamVR/OpenXR`, and the
+spectator window shows the single left eye. Confirmed 2026-10-10 with no headset
+connected. The null HMD has a fixed origin and near-static eye poses, so head
+motion and device timing are not exercised; treat it as a functional check
+(session, view location, stereo render, submission, spectator mirror), not as
+headset evidence. The system's active runtime and the normal VDXR path are
+untouched.
+
 ## Controls and inspection
 
 | Control | Meaning |
@@ -80,6 +102,7 @@ unverified — see the compatibility-matrix task in the backlog.
 | `-TurnGain 0.65` | Right horizontal axis gain; native game controls the turn rate |
 | `-Runtime vdxr\|oculus\|steamvr` | Pin an installed OpenXR runtime for this launch; default `current` |
 | `-RuntimeJson <path>` | Explicit OpenXR runtime manifest; overrides `-Runtime` |
+| `-Headless` | No headset: SteamVR's null HMD driver serves the session (implies `-Runtime steamvr`) |
 | `-Desktop -MovementDiagnostic` | Enable the source for explicitly synthetic TCP input controls |
 
 Effective mapping is `base_units_per_meter / WorldScale`. At profile 3 this is
