@@ -78,6 +78,7 @@
 #include "moh_vr_weapons.h"
 #include "moh_vr_frustum.h"
 #include "moh_vr_raycast.h"
+#include "moh_vr_hud.h"
 
 #define FUN_80084718 0x80084718u
 /* Geometry pass: entity -> screen geometry. FUN_80082948 dispatches here on
@@ -544,6 +545,24 @@ static int vr_draw_mp_control(CPUState *cpu,const PSXModRenderPass *pass) {
     return 1;
 }
 
+static void vr_hud_unlink_health(uint32_t ot,uint32_t buffer) {
+    /* Native 80060AFC owns these two alternating packet arrays. Inspect only
+     * bucket zero, where that producer links them; retain notification packets. */
+    uint32_t previous=ot,next=psx_mod_read_word(previous)&0xffffffu;
+    for(unsigned count=0;next!=0xffffffu && count<4096;count++) {
+        if(next>=0x200000u || (next&3u))break;
+        uint32_t node=0x80000000u|next,tag=psx_mod_read_word(node),op=psx_mod_read_byte(node+7);
+        uint32_t ring=0x800ab970u+buffer*0xc00u;
+        /* Each linked health packet contains two F4s and an embedded tag/NOP:
+         * 11 GP0 words, linked at every other 24-byte segment. */
+        int health=node>=ring && node<ring+32u*24u && (node-ring)%48u==0 &&
+                   (tag>>24)==11 && (op&0xfcu)==0x28u;
+        int compass=node==0x800ad170u+buffer*40u && (tag>>24)==9 && (op&0xfcu)==0x2cu;
+        if(health || compass)psx_mod_write_word(previous,(psx_mod_read_word(previous)&0xff000000u)|(tag&0xffffffu));
+        else previous=node;
+        next=tag&0xffffffu;
+    }
+}
 static int vr_draw_scene(CPUState* cpu, const PSXModRenderPass* pass) {
     if(g_scene_mp)return vr_draw_mp_control(cpu,pass);
     const uint32_t ctx = 0x8009a620u;
@@ -583,13 +602,27 @@ static int vr_draw_scene(CPUState* cpu, const PSXModRenderPass* pass) {
     if ((g_draw_mask & 2u) && (psx_mod_read_word(world + 1420u) & 0x00ffffffu))
         vr_guest_call(cpu, 0x80089a0cu, ctx, 0, 0, ra);
     vr_guest_call(cpu, 0x80064550u, 0, 0, 0, ra);
+    unsigned hud_mask=g_menu_flat?0:moh_vr_hud_replacement_mask();
+    uint32_t ammo_entries[64],ammo_flags[64],ammo_count=0;
+    if(hud_mask&2u) {
+        uint32_t input=psx_mod_read_word(vr_weapon_player()+904u),count=psx_mod_read_word(0x80099ed0u);
+        if(count<=64)for(uint32_t i=0;i<count;i++) {
+            uint32_t entry=0x80099f4cu+i*32u,pointer=psx_mod_read_word(entry);
+            if(pointer==input+264u || pointer==input+268u) {
+                ammo_entries[ammo_count]=entry+24u;ammo_flags[ammo_count++]=psx_mod_read_word(entry+24u);
+                psx_mod_write_word(entry+24u,psx_mod_read_word(entry+24u)&~1u);
+            }
+        }
+    }
     if (g_text_visible && (g_draw_mask & 4u)) vr_guest_call(cpu, 0x8005f86cu, psx_mod_read_word(ctx + 8728u),
                   psx_mod_read_word(ctx + 8732u), 0, ra);
+    for(uint32_t i=0;i<ammo_count;i++)psx_mod_write_word(ammo_entries[i],ammo_flags[i]);
     vr_guest_call(cpu, 0x8006c714u, ctx, psx_mod_read_word(0x8009d64cu), 0, ra);
-    if (g_icon_visible && (g_draw_mask & 8u))
+    if (g_icon_visible && (g_draw_mask & 8u) && !(hud_mask&2u))
         vr_guest_call(cpu, 0x8008019cu, camera, ctx, 0, ra);
     /* ClearOTagR initializes 512 entries; DrawOTag starts from the final one.
      * 0x800172D8 is DrawOTag, confirmed by its own debug-string producer. */
+    if(hud_mask&1u)vr_hud_unlink_health(psx_mod_read_word(ctx+8728u),psx_mod_read_word(ctx+8732u));
     vr_guest_call(cpu, 0x800172d8u, psx_mod_read_word(ctx + 8728u) + 511u * 4u,
                   0, 0, ra);
     return 1;
@@ -633,6 +666,54 @@ static int vr_stereo_fn(CPUState* cpu, void* user, uint32_t eye) {
     if (rendered) vr_laser_draw();
     return rendered;
 }
+
+#if defined(PSX_MOD_RENDER_CAPTURE_RGBA)
+typedef struct {const PSXModRenderPass *rect;uint32_t matte;} VrHudCapture;
+static uint8_t g_hud_black[512*240*4],g_hud_white[512*240*4];
+static int vr_hud_only_draw(CPUState *cpu,void *user,uint32_t alpha) {
+    (void)alpha;const VrHudCapture *capture=user;const PSXModRenderPass *pass=capture->rect;
+    const uint32_t ctx=0x8009a620u,ra=cpu->gpr[31];
+    uint32_t player=vr_weapon_player();
+    if(player<0x80000000u || player>0x801ff000u)return 0;
+    uint32_t input=psx_mod_read_word(player+904u);
+    uint32_t index=psx_mod_read_word(ctx+8708u);
+    if(index>1 || player<0x80000000u || player>0x801ff000u || input<0x80000000u || input>0x801ff000u)return 0;
+    PSXModRenderView identity={0};identity.struct_size=sizeof identity;
+    identity.rotation_q12[0]=identity.rotation_q12[4]=identity.rotation_q12[8]=4096;
+    if(!psx_mod_render_view(&identity))return 0;
+    vr_guest_call(cpu,0x80017348u,ctx+16u+184u*index,0,0,ra);
+    psx_mod_write_word(0x1f801810u,0x02000000u|capture->matte);
+    psx_mod_write_word(0x1f801810u,((uint32_t)pass->y<<16)|pass->x);
+    psx_mod_write_word(0x1f801810u,((uint32_t)pass->h<<16)|pass->w);
+    vr_guest_call(cpu,0x80050548u,psx_mod_read_word(0x8009d638u),0,0,ra);
+    /* Exclude unrelated notification flashes, within this rollback only. */
+    for(uint32_t a=0x8009a590u;a<=0x8009a59cu;a+=4)psx_mod_write_word(a,0);
+    vr_guest_call(cpu,0x80060afcu,player,0,0,ra);
+    uint32_t count=psx_mod_read_word(0x80099ed0u);if(count>64)return 0;
+    for(uint32_t i=0;i<count;i++) {
+        uint32_t entry=0x80099f4cu+i*32,pointer=psx_mod_read_word(entry);
+        /* Native ammo format buffers, not a coordinate/value heuristic. */
+        if(pointer!=input+264u && pointer!=input+268u)
+            psx_mod_write_word(entry+24u,psx_mod_read_word(entry+24u)&~1u);
+    }
+    vr_guest_call(cpu,0x8005f86cu,psx_mod_read_word(ctx+8728u),psx_mod_read_word(ctx+8732u),0,ra);
+    vr_guest_call(cpu,0x8008019cu,player,ctx,0,ra);
+    vr_guest_call(cpu,0x800172d8u,psx_mod_read_word(ctx+8728u)+511u*4u,0,0,ra);
+    return 1;
+}
+static void vr_capture_native_hud(CPUState *cpu,const PSXModRenderPass *rect) {
+    if(!moh_vr_hud_wants_native() || g_scene_mp || rect->w!=512 || rect->h!=240)return;
+    /* The SP overlay owns these producers; refuse a different overlay. */
+    if(psx_mod_read_word(0x80060afcu)!=0x3c02800au ||
+       psx_mod_read_word(0x80060b00u)!=0x8c42a5e0u)return;
+    VrHudCapture capture={rect,0};g_in_pass=1;g_stereo_eye=0;
+    int black=psx_mod_render_capture_rgba(cpu,rect,vr_hud_only_draw,&capture,g_hud_black,sizeof g_hud_black);
+    capture.matte=0xffffffu;
+    int white=black && psx_mod_render_capture_rgba(cpu,rect,vr_hud_only_draw,&capture,g_hud_white,sizeof g_hud_white);
+    g_in_pass=0;
+    (void)moh_vr_hud_set_native(black&&white?g_hud_black:NULL,black&&white?g_hud_white:NULL);
+}
+#endif
 
 static void vr_vsync_entry(CPUState* cpu, uint32_t address) {
     (void)address;
@@ -757,6 +838,13 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
             memset(&g_eye_view[eye],0,sizeof g_eye_view[eye]);
             g_eye_view[eye].struct_size=sizeof g_eye_view[eye];
             g_eye_view[eye].rotation_q12[0]=g_eye_view[eye].rotation_q12[4]=g_eye_view[eye].rotation_q12[8]=4096;
+        }
+        moh_vr_hud_frame(g_eye_view[0].fy_q16>0?(float)g_eye_view[0].fx_q16/g_eye_view[0].fy_q16:1);
+        if(g_openxr && !g_menu_flat) {
+#if defined(PSX_MOD_RENDER_CAPTURE_RGBA)
+            vr_capture_native_hud(cpu,&pass);
+#endif
+            moh_vr_hud_prepare();
         }
         g_in_pass = 1;
         int rendered = psx_mod_render_stereo(cpu, &frame, vr_stereo_fn, &pass);

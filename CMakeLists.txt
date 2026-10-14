@@ -58,6 +58,7 @@ psxrecomp_add_game_runtime(psx-runtime
 target_sources(psx-runtime PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/vr/psx_vr_stereo.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/vr/moh_vr_input.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vr/moh_vr_hud.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/vr/moh_vr_aim.c")
 
 # Stage runtime configs next to the exe for direct build/ launches. Only copy

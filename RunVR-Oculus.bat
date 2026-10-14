@@ -3,7 +3,7 @@ setlocal
 rem VR launch pinned to the Oculus (Meta Quest Link / Air Link) OpenXR runtime.
 rem The runtime is chosen by which launcher you run; the system's active runtime
 rem is unchanged. Uses the accepted VR settings and tracked-weapon controls.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0vr\run_vr.ps1" -Runtime oculus -WeaponPoseDiagnostic %*
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0vr\run_vr.ps1" -Runtime oculus -WeaponPoseDiagnostic -WristHud -WristHudReplace -BuildDirectory build-vr-wrist %*
 set "VR_EXIT_CODE=%ERRORLEVEL%"
 if not "%VR_EXIT_CODE%"=="0" (
     echo.

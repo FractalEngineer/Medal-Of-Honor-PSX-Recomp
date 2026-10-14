@@ -1,0 +1,470 @@
+diff --git a/runtime/include/gpu_gl_renderer.h b/runtime/include/gpu_gl_renderer.h
+index 122bdb89..4a27bdb2 100644
+--- a/runtime/include/gpu_gl_renderer.h
++++ b/runtime/include/gpu_gl_renderer.h
+@@ -136,6 +136,7 @@ uint32_t gl_renderer_stereo_unavailable(void);
+ int gl_renderer_stereo_begin(int x, int y, int w, int h, int reuse_backup);
+ int gl_renderer_stereo_end(uint32_t eye, int keep);
+ void gl_renderer_stereo_stage_reset(void);
++int gl_renderer_stereo_stage_readback(uint32_t eye,uint32_t width,uint32_t height,uint8_t *rgba);
+ int gl_renderer_stereo_publish(uint64_t pair_id, uint64_t guest_cycle,
+                                 const int32_t eye_view[2][3]);
+ void gl_renderer_stereo_reset(void);
+diff --git a/runtime/include/mod_plugins.h b/runtime/include/mod_plugins.h
+index 3b1cc33c..85a7ae47 100644
+--- a/runtime/include/mod_plugins.h
++++ b/runtime/include/mod_plugins.h
+@@ -600,6 +600,14 @@ uint32_t psx_mod_render_pass_plan(uint32_t period_vblanks,
+  * partially updated plugin state) across guest code, or tolerate the abort. */
+ int psx_mod_render_pass(struct CPUState* cpu, const PSXModRenderPass* pass,
+                         PSXModRenderPassFn fn, void* user);
++/* Isolated draw/readback using the stereo-capable rollback transaction.
++ * Never publishes an eye pair or changes presentation. Returns native-sized
++ * top-to-bottom RGBA8 pixels (alpha remains the PSX mask bit, not coverage).
++ * Call outside another pass. rgba_bytes must cover rect->w*rect->h*4. */
++int psx_mod_render_capture_rgba(struct CPUState *cpu,const PSXModRenderPass *rect,
++                               PSXModRenderPassFn fn,void *user,
++                               uint8_t *rgba,uint32_t rgba_bytes);
++#define PSX_MOD_RENDER_CAPTURE_RGBA 1
+ /*
+  * Why passes cannot run right now, the host-time budget aside (a plan that
+  * returns 0 while this says READY was shed for time). A plugin that relies on
+@@ -709,6 +717,21 @@ int psx_mod_openxr_end(int pair_rendered);
+  * Dimensions and distance are meters; zero distance restores projection.
+  * Requests reset at begin/end and never affect faithful guest rendering. */
+ int psx_mod_openxr_quad(double distance_m, double width_m, double height_m);
++/* Additive, frame-local LOCAL-space surface. Called between XR begin/end and
++ * outside guest replay. Pixels are tightly packed bottom-to-top sRGB RGBA8,
++ * straight alpha, copied synchronously; caller retains ownership. IDs 0..1.
++ * Pose is raw XR LOCAL meters/quaternion x,y,z,w, not recentered game units.
++ * Missing requests disappear next frame. Returns 0 without replacing scene UI. */
++typedef struct PSXModOpenXRSurface {
++    uint32_t struct_size, id, width_px, height_px, flags;
++    float position_m[3], orientation_xyzw[4], size_m[2];
++    const uint8_t *rgba;
++} PSXModOpenXRSurface;
++#define PSX_MOD_OPENXR_SURFACES 1
++/* Ignore surface orientation: aim at predicted eye midpoint, upright in LOCAL
++ * space. Both eyes use the same plane. Position remains caller-controlled. */
++#define PSX_MOD_OPENXR_SURFACE_FACE_HEAD 1u
++int psx_mod_openxr_surface(const PSXModOpenXRSurface *surface);
+ /* Opt-in native presentation surface for boot, videos and menus. Copies the
+  * freshly drawn desktop content before host overlays, without guest replay.
+  * Zero distance disables it. Applications disable it before scene begin and
+diff --git a/runtime/include/psx_openxr.h b/runtime/include/psx_openxr.h
+index fade951c..4455b098 100644
+--- a/runtime/include/psx_openxr.h
++++ b/runtime/include/psx_openxr.h
+@@ -25,6 +25,8 @@ typedef struct PSXOpenXRStats {
+     uint32_t submitted_source; /* 1 fresh stereo pair, 2 native presentation */
+     uint64_t native_submitted, submitted_native_frame;
+     uint64_t losses; /* session/instance/swapchain losses torn down and retried */
++    uint32_t submitted_surfaces;
++    uint64_t surface_uploads, surface_failures;
+ } PSXOpenXRStats;
+ int psx_openxr_enable(int enabled);
+ int psx_openxr_begin(int width,int height,double units);
+@@ -33,6 +35,9 @@ int psx_openxr_view(uint32_t eye,PSXModRenderView *out);
+ typedef int (*PSXOpenXRCopy)(uint32_t eye,uint32_t texture,int w,int h);
+ int psx_openxr_end(int keep,PSXOpenXRCopy copy);
+ int psx_openxr_quad(double distance_m,double width_m,double height_m);
++int psx_openxr_surface_valid(const PSXModOpenXRSurface *surface);
++int psx_openxr_surface(const PSXModOpenXRSurface *surface);
++int psx_openxr_surface_get(uint32_t id,PSXModOpenXRSurface *out);
+ void psx_openxr_pair_metadata(uint64_t pair_id,uint64_t cycle);
+ void psx_openxr_native_metadata(uint64_t frame);
+ /* Pure gate: presentation-side frame interpolation must be OFF while a headset
+diff --git a/runtime/include/xr_surface_math.h b/runtime/include/xr_surface_math.h
+new file mode 100644
+index 00000000..f61a2ea1
+--- /dev/null
++++ b/runtime/include/xr_surface_math.h
+@@ -0,0 +1,47 @@
++#pragma once
++#include <math.h>
++#include "mod_plugins.h"
++static inline void xr_surface_rotate(const float q[4],const float p[3],float out[3]) {
++    float t[3]={2*(q[1]*p[2]-q[2]*p[1]),2*(q[2]*p[0]-q[0]*p[2]),2*(q[0]*p[1]-q[1]*p[0])};
++    out[0]=p[0]+q[3]*t[0]+q[1]*t[2]-q[2]*t[1];
++    out[1]=p[1]+q[3]*t[1]+q[2]*t[0]-q[0]*t[2];
++    out[2]=p[2]+q[3]*t[2]+q[0]*t[1]-q[1]*t[0];
++}
++/* Six clip-space vertices with UV, before the renderer's storage-row flip.
++ * Surface and eye use raw LOCAL poses; recenter is already embodied in both.
++ * Hide a surface crossing the near plane rather than producing invalid UVs. */
++static inline int xr_surface_vertices_head(const PSXModOpenXRSurface *v,const float eye[7],
++                                      const float fov[4],const float head[3],float out[36]) {
++    const int corners[6][2]={{0,0},{1,0},{1,1},{0,0},{1,1},{0,1}};
++    float inverse[4]={-eye[3],-eye[4],-eye[5],eye[6]};
++    float l=tanf(fov[0]),r=tanf(fov[1]),u=tanf(fov[2]),d=tanf(fov[3]);
++    if(!(r>l && u>d))return 0;
++    float right[3]={1,0,0},up[3]={0,1,0};
++    if(v->flags&PSX_MOD_OPENXR_SURFACE_FACE_HEAD) {
++        float n[3];float length=0;
++        for(int j=0;j<3;j++){n[j]=head[j]-v->position_m[j];length+=n[j]*n[j];}
++        if(!isfinite(length) || length<.0004f)return 0;
++        length=sqrtf(length);for(int j=0;j<3;j++)n[j]/=length;
++        float horizontal=sqrtf(n[0]*n[0]+n[2]*n[2]);
++        if(horizontal>.0001f){right[0]=n[2]/horizontal;right[2]=-n[0]/horizontal;}
++        up[0]=n[1]*right[2];up[1]=n[2]*right[0]-n[0]*right[2];up[2]=-n[1]*right[0];
++    }
++    for(int i=0;i<6;i++) {
++        float local[3]={(corners[i][0]-.5f)*v->size_m[0],(corners[i][1]-.5f)*v->size_m[1],0};
++        float world[3],camera[3];
++        if(v->flags&PSX_MOD_OPENXR_SURFACE_FACE_HEAD)
++            for(int j=0;j<3;j++)world[j]=local[0]*right[j]+local[1]*up[j];
++        else xr_surface_rotate(v->orientation_xyzw,local,world);
++        for(int j=0;j<3;j++)world[j]+=v->position_m[j]-eye[j];
++        xr_surface_rotate(inverse,world,camera);
++        if(!isfinite(camera[2]) || camera[2]>=-.02f)return 0;
++        out[i*6]=2*camera[0]/(r-l)+(r+l)*camera[2]/(r-l);
++        out[i*6+1]=2*camera[1]/(u-d)+(u+d)*camera[2]/(u-d);
++        out[i*6+2]=0;out[i*6+3]=-camera[2];
++        out[i*6+4]=corners[i][0];out[i*6+5]=corners[i][1];
++    }
++    return 1;
++}
++static inline int xr_surface_vertices(const PSXModOpenXRSurface *v,const float eye[7],const float fov[4],float out[36]) {
++    return xr_surface_vertices_head(v,eye,fov,eye,out);
++}
+diff --git a/runtime/src/debug_server.c b/runtime/src/debug_server.c
+index 3a7ee181..58fec399 100644
+--- a/runtime/src/debug_server.c
++++ b/runtime/src/debug_server.c
+@@ -8941,7 +8941,8 @@ static void handle_openxr_stats(int id, const char *json) {
+              "\"gl_version\":%llu,\"min_gl_version\":%llu,\"max_gl_version\":%llu,\"swapchain_format\":%lld,"
+              "\"submitted_layer\":%u,\"quad_submitted\":%llu,"
+              "\"submitted_source\":%u,\"native_submitted\":%llu,\"submitted_native_frame\":%llu,"
+-             "\"quad_distance_m\":%.6f,\"quad_width_m\":%.6f,\"quad_height_m\":%.6f,\"losses\":%llu}", id,s.compiled,s.enabled,
++             "\"quad_distance_m\":%.6f,\"quad_width_m\":%.6f,\"quad_height_m\":%.6f,\"losses\":%llu,"
++             "\"submitted_surfaces\":%u,\"surface_uploads\":%llu,\"surface_failures\":%llu}", id,s.compiled,s.enabled,
+              s.initialized,s.running,s.state,s.tracking,s.frame_open,s.result,
+              s.stage?s.stage:"off",s.runtime,s.last_failure?s.last_failure:"",s.last_failure_result,
+              (unsigned long long)s.view_flags,(unsigned long long)s.waits,
+@@ -8951,7 +8952,8 @@ static void handle_openxr_stats(int id, const char *json) {
+              (unsigned long long)s.max_gl_version,(long long)s.swapchain_format,s.submitted_layer,
+              (unsigned long long)s.quad_submitted,s.submitted_source,
+              (unsigned long long)s.native_submitted,(unsigned long long)s.submitted_native_frame,
+-             s.quad_distance_m,s.quad_width_m,s.quad_height_m,(unsigned long long)s.losses);
++             s.quad_distance_m,s.quad_width_m,s.quad_height_m,(unsigned long long)s.losses,
++             s.submitted_surfaces,(unsigned long long)s.surface_uploads,(unsigned long long)s.surface_failures);
+ }
+ static void handle_openxr_views(int id,const char *json) {
+     PSXOpenXRStats s; (void)json;psx_openxr_stats(&s);
+diff --git a/runtime/src/gpu_gl_renderer.c b/runtime/src/gpu_gl_renderer.c
+index f038644e..8c3f667a 100644
+--- a/runtime/src/gpu_gl_renderer.c
++++ b/runtime/src/gpu_gl_renderer.c
+@@ -610,6 +610,9 @@ static GLuint        s_osd_tex = 0;
+ static int           s_osd_tw = 0, s_osd_th = 0;
+ static GLuint        s_present_prog = 0, s_present_vao = 0;
+ static GLuint        s_xr_color_prog = 0, s_xr_native_tex = 0;
++static GLuint s_xr_surface_program,s_xr_surface_vao,s_xr_surface_vbo,s_xr_surface_tex[2];
++static GLuint s_capture_read_tex,s_capture_read_fbo;
++static int s_capture_read_w,s_capture_read_h;
+ static void          gl_swap_with_osd(void);
+ static int           s_post_aa = 0;   /* GL_POST_AA_*; post-process AA (post_aa_apply) */
+ static int s_native_surface_enabled, s_native_surface_pending;
+@@ -8330,7 +8333,16 @@ static void pass_resources_release(void) {
+         if(s_xr_color_prog && p_glDeleteProgram) p_glDeleteProgram(s_xr_color_prog);
+         if(s_xr_native_tex) glDeleteTextures(1,&s_xr_native_tex);
+     }
++    if(s_ctx) {
++        if(s_xr_surface_program && p_glDeleteProgram)p_glDeleteProgram(s_xr_surface_program);
++        if(s_xr_surface_vao && p_glDeleteVertexArrays)p_glDeleteVertexArrays(1,&s_xr_surface_vao);
++        if(s_xr_surface_vbo && p_glDeleteBuffers)p_glDeleteBuffers(1,&s_xr_surface_vbo);
++        glDeleteTextures(2,s_xr_surface_tex);
++    }
++    s_xr_surface_program=s_xr_surface_vao=s_xr_surface_vbo=0;
++    s_xr_surface_tex[0]=s_xr_surface_tex[1]=0;
+     s_xr_color_prog=s_xr_native_tex=0;
++    pass_free_color_fbo(&s_capture_read_tex,NULL,&s_capture_read_fbo,&s_capture_read_w,&s_capture_read_h);
+     stereo_resources_release();
+     for(int gi=0;gi<PASS_GENERATIONS;++gi)pass_gen_release(gi);
+     pass_gens_invalidate();
+@@ -8673,6 +8685,34 @@ void gl_renderer_stereo_stage_reset(void) {
+     GL_RT_SYNC("stereo_stage_reset");
+     s_stereo_pair[1 - s_stereo_current].mask = 0;
+ }
++int gl_renderer_stereo_stage_readback(uint32_t eye,uint32_t w,uint32_t h,uint8_t *rgba) {
++    GL_RT_SYNC("capture_readback");
++    if(eye>=2 || !rgba || !w || !h || w>1024 || h>512)return 0;
++    StereoPair *pair=&s_stereo_pair[1-s_stereo_current];
++    if(!(pair->mask&(1u<<eye)))return 0;
++    GLint read,draw,texture,pack,pbo,row,skipr,skipp;
++    GLboolean scissor=glIsEnabled(GL_SCISSOR_TEST),srgb=glIsEnabled(0x8DB9);
++    glGetIntegerv(0x8CAA,&read);glGetIntegerv(0x8CA6,&draw);glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture);
++    glGetIntegerv(GL_PACK_ALIGNMENT,&pack);glGetIntegerv(0x88ED,&pbo);glGetIntegerv(GL_PACK_ROW_LENGTH,&row);
++    glGetIntegerv(GL_PACK_SKIP_ROWS,&skipr);glGetIntegerv(GL_PACK_SKIP_PIXELS,&skipp);
++    int ok=pass_make_color_fbo(&s_capture_read_tex,NULL,&s_capture_read_fbo,&s_capture_read_w,&s_capture_read_h,
++                              w,h,GL_RGBA8,GL_RGBA,GL_UNSIGNED_BYTE);
++    if(ok) {
++        glDisable(GL_SCISSOR_TEST);glDisable(0x8DB9);
++        p_glBindFramebuffer(PSXGL_READ_FRAMEBUFFER,pair->fbo[eye]);
++        p_glBindFramebuffer(PSXGL_DRAW_FRAMEBUFFER,s_capture_read_fbo);
++        p_glBlitFramebuffer(0,0,pair->tw[eye],pair->th[eye],0,0,w,h,GL_COLOR_BUFFER_BIT,GL_NEAREST);
++        p_glBindFramebuffer(PSXGL_READ_FRAMEBUFFER,s_capture_read_fbo);
++        p_glBindBuffer(0x88EB,0);glPixelStorei(GL_PACK_ALIGNMENT,1);glPixelStorei(GL_PACK_ROW_LENGTH,0);
++        glPixelStorei(GL_PACK_SKIP_ROWS,0);glPixelStorei(GL_PACK_SKIP_PIXELS,0);
++        glReadPixels(0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,rgba);
++    }
++    p_glBindFramebuffer(PSXGL_READ_FRAMEBUFFER,read);p_glBindFramebuffer(PSXGL_DRAW_FRAMEBUFFER,draw);
++    glBindTexture(GL_TEXTURE_2D,texture);glPixelStorei(GL_PACK_ALIGNMENT,pack);
++    glPixelStorei(GL_PACK_ROW_LENGTH,row);glPixelStorei(GL_PACK_SKIP_ROWS,skipr);glPixelStorei(GL_PACK_SKIP_PIXELS,skipp);
++    p_glBindBuffer(0x88EB,pbo);if(scissor)glEnable(GL_SCISSOR_TEST);if(srgb)glEnable(0x8DB9);
++    return ok;
++}
+ static void stereo_invalidate(void) {
+     s_stereo_valid = 0;
+     s_stereo_pair[0].mask = s_stereo_pair[1].mask = 0;
+@@ -8802,6 +8842,11 @@ int psx_mod_openxr_quad(double distance,double width,double height) {
+     if(s_pass_active)return 0;
+     return psx_openxr_quad(distance,width,height);
+ }
++int psx_mod_openxr_surface(const PSXModOpenXRSurface *surface) {
++    GL_RT_SYNC("openxr_surface");
++    if(s_pass_active)return 0;
++    return psx_openxr_surface(surface); /* CPU copy only; upload after eye replay. */
++}
+ int psx_mod_openxr_native_surface(double distance,double width,double units) {
+     GL_RT_SYNC("openxr_native_surface");
+     PSXOpenXRStats stats;psx_openxr_stats(&stats);
+@@ -8868,7 +8913,68 @@ static int openxr_color_draw(GLuint source, int w, int h, int flip, float gamma,
+     glBindTexture(GL_TEXTURE_2D,(GLuint)binding);p_glActiveTexture((GLenum)active);
+     return 1;
+ }
++#include "xr_surface_math.h"
++static int openxr_surface_draw(uint32_t eye) {
++    PSXModOpenXRSurface surface[2];int present[2];
++    for(int i=0;i<2;i++)present[i]=psx_openxr_surface_get(i,&surface[i]);
++    if(!present[0] && !present[1])return 1;
++    PSXOpenXRStats xr;psx_openxr_stats(&xr);
++    GLint program,vao,vbo,active,texture,fbo,viewport[4],unpack,pbo,row,skipr,skipp;
++    GLint bs,bd,bas,bad,be,bae;GLboolean mask[4];
++    const GLenum caps[]={GL_BLEND,GL_DEPTH_TEST,GL_STENCIL_TEST,GL_CULL_FACE,GL_SCISSOR_TEST,0x8DB9};
++    GLboolean enabled[6];
++    glGetIntegerv(0x8B8D,&program);glGetIntegerv(0x85B5,&vao);glGetIntegerv(0x8894,&vbo);
++    glGetIntegerv(0x84E0,&active);p_glActiveTexture(PSXGL_TEXTURE0);
++    glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture);glGetIntegerv(0x8CA6,&fbo);
++    glGetIntegerv(GL_VIEWPORT,viewport);glGetBooleanv(GL_COLOR_WRITEMASK,mask);
++    glGetIntegerv(0x80C9,&bs);glGetIntegerv(0x80C8,&bd);glGetIntegerv(0x80CB,&bas);glGetIntegerv(0x80CA,&bad);
++    glGetIntegerv(0x8009,&be);glGetIntegerv(0x883D,&bae);
++    glGetIntegerv(GL_UNPACK_ALIGNMENT,&unpack);glGetIntegerv(0x88EF,&pbo);
++    glGetIntegerv(GL_UNPACK_ROW_LENGTH,&row);glGetIntegerv(GL_UNPACK_SKIP_ROWS,&skipr);glGetIntegerv(GL_UNPACK_SKIP_PIXELS,&skipp);
++    for(int i=0;i<6;i++){enabled[i]=glIsEnabled(caps[i]);glDisable(caps[i]);}
++    int ok=1;
++    if(!s_xr_surface_program)s_xr_surface_program=build_program(
++        "#version 330\nlayout(location=0) in vec4 p; layout(location=1) in vec2 uv; out vec2 v_uv; void main(){gl_Position=vec4(p.x,-p.y,p.z,p.w);v_uv=uv;}\n",
++        "#version 330\nin vec2 v_uv; uniform sampler2D u_tex; out vec4 frag; void main(){frag=texture(u_tex,v_uv);}\n");
++    if(!s_xr_surface_program){ok=0;goto restore;}
++    if(!s_xr_surface_vao)p_glGenVertexArrays(1,&s_xr_surface_vao);
++    if(!s_xr_surface_vbo)p_glGenBuffers(1,&s_xr_surface_vbo);
++    if(!s_xr_surface_tex[0])glGenTextures(2,s_xr_surface_tex);
++    StereoPair *pair=&s_stereo_pair[s_stereo_current];
++    p_glBindFramebuffer(PSXGL_DRAW_FRAMEBUFFER,pair->fbo[eye]);
++    glViewport(0,0,pair->tw[eye],pair->th[eye]);glColorMask(1,1,1,1);
++    glEnable(GL_BLEND);p_glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
++    p_glBlendEquationSeparate(0x8006,0x8006);
++    p_glUseProgram(s_xr_surface_program);p_glUniform1i(p_glGetUniformLocation(s_xr_surface_program,"u_tex"),0);
++    p_glBindVertexArray(s_xr_surface_vao);p_glBindBuffer(PSXGL_ARRAY_BUFFER,s_xr_surface_vbo);
++    p_glEnableVertexAttribArray(0);p_glEnableVertexAttribArray(1);
++    p_glVertexAttribPointer(0,4,GL_FLOAT,GL_FALSE,6*sizeof(float),(void*)0);
++    p_glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,6*sizeof(float),(void*)(4*sizeof(float)));
++    p_glBindBuffer(0x88EC,0);glPixelStorei(GL_UNPACK_ALIGNMENT,1);glPixelStorei(GL_UNPACK_ROW_LENGTH,0);
++    glPixelStorei(GL_UNPACK_SKIP_ROWS,0);glPixelStorei(GL_UNPACK_SKIP_PIXELS,0);
++    for(int i=0;i<2;i++)if(present[i]) {
++        float head[3];for(int j=0;j<3;j++)head[j]=(xr.pose[0][j]+xr.pose[1][j])*.5f;
++        float vertices[36];if(!xr_surface_vertices_head(&surface[i],xr.pose[eye],xr.fov[eye],head,vertices))continue;
++        glBindTexture(GL_TEXTURE_2D,s_xr_surface_tex[i]);
++        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
++        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
++        glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,surface[i].width_px,surface[i].height_px,0,GL_RGBA,GL_UNSIGNED_BYTE,surface[i].rgba);
++        p_glBufferData(PSXGL_ARRAY_BUFFER,sizeof vertices,vertices,PSXGL_STREAM_DRAW);
++        glDrawArrays(GL_TRIANGLES,0,6);
++    }
++restore:
++    p_glBindFramebuffer(PSXGL_DRAW_FRAMEBUFFER,fbo);glViewport(viewport[0],viewport[1],viewport[2],viewport[3]);
++    glColorMask(mask[0],mask[1],mask[2],mask[3]);
++    p_glBlendFuncSeparate(bs,bd,bas,bad);p_glBlendEquationSeparate(be,bae);
++    for(int i=0;i<6;i++)if(enabled[i])glEnable(caps[i]);else glDisable(caps[i]);
++    p_glBindVertexArray(vao);p_glBindBuffer(PSXGL_ARRAY_BUFFER,vbo);p_glUseProgram(program);
++    glBindTexture(GL_TEXTURE_2D,texture);p_glActiveTexture(active);
++    glPixelStorei(GL_UNPACK_ALIGNMENT,unpack);glPixelStorei(GL_UNPACK_ROW_LENGTH,row);
++    glPixelStorei(GL_UNPACK_SKIP_ROWS,skipr);glPixelStorei(GL_UNPACK_SKIP_PIXELS,skipp);p_glBindBuffer(0x88EC,pbo);
++    return ok;
++}
+ static int openxr_copy_eye(uint32_t eye, uint32_t texture, int w, int h) {
++    if(!openxr_surface_draw(eye))return 0;
+     StereoPair *p = &s_stereo_pair[s_stereo_current];
+     GLint read_fbo, draw_fbo; GLuint target = 0;
+     GLboolean scissor = glIsEnabled(GL_SCISSOR_TEST);
+diff --git a/runtime/src/psx_openxr.c b/runtime/src/psx_openxr.c
+index 7afd10df..e9244553 100644
+--- a/runtime/src/psx_openxr.c
++++ b/runtime/src/psx_openxr.c
+@@ -13,6 +13,11 @@
+ #include <stdlib.h>
+ #include <math.h>
+ static PSXOpenXRStats s_stats;
++static PSXModOpenXRSurface s_surfaces[2];
++static uint8_t *s_surface_pixels[2];
++static size_t s_surface_capacity[2];
++static unsigned s_surface_mask;
++
+ static uint64_t s_pair_id,s_pair_cycle;
+ static uint32_t s_source;
+ static uint64_t s_native_frame;
+@@ -77,6 +82,17 @@ int psx_openxr_input_override(const PSXModOpenXRInput *input) {
+ void psx_openxr_input_snapshot(PSXModOpenXRInput *out) { if(out)*out=s_input; }
+ void psx_openxr_pair_metadata(uint64_t id,uint64_t cycle){s_pair_id=id;s_pair_cycle=cycle;s_source=1;s_native_frame=0;}
+ void psx_openxr_native_metadata(uint64_t frame){s_pair_id=s_pair_cycle=0;s_source=2;s_native_frame=frame;}
++int psx_openxr_surface_valid(const PSXModOpenXRSurface *v) {
++    if(!v || v->struct_size!=sizeof *v || v->id>=2 || !v->rgba ||
++       !v->width_px || !v->height_px || v->width_px>1024 || v->height_px>1024)return 0;
++    if(v->flags&~PSX_MOD_OPENXR_SURFACE_FACE_HEAD)return 0;
++    double norm=0;
++    for(int i=0;i<3;i++)if(!isfinite(v->position_m[i]) || fabs(v->position_m[i])>100)return 0;
++    for(int i=0;i<4;i++){if(!isfinite(v->orientation_xyzw[i]))return 0;norm+=v->orientation_xyzw[i]*v->orientation_xyzw[i];}
++    if(fabs(norm-1)>.01)return 0;
++    for(int i=0;i<2;i++)if(!isfinite(v->size_m[i]) || v->size_m[i]<.001f || v->size_m[i]>2)return 0;
++    return 1;
++}
+ #if defined(PSX_OPENXR)
+ #include "host_time.h"
+ #define WIN32_LEAN_AND_MEAN
+@@ -418,6 +434,8 @@ void psx_openxr_shutdown(void) {
+     xr_destroy();
+     s_reset_pending=s_exit_pending=s_recovering=0;s_reset_stage=NULL;s_retry_ms=0;
+ #endif
++    for(int i=0;i<2;i++){free(s_surface_pixels[i]);s_surface_pixels[i]=NULL;s_surface_capacity[i]=0;}
++    s_surface_mask=0;
+     s_stats.enabled=0;
+     s_quad_distance=s_quad_width=s_quad_height=0;
+     memset(&s_input,0,sizeof s_input);
+@@ -505,6 +523,7 @@ int psx_openxr_input(PSXModOpenXRInput *out) {
+ int psx_openxr_begin(int width,int height,double units) {
+ #if defined(PSX_OPENXR)
+     if(!s_stats.enabled || s_stats.frame_open)return 0;
++    s_surface_mask=0;
+     s_quad_distance=s_quad_width=s_quad_height=0;
+     s_pair_id=s_pair_cycle=s_native_frame=0;s_source=0;
+     hands_clear();
+@@ -648,6 +667,7 @@ int psx_openxr_end(int keep,PSXOpenXRCopy copy) {
+     end.layerCount=complete?1:0;end.layers=complete?layers:NULL;
+     int ok=check(xrEndFrame(s_session,&end),"end_frame");s_stats.frame_open=0;
+     if(ok && complete) {
++        s_stats.submitted_surfaces=quad?0:((s_surface_mask&1)!=0)+((s_surface_mask&2)!=0);
+         s_stats.submitted++;s_stats.submitted_pair_id=s_pair_id;
+         s_stats.submitted_guest_cycle=s_pair_cycle;s_stats.submitted_predicted_time=(uint64_t)s_time;
+         s_stats.submitted_layer=quad?2:1;
+@@ -655,7 +675,7 @@ int psx_openxr_end(int keep,PSXOpenXRCopy copy) {
+         if(s_source==2)s_stats.native_submitted++;
+         if(quad){s_stats.quad_submitted++;s_stats.quad_distance_m=s_quad_distance;
+             s_stats.quad_width_m=s_quad_width;s_stats.quad_height_m=s_quad_height;}
+-    } else s_stats.empty++;
++    } else {s_stats.empty++;s_stats.submitted_surfaces=0;}
+     if(ok && complete)s_stats.stage="submitted";
+     s_quad_distance=s_quad_width=s_quad_height=0;
+     (void)service_loss(); /* after the frame is closed: lost session / bad swapchain */
+@@ -664,3 +684,21 @@ int psx_openxr_end(int keep,PSXOpenXRCopy copy) {
+     return 0;
+ #endif
+ }
++
++int psx_openxr_surface(const PSXModOpenXRSurface *v) {
++    if(!psx_openxr_surface_valid(v))return 0;
++    if(!s_stats.frame_open || !s_stats.tracking || s_quad_distance>0)return 0;
++    size_t bytes=(size_t)v->width_px*v->height_px*4;
++    if(s_surface_capacity[v->id]<bytes) {
++        uint8_t *buffer=realloc(s_surface_pixels[v->id],bytes);
++        if(!buffer){s_stats.surface_failures++;return 0;}
++        s_surface_pixels[v->id]=buffer;s_surface_capacity[v->id]=bytes;
++    }
++    memcpy(s_surface_pixels[v->id],v->rgba,bytes);
++    s_surfaces[v->id]=*v;s_surfaces[v->id].rgba=s_surface_pixels[v->id];
++    s_surface_mask|=1u<<v->id;s_stats.surface_uploads++;return 1;
++}
++int psx_openxr_surface_get(uint32_t id,PSXModOpenXRSurface *out) {
++    if(!out || id>=2 || !(s_surface_mask&(1u<<id)) || !s_stats.frame_open || s_quad_distance>0)return 0;
++    *out=s_surfaces[id];return 1;
++}
+diff --git a/runtime/src/render_pass.c b/runtime/src/render_pass.c
+index fdeb5a6a..456779fa 100644
+--- a/runtime/src/render_pass.c
++++ b/runtime/src/render_pass.c
+@@ -979,3 +979,19 @@ int psx_mod_render_stereo(CPUState *cpu, const PSXModStereoFrame *frame,
+     s_pair_busy = 0;
+     return ok;
+ }
++
++int psx_mod_render_capture_rgba(CPUState *cpu,const PSXModRenderPass *rect,
++                               PSXModRenderPassFn fn,void *user,
++                               uint8_t *rgba,uint32_t bytes) {
++    if(s_pair_busy || !cpu || !rect || !fn || !rgba || rect->struct_size<sizeof *rect ||
++       !rect->w || !rect->h || rect->x+rect->w>1024 || rect->y+rect->h>512 ||
++       (uint64_t)rect->w*rect->h*4>bytes || transaction_status(1)!=PSX_MOD_RENDER_PASS_READY)return 0;
++    if(g_overlay_flush_pending_cycles)g_overlay_flush_pending_cycles();
++    s_pair_busy=1;s_plan_serial++;
++    gl_renderer_stereo_stage_reset();
++    PSXModRenderPass capture=*rect;capture.alpha_q16=0;
++    int ok=render_transaction(cpu,&capture,fn,user,0);
++    if(ok)ok=gl_renderer_stereo_stage_readback(0,rect->w,rect->h,rgba);
++    gl_renderer_stereo_stage_reset();s_pair_busy=0;
++    return ok;
++}
+diff --git a/runtime/tests/test_openxr_input.c b/runtime/tests/test_openxr_input.c
+index aa107a90..d9b7254a 100644
+--- a/runtime/tests/test_openxr_input.c
++++ b/runtime/tests/test_openxr_input.c
+@@ -1,6 +1,7 @@
+ #include "psx_openxr.h"
+ #include <stdio.h>
+ #include <math.h>
++#include "xr_surface_math.h"
+ /* Evaluate side effects and failures even when NDEBUG is defined. */
+ #define CHECK(expr) do { \
+     if (!(expr)) { \
+@@ -9,6 +10,43 @@
+     } \
+ } while (0)
+ int main(void) {
++    /* Shared head center gives coherent binocular geometry. Billboarding must
++     * ignore attachment roll, respond to head motion, and reject near-plane
++     * crossings. Common translation of eye/head/surface preserves projection. */
++    PSXModOpenXRSurface plane={0};plane.orientation_xyzw[3]=1;
++    plane.position_m[2]=-1;plane.size_m[0]=plane.size_m[1]=.2f;
++    float eye[7]={-.03f,0,0,0,0,0,1},head[3]={0,0,0};
++    const float fov[4]={-.785398f,.785398f,.785398f,-.785398f};
++    float left[36],right[36],other[36];
++    CHECK(xr_surface_vertices_head(&plane,eye,fov,head,left));
++    eye[0]=.03f;CHECK(xr_surface_vertices_head(&plane,eye,fov,head,right));
++    CHECK(left[0]>right[0]);
++    plane.flags=PSX_MOD_OPENXR_SURFACE_FACE_HEAD;
++    CHECK(xr_surface_vertices_head(&plane,eye,fov,head,left));
++    plane.orientation_xyzw[0]=1;plane.orientation_xyzw[3]=0;
++    CHECK(xr_surface_vertices_head(&plane,eye,fov,head,right));
++    for(int i=0;i<36;i++)CHECK(fabsf(left[i]-right[i])<.00001f);
++    head[0]=.5f;CHECK(xr_surface_vertices_head(&plane,eye,fov,head,other));
++    CHECK(fabsf(left[0]-other[0])+fabsf(left[3]-other[3])>.001f);
++    head[0]=0;plane.position_m[0]+=2;plane.position_m[1]+=3;
++    eye[0]+=2;eye[1]+=3;head[0]+=2;head[1]+=3;
++    CHECK(xr_surface_vertices_head(&plane,eye,fov,head,other));
++    for(int i=0;i<36;i++)CHECK(fabsf(left[i]-other[i])<.00001f);
++    plane.position_m[2]=.1f;CHECK(!xr_surface_vertices_head(&plane,eye,fov,head,other));
++    plane.position_m[0]=head[0];plane.position_m[1]=head[1];plane.position_m[2]=head[2];
++    CHECK(!xr_surface_vertices_head(&plane,eye,fov,head,other));
++    uint8_t pixel[4]={255,0,0,255};
++    PSXModOpenXRSurface surface={0};surface.struct_size=sizeof surface;
++    surface.width_px=surface.height_px=1;surface.rgba=pixel;
++    surface.size_m[0]=surface.size_m[1]=.1f;surface.orientation_xyzw[3]=1;
++    CHECK(psx_openxr_surface_valid(&surface));CHECK(!psx_openxr_surface(&surface));
++    surface.flags=PSX_MOD_OPENXR_SURFACE_FACE_HEAD;CHECK(psx_openxr_surface_valid(&surface));
++    surface.flags=2;CHECK(!psx_openxr_surface_valid(&surface));surface.flags=0;
++    surface.id=2;CHECK(!psx_openxr_surface_valid(&surface));surface.id=0;
++    surface.position_m[0]=NAN;CHECK(!psx_openxr_surface_valid(&surface));surface.position_m[0]=0;
++    surface.orientation_xyzw[3]=0;CHECK(!psx_openxr_surface_valid(&surface));surface.orientation_xyzw[3]=1;
++    surface.width_px=1025;CHECK(!psx_openxr_surface_valid(&surface));surface.width_px=1;
++    surface.rgba=NULL;CHECK(!psx_openxr_surface_valid(&surface));
+     /* Interpolation gate: only a compiled, enabled, initialized, RUNNING session
+      * suspends presentation interpolation; every other state is a no-op. */
+     CHECK(psx_openxr_interp_gate(1,1,1,1));

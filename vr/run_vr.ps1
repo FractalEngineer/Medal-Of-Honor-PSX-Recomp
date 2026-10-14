@@ -40,6 +40,9 @@ param(
     # Capture SteamVR's assembled backbuffer as well as the app's eye textures.
     # Exercises synthetic grip availability; requires -Headless, -Verify and a save.
     [switch]$HeadlessMirrorCheck,
+    [switch]$WristHudTest,
+    [switch]$WristHud,
+    [switch]$WristHudReplace,
     [switch]$Build,
     [string]$BuildDirectory = 'build-release',
     [string]$DiscPath = '',
@@ -51,6 +54,7 @@ param(
     [int]$Seconds = 0
 )
 $ErrorActionPreference = 'Stop'
+if ($WristHudReplace -and -not $WristHud) { throw '-WristHudReplace requires -WristHud.' }
 if ($HeadlessMirrorCheck -and (-not $Headless -or -not $Verify -or -not $CaptureDirectory)) {
     throw '-HeadlessMirrorCheck requires -Headless -Verify -CaptureDirectory <fresh-path>.'
 }
@@ -62,7 +66,7 @@ if ($Headless) {
 $vrRoot = Split-Path $PSScriptRoot -Parent
 $vrBuild = Join-Path $vrRoot $BuildDirectory
 $vrExe = Join-Path $vrBuild 'Medal_of_Honor__Recompiled.exe'
-if (-not $Build -and (Test-Path -LiteralPath (Join-Path $vrRoot 'Medal_of_Honor__Recompiled.exe'))) {
+if (-not $Build -and -not $WristHud -and -not $WristHudTest -and -not $PSBoundParameters.ContainsKey('BuildDirectory') -and (Test-Path -LiteralPath (Join-Path $vrRoot 'Medal_of_Honor__Recompiled.exe'))) {
     $vrExe = Join-Path $vrRoot 'Medal_of_Honor__Recompiled.exe'
 }
 
@@ -122,6 +126,13 @@ $vrVariables = @{
     PSX_VR_OPENXR = [string][int](-not $Desktop);
     PSX_VR_STEREO = '1'; PSX_VR_PROBE = '0'; PSX_VR_INTERP = '0';
     PSX_INTERNAL_RESOLUTION = $InternalResolution;
+    # Preserve the accepted clean VR image after the framework enabled native-grid
+    # PS1 dithering by default. The enlarged pattern is distracting in the headset.
+    PSX_DITHERING = $(if ($Desktop) { [Environment]::GetEnvironmentVariable('PSX_DITHERING','Process') } else { '0' });
+    PSX_VR_WRIST_HUD_TEST = [string][int]$WristHudTest.IsPresent;
+    PSX_VR_WRIST_HUD = [string][int]$WristHud.IsPresent;
+    PSX_VR_WRIST_REPLACE = [string][int]$WristHudReplace.IsPresent;
+    PSX_VR_WRIST_DUMP_DIRECTORY = $(if ($WristHud -and $CaptureDirectory) { [IO.Path]::GetFullPath((Join-Path $vrRoot $CaptureDirectory)) } else { $null });
     PSX_VR_DESKTOP_MIRROR = $(if ($Headless) { 'sbs' } else { [Environment]::GetEnvironmentVariable('PSX_VR_DESKTOP_MIRROR','Process') });
     # Process-scoped runtime override; restored with the rest in the finally block.
     # Native-only (no XR_RUNTIME_JSON) leaves any inherited value untouched.
@@ -169,7 +180,9 @@ try {
         # Refused connection is expected before this owned process starts.
     } finally { $vrSocket.Dispose() }
     if ($Build) {
-        cmake -S . -B $vrBuild -DPSX_OPENXR=ON "-DPSXRECOMP_ROOT=$vrRoot/psxrecomp"
+        $vrFrameworkRoot = Join-Path $vrRoot 'psxrecomp'
+        if (-not (Test-Path -LiteralPath (Join-Path $vrFrameworkRoot 'runtime/include/mod_plugins.h'))) { throw "Framework source missing: $vrFrameworkRoot" }
+        cmake -S . -B $vrBuild -DPSX_OPENXR=ON "-DPSXRECOMP_ROOT=$vrFrameworkRoot" "-DRECOMP_UI_ROOT=$vrRoot/recomp-ui"
         if ($LASTEXITCODE -ne 0) { throw 'VR configure failed' }
         cmake --build $vrBuild --target psx-runtime
         if ($LASTEXITCODE -ne 0) { throw 'VR build failed; launch refused' }
@@ -236,7 +249,14 @@ try {
         }
         Write-Host 'SteamVR is up on the null HMD (no headset).'
     }
-    $vrProcess = Start-Process -FilePath $vrExe -ArgumentList '--no-launcher','--game','game.toml','--disc',('"' + $DiscPath + '"') -WorkingDirectory $vrRoot -WindowStyle Hidden -PassThru
+    $vrLogOptions = @{}
+    if ($CaptureDirectory) {
+        $vrCapturePath = [IO.Path]::GetFullPath((Join-Path $vrRoot $CaptureDirectory))
+        [IO.Directory]::CreateDirectory($vrCapturePath) | Out-Null
+        $vrLogOptions.RedirectStandardOutput = Join-Path $vrCapturePath 'runtime.stdout.log'
+        $vrLogOptions.RedirectStandardError = Join-Path $vrCapturePath 'runtime.stderr.log'
+    }
+    $vrProcess = Start-Process -FilePath $vrExe -ArgumentList '--no-launcher','--game','game.toml','--disc',('"' + $DiscPath + '"') -WorkingDirectory $vrRoot -WindowStyle Hidden -PassThru @vrLogOptions
     if ($CaptureDirectory) {
         $vrSaveSlot = if ($Slot -ge 0) {$Slot} else {3}
         $vrCaptureOptions = @()
@@ -244,7 +264,22 @@ try {
         python vr/capture_stereo.py $CaptureDirectory --slot $vrSaveSlot --pairs 2 --executable $vrExe @vrCaptureOptions
         if ($LASTEXITCODE -ne 0) { throw 'VR capture failed' }
         if ($HeadlessMirrorCheck) {
-            python vr/check_headless_mirror.py $CaptureDirectory --pid $vrProcess.Id --steamvr-root (Join-Path $vrSteamPath 'steamapps/common/SteamVR')
+            $vrMirrorOptions = @()
+            if ($WristHudTest) { $vrMirrorOptions += '--wrist-panels' }
+            elseif ($WristHud) { $vrMirrorOptions += '--native-hud' }
+            if ($WristHudReplace) { $vrMirrorOptions += '--native-replace' }
+            python vr/check_headless_mirror.py $CaptureDirectory --pid $vrProcess.Id --steamvr-root (Join-Path $vrSteamPath 'steamapps/common/SteamVR') @vrMirrorOptions
+            if ($LASTEXITCODE -ne 0) { throw 'Headless mirror check failed.' }
+            if ($WristHud -and $WristHudReplace) {
+                python vr/verify_native_hud.py $CaptureDirectory
+                if ($LASTEXITCODE -ne 0) { throw 'Native HUD cutout verification failed.' }
+                python vr/check_native_hud_gameplay.py $CaptureDirectory --pid $vrProcess.Id --steamvr-root (Join-Path $vrSteamPath 'steamapps/common/SteamVR')
+                if ($LASTEXITCODE -ne 0) { throw 'Native HUD gameplay check failed.' }
+            }
+            if ($WeaponPoseDiagnostic) {
+                python vr/check_weapon_pose.py (Join-Path $CaptureDirectory 'tracked-weapon') --slot $vrSaveSlot
+                if ($LASTEXITCODE -ne 0) { throw 'Tracked weapon pose check failed.' }
+            }
             if ($LASTEXITCODE -ne 0) { throw 'Headless compositor verification failed' }
         }
     } elseif ($Slot -ge 0) {
