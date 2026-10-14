@@ -22,6 +22,7 @@ class HeadlessMirrorTests(unittest.TestCase):
         self.assertFalse(updated["steamvr"]["enableHomeApp"])
         self.assertFalse(updated["dashboard"]["enableDashboard"])
         self.assertFalse(updated["power"]["pauseCompositorOnStandby"])
+        self.assertEqual(updated["driver_null"]["windowWidth"],1920)
         self.assertEqual(updated["audio"], original["audio"])
         self.assertFalse(original["driver_null"]["enable"])
 
@@ -76,6 +77,29 @@ class HeadlessMirrorTests(unittest.TestCase):
             Image.new("RGB", (30, 16)).save(root / "p000007_right.png")
             with self.assertRaises(RuntimeError):
                 collect_pair_manifests(root, [record])
+
+    def test_quad_menu_empty_projection_never_relaxes_compositor_check(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); (root / "screenshots").mkdir()
+            compositor = object.__new__(Compositor); compositor.runtime = root
+            compositor.renderer_pid = lambda: 42
+            def dump():
+                visible = Image.new("RGB", (32,16), "black")
+                visible.paste("white", (4,4,12,12))
+                visible.save(root / "screenshots" / "menu.png")
+                Image.new("RGB", (1,1), "black").save(root / "screenshots" / "menu-raw.png")
+            compositor.dump_images = dump
+            with self.assertRaisesRegex(RuntimeError,"application_layer"):
+                compositor.capture(root / "projection",42)
+            record = compositor.capture(root / "quad",42,require_projection=False)
+            self.assertTrue(record["images"][1]["flat"])
+            self.assertFalse(record["projection_required"])
+            def blank():
+                for suffix in ("", "-raw"):
+                    Image.new("RGB",(32,16),"black").save(root / "screenshots" / f"blank{suffix}.png")
+            compositor.dump_images=blank
+            with self.assertRaisesRegex(RuntimeError,"compositor"):
+                compositor.capture(root / "blank",42,require_projection=False)
 
 
 if __name__ == "__main__":

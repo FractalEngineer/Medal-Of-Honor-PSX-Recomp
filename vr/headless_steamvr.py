@@ -20,6 +20,9 @@ def null_settings(original):
         if not isinstance(settings.setdefault(section, {}), dict):
             raise ValueError(f"SteamVR {section} settings must be an object")
     settings["driver_null"]["enable"] = True
+    # The shipped 2160px null display is clipped by a 1920px desktop backbuffer
+    # in compositor dumps. Keep both eye viewports inside the captured surface.
+    settings["driver_null"].update({"windowX":0,"windowY":0,"windowWidth":1920,"windowHeight":1080})
     settings["steamvr"].update({
         "forcedDriver": "null", "activateMultipleDrivers": False,
         "enableHomeApp": False, "startDashboardFromAppLaunch": False,
@@ -61,7 +64,7 @@ class Compositor:
     def close(self):
         self.dll.VR_ShutdownInternal()
 
-    def capture(self, destination, expected_pid):
+    def capture(self, destination, expected_pid, require_projection=True):
         """Collect new compositor backbuffer AND app-layer images, never old PNGs.
 
         Dumps are asynchronous and are not atomically correlated to a guest eye
@@ -78,6 +81,7 @@ class Compositor:
         if pid_before != expected_pid:
             raise RuntimeError(f"Compositor renderer {pid_before} is not owned game {expected_pid}")
         self.dump_images()
+        rejected = []
         deadline = time.monotonic() + 15
         while time.monotonic() < deadline:
             changed = [p for p in source.glob("*.png")
@@ -98,20 +102,38 @@ class Compositor:
                             rgb = image.convert("RGB")
                             rgb.load()
                             extrema = rgb.getextrema()
-                            if max(hi - lo for lo, hi in extrema) < 8:
+                            flat = max(hi - lo for lo, hi in extrema) < 8
+                            # Quad-only menu frames can export an empty -raw
+                            # projection. The compositor must still show content.
+                            if flat and (label == "compositor" or require_projection):
                                 raise RuntimeError(f"Blank/flat {label} capture")
                             dimensions = rgb.size
                             mean = ImageStat.Stat(rgb).mean
                         shutil.copyfile(original, target)
                         records.append({"kind": label, "path": str(target),
                                         "source": str(original), "size": dimensions,
-                                        "mean_rgb": mean})
+                                        "mean_rgb": mean, "flat": flat})
                     pid_after = self.renderer_pid()
                     if pid_after != expected_pid:
                         raise RuntimeError(f"Compositor renderer changed to {pid_after}")
                     return {"interface": "IVRCompositor_029", "renderer_pid_before": pid_before,
                             "renderer_pid_after": pid_after, "images": records,
-                            "atomic_guest_pair": False}
+                            "atomic_guest_pair": False,
+                            "projection_required": require_projection,
+                            "rejected_dumps": rejected}
+                except RuntimeError as exc:
+                    if not str(exc).startswith("Blank/flat") or len(rejected) >= 2:
+                        raise
+                    # SteamVR occasionally exports a transient empty buffer.
+                    # Reject it and request another fresh dump, retaining the
+                    # reason in the successful receipt; never accept old pixels.
+                    rejected.append({"source":str(backbuffer),"reason":str(exc)})
+                    time.sleep(1.1)
+                    before = {p.name:(p.stat().st_mtime_ns,p.stat().st_size) for p in source.glob("*.png")}
+                    if self.renderer_pid() != expected_pid:
+                        raise RuntimeError("Compositor renderer changed before retry")
+                    self.dump_images()
+                    break
                 except (OSError, SyntaxError):
                     pass  # compositor may still be writing
             time.sleep(.15)

@@ -83,3 +83,13 @@ invalidate these tests. Retain numeric assertions and visually inspect both eyes
 
 Valve documents the dump as compositor backbuffer plus application stereo images:
 [OpenVR compositor interface](https://github.com/ValveSoftware/openvr/blob/master/headers/openvr.h).
+
+## Null mirror follow-up
+
+The null display is temporarily set to 1920x1080: the shipped 2160px window was
+clipped in a 1920px compositor backbuffer, truncating the right eye. Both-eye
+native HUD assertions passed after this correction. Blank dumps are rejected;
+up to two new dumps may be requested and rejected attempts remain in the receipt.
+Explicit menu-quad checks may accept an empty raw projection while requiring a
+nonblank compositor image. Gameplay always requires a nonblank projection.
+Six automated harness tests cover these rules. Settings are restored afterward.
