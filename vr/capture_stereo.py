@@ -29,12 +29,31 @@ def save(path, name, result):
     (path / name).write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
 
 
+def collect_pair_manifests(directory, records):
+    """The current renderer reports metadata over TCP instead of writing JSON."""
+    from PIL import Image
+    for record in records:
+        stem = f"p{record['pair_id']:06d}"
+        for eye in ("left", "right", "sbs"):
+            path = directory / f"{stem}_{eye}.png"
+            if not path.exists():
+                break
+            with Image.open(path) as image:
+                image.load()
+                expected = (record["width"] * (2 if eye == "sbs" else 1), record["height"])
+                if image.size != expected:
+                    raise RuntimeError(f"Capture dimensions do not match pair metadata: {path}")
+        else:
+            save(directory, stem + ".json", record)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", type=Path)
     parser.add_argument("--slot", type=int, default=3)
     parser.add_argument("--pairs", type=int, default=2)
     parser.add_argument("--executable", type=Path, help="Record built binary and actual CMake framework root")
+    parser.add_argument("--resume", action="store_true", help="Resume a paused save through native Start before capture")
     args = parser.parse_args()
     directory = args.directory.resolve()
     directory.mkdir(parents=True, exist_ok=True)
@@ -104,11 +123,27 @@ def main():
             if xr.get("failures", 0) or time.monotonic() > deadline:
                 raise RuntimeError("No live OpenXR submission: " + json.dumps(xr))
             time.sleep(.1)
+    if args.resume:
+        from weapon_state import resume_if_paused
+        def frames(count):
+            start = command("frame")["frame"]
+            deadline = time.monotonic() + 15
+            while command("frame")["frame"] < start + count:
+                if time.monotonic() > deadline:
+                    raise TimeoutError("Native frames did not advance while resuming")
+                time.sleep(.05)
+        # Native input/camera state needs to settle after save restoration.
+        command("clear_input")
+        frames(60)
+        resumed = resume_if_paused(command, frames)
+        save(directory, "resume.json", {"resumed": resumed})
     if args.pairs:
         save(directory, "dump_arm.json", command("stereo_dump", path=directory.as_posix(), count=args.pairs))
     deadline = time.monotonic() + 45
     while True:
         fingerprint = command("frame_fingerprint", count=96)
+        if args.pairs:
+            collect_pair_manifests(directory, command("stereo_stats").get("captures", []))
         manifests = [p for p in directory.glob("p*.json") if p.stem[1:].isdigit()]
         if fingerprint["available"] >= 96 and len(manifests) >= args.pairs:
             save(directory, "fingerprint.json", fingerprint)

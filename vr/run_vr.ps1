@@ -37,6 +37,9 @@ param(
     # Implies -Runtime steamvr and manages SteamVR's start and stop. Requires Steam
     # and SteamVR, and SteamVR must be closed first.
     [switch]$Headless,
+    # Capture SteamVR's assembled backbuffer as well as the app's eye textures.
+    # Exercises synthetic grip availability; requires -Headless, -Verify and a save.
+    [switch]$HeadlessMirrorCheck,
     [switch]$Build,
     [string]$BuildDirectory = 'build-release',
     [string]$DiscPath = '',
@@ -48,6 +51,9 @@ param(
     [int]$Seconds = 0
 )
 $ErrorActionPreference = 'Stop'
+if ($HeadlessMirrorCheck -and (-not $Headless -or -not $Verify -or -not $CaptureDirectory)) {
+    throw '-HeadlessMirrorCheck requires -Headless -Verify -CaptureDirectory <fresh-path>.'
+}
 if ($Headless) {
     if ($Desktop) { throw '-Headless runs through OpenXR and cannot be combined with -Desktop.' }
     if ($RuntimeJson) { throw '-Headless drives SteamVR; do not also pass -RuntimeJson.' }
@@ -116,6 +122,7 @@ $vrVariables = @{
     PSX_VR_OPENXR = [string][int](-not $Desktop);
     PSX_VR_STEREO = '1'; PSX_VR_PROBE = '0'; PSX_VR_INTERP = '0';
     PSX_INTERNAL_RESOLUTION = $InternalResolution;
+    PSX_VR_DESKTOP_MIRROR = $(if ($Headless) { 'sbs' } else { [Environment]::GetEnvironmentVariable('PSX_VR_DESKTOP_MIRROR','Process') });
     # Process-scoped runtime override; restored with the rest in the finally block.
     # Native-only (no XR_RUNTIME_JSON) leaves any inherited value untouched.
     XR_RUNTIME_JSON = $(if ($vrRuntimeJson) { $vrRuntimeJson } else { [Environment]::GetEnvironmentVariable('XR_RUNTIME_JSON','Process') });
@@ -212,12 +219,11 @@ try {
         if (-not (Test-Path -LiteralPath $vrSteamVrSettings)) { throw "steamvr.vrsettings not found at $vrSteamVrSettings. Start SteamVR once to create it." }
         if (Get-Process vrserver -ErrorAction SilentlyContinue) { throw 'SteamVR is already running. Close it before -Headless so the null driver is loaded on start.' }
         $vrSteamVrOriginal = [IO.File]::ReadAllText($vrSteamVrSettings)
-        if ($vrSteamVrOriginal -notmatch 'driver_null') {
-            $vrSteamInsert = "`r`n   `"driver_null`" : {`r`n      `"enable`" : true`r`n   },"
-            [IO.File]::WriteAllText($vrSteamVrSettings, ($vrSteamVrOriginal -replace '^\s*\{', ('{' + $vrSteamInsert)), (New-Object Text.UTF8Encoding($false)))
-            Write-Host 'SteamVR null HMD driver enabled for this run.'
-        }
-        Start-Process -FilePath $vrSteamVrStartup | Out-Null
+        $vrNullSettings = python (Join-Path $PSScriptRoot 'headless_steamvr.py') --settings $vrSteamVrSettings
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot prepare null-HMD settings.' }
+        [IO.File]::WriteAllText($vrSteamVrSettings, ($vrNullSettings -join "`n"), (New-Object Text.UTF8Encoding($false)))
+        Write-Host 'SteamVR null HMD forced; competing drivers and Home disabled for this run.'
+        Start-Process -FilePath $vrSteamVrStartup -WindowStyle Hidden | Out-Null
         $vrSteamVrStarted = $true
         $vrSteamVrDeadline = (Get-Date).AddSeconds(60)
         while ((Get-Date) -lt $vrSteamVrDeadline) {
@@ -233,8 +239,14 @@ try {
     $vrProcess = Start-Process -FilePath $vrExe -ArgumentList '--no-launcher','--game','game.toml','--disc',('"' + $DiscPath + '"') -WorkingDirectory $vrRoot -WindowStyle Hidden -PassThru
     if ($CaptureDirectory) {
         $vrSaveSlot = if ($Slot -ge 0) {$Slot} else {3}
-        python vr/capture_stereo.py $CaptureDirectory --slot $vrSaveSlot --pairs 2 --executable $vrExe
+        $vrCaptureOptions = @()
+        if ($HeadlessMirrorCheck) { $vrCaptureOptions += '--resume' }
+        python vr/capture_stereo.py $CaptureDirectory --slot $vrSaveSlot --pairs 2 --executable $vrExe @vrCaptureOptions
         if ($LASTEXITCODE -ne 0) { throw 'VR capture failed' }
+        if ($HeadlessMirrorCheck) {
+            python vr/check_headless_mirror.py $CaptureDirectory --pid $vrProcess.Id --steamvr-root (Join-Path $vrSteamPath 'steamapps/common/SteamVR')
+            if ($LASTEXITCODE -ne 0) { throw 'Headless compositor verification failed' }
+        }
     } elseif ($Slot -ge 0) {
         # Use the capture utility readiness/load protocol without committing assets.
         $vrRunDir = 'analysis/vr-proof/run-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
