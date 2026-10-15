@@ -39,7 +39,7 @@ Branch history, newest first, framework and parent commit per step:
 | PR 3 | Reuse stereo checkpoints safely | Done, exit criteria measured. Gain: `eye_begin_r` 143 to 36 us p50. |
 | PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started, and the measurements now say why it cannot pay for itself as scoped. |
 | PR 4 | GPU capture and submission optimization | Not started as a package, and its first target is now mostly worked: the wrist HUD capture (3.19 ms p50 headless, 2.0 to 2.6 ms on the headset) had its stage cost located, its readback merged, and its checkpoint share removed. What remains on it is change-gated capture, which the headset data puts at 43 us of a slow frame. |
-| PR 6 | Mission/sector hotspots | Instrumented and in progress: the per-eye replay is split by the call the hook replays, and the first reading puts 92% of it in the scene traversal even at the save. Waiting on the headset session over the known stretch to see which term grows. |
+| PR 6 | Mission/sector hotspots | Attributed: the per-eye replay is split by call and the stretch is 97.8% `game_traverse`, with guest cycles, primitives and `tex_bytes` saying it is emulated per-object work. Next: the selector control run that says whether the lever is the per-eye selection or pruning what it returns. |
 
 ## Environment
 
@@ -221,6 +221,37 @@ So the replay is dominated by the scene traversal even where nothing is moving, 
 ordering-table submission and the draw environment are minor. That makes the traversal the
 hypothesis for the stretch, and the headset session below is what decides it: the split is
 only useful where the frames are heavy.
+
+### The stretch, attributed
+
+`analysis/vr-proof/pr6-attr`: 92 s of gameplay on the headset, 2409 frames, 641 above 12 ms,
+worst pair 19.42 ms, same stretch as the earlier sessions (t 45 to 80 s from the save).
+Medians of the slow frames against the rest, and each call's share of the rise in the two
+eyes' replay:
+
+| stage | fast | slow | delta | share of the eye rise |
+| --- | --- | --- | --- | --- |
+| `game_traverse` | 7019 | 11548 | **+4529** | **97.8%** |
+| `game_submit` | 382 | 496 | +114 | 2.5% |
+| `game_laser` | 14 | 19 | +5 | 0.1% |
+| `game_env` / `game_world` / `game_text` / `game_icon` | 69 / 7 / 11 / 0 | 70 / 7 / 11 / 0 | +1 / 0 / 0 / 0 | 0% |
+| `eye_guest` sum | 7528 | 12161 | +4633 | |
+| remainder | 26 | 10 | -16 | |
+
+Per eye, `prims_l` rises 640 to 864 and `prims_r` 660 to 860, `tex_bytes` stays 0, and the
+guest cycles rise with the traversal: 458380 to 733349 (left) and 460155 to 713016 (right),
+about 55 to 60 per cent. The slow frames' `pair_total` is +4839 us and the two eyes' replay
+is +4608 of it, so the finding from the earlier sessions holds and is now located.
+
+Two things the split adds. First, the time is **emulated machine work inside the scene
+traversal**, not host submission: the guest cycles rise with it, and the primitive count
+rose 30 per cent while the traversal's own cost rose 64 per cent, which points at per-object
+processing (the level's node and group iteration, the entity transforms, the ordering-table
+insertion) rather than at per-primitive or per-pixel work. Second, the remainder is -16 us,
+so the seven calls account for the whole eye replay and nothing is hiding between them.
+
+That selects the first branch of the decision gate in the next steps: the lever is what the
+eye selects and how much of the scene the traversal has to process.
 
 ## Shedding latch defect: found, fixed, A/B measured
 
@@ -408,27 +439,32 @@ remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM cop
   extra pair time on a slow frame. The counters say the extra drawing is geometry: 947
   primitives against 669 (one eye's count, see the caveat above), with `tex_bytes` 0 in
   both.
-  1. **The replay is now split per call, and the split is what the next session is for.**
-     `vr/record_session.py` (recorder first) plus `vr/hitch_report.py` print the seven guest
-     sub-stages, the per-eye prims and the per-eye guest cycles against the fast frames. The
-     static headless reading above already puts 92% of the replay in `game_traverse`, so the
-     question the session answers is whether that is the term that grows in the stretch, or
-     whether the submission, the world passes or the host remainder grows with it.
-  2. **Then the decision gate.** If `game_traverse` (or `game_world`) grows with the scene
-     and the guest cycles grow with it, the cost is emulated machine work and the lever is
-     what the eye selects: the level AABB/PVS filter's conservatism (`vr/moh_vr_frustum.h`,
-     its guard band and saturated-coordinate fallback) or a pair-shared selection, held to
-     no missing tiles and no new pop-in by the pixel-compare harness plus the accepted look
-     on the headset. If `game_submit` or the host remainder grows instead, the lever is the
-     framework's submission and batching path, held to a byte-identical pair. If nothing
-     dominates and the guest cycles track the pair time, the cost is inherent scene work and
-     the honest answer is to document the ceiling rather than trade fidelity.
-  3. It reproduces in the same part of the level in every session (t 44 to 93 s from the
-     save), so the route can be walked again deliberately. The two things not to do: treat
-     the HUD capture as a suspect (it moves 43 us of that 4.9 ms), and treat it as a
-     submission problem (the runtime never missed one: `empty` held at 3 through the whole
-     session, and the slow frames were covered by reprojection at a pose 5 ms older). Both
-     are already measured, so neither needs a run.
+  1. **The replay is split per call, and the split is done for the stretch.** DONE: the
+     headset session above puts 97.8% of the eye rise in `game_traverse`, with the guest
+     cycles rising with it, the primitive count up 30% and the traversal cost up 64%, and
+     `tex_bytes` 0. The submission, the draw environment and the host remainder are all
+     under 3%.
+  2. **Narrow it inside the traversal.** `game_traverse` is the guest's scene traversal, so
+     the two candidate levers inside it are different in kind: the hook's own per-eye
+     AABB/PVS selection (`moh_vr_collect_tree`, called from `vr_head_frustum_filter`, host
+     work that a pair-shared selection could do once per frame), or the guest's per-object
+     processing of whatever the selection returns (fewer objects, which needs pruning). The
+     cheapest way to weigh them is the existing selector control: a run over the same route
+     with `-NoHeadFrustumDiagnostic` (the launcher switch that turns `PSX_VR_HEAD_FRUSTUM`
+     off) bounds the whole per-eye selection, and needs its own session because the switch is
+     launcher scoped. If the traversal stays heavy with the selector off, the cost is the
+     guest's own per-object work and the lever is pruning; if it collapses, the selection's
+     conservatism is the lever and it can be tightened without touching what is drawn.
+  3. **Then the change, held to its acceptance.** Pruning or a tighter frustum must clear the
+     pixel-compare harness at a fixed guest cycle against the current baseline and the
+     accepted look on the headset (no missing tiles, no head-turn pop-in, no near-player
+     floor gaps). Anything that only moves bytes must keep the pair byte-identical.
+  4. The stretch reproduces in the same part of the level in every session, so the route can
+     be walked again deliberately. The two things not to do: treat the HUD capture as a
+     suspect (it moves 115 us of that 4.8 ms), and treat it as a submission problem (the
+     runtime never missed one: `empty` held through the whole session, and the slow frames
+     were covered by reprojection at a pose 5 ms older). Both are already measured, so
+     neither needs a run.
 - **Wrist HUD captures, the top measured non-guest cost.** 3.19 ms p50 and 5.93 ms p95
   per frame headless, 2.0 to 2.6 ms p50 on the headset, of which the readback is 2.16 ms
   p50 headless and 0.87 to 1.17 ms on the headset.
