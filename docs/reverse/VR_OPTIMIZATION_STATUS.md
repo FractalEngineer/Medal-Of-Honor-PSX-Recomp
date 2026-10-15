@@ -600,6 +600,75 @@ remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM cop
 5. **Per-eye guest draw** is the bulk of the pair: median 4.3 ms per eye on the headset,
    6.1 and 6.0 ms on the slow frames, which is where the stutters come from (PR 6).
 
+## The overlay cache is the route, and this is the ask
+
+Decided after the interpreter measurement above. The largest lever in this frame is not in it:
+63.7 to 66.6 per cent of wall time is the framework's dirty-RAM interpreter running this game's
+overlay code (556,199 interpreted instructions per pair, 99.9 per cent of interpreted weight
+above phys 0x3A000), because the statically recompiled image is this game's text, 0x2A000 bytes
+from 0x80010000, and every scene the game plays from is DMA'd in above it. So this goes to the
+framework that owns the overlay cache, with the counters as evidence, rather than being spent on
+levers worth tens of microseconds or on one interpreted block at a time.
+
+Nothing in the route is new machinery, and the capture half is already done. From the artifacts
+themselves: `build-release/overlay_captures.json` holds 6 capture records, 340 KB in total
+(schema `psxrecomp overlay capture v3`), and between them they cover every hot interpreted
+address in the profile above:
+
+| capture | covers | seeds |
+| --- | --- | --- |
+| `0x66000` + 143364 | the traversal `0x6C714`, and the hot blocks `0x6DAD8` and `0x6DC48` | 46 |
+| `0x8A000` + 20484 | the level blocks `0x8BE6C`, `0x8BFCC`, `0x8CDB4` | 10 |
+| `0x3D000` + 163844 | the world pass `0x64550` and `0x3DD6C` | 23 |
+
+(`0x80011214` `vertex_project` is not captured, correctly: it is main-EXE text and already runs
+compiled.) What has not happened is the compile: `build-release/cache/SLUS-00974/` contains an
+empty `datashards/` directory and no DLL, which is why the loader reports `registered: 0` and
+`dispatch_native: 0` while falling back 113019 times. **So the first increment is to point the
+overlay compiler at the capture that already exists**, not to go and capture again.
+
+The route from there, from the framework's own docs and tools:
+
+1. **Capture.** The config gate is already open here (`[runtime] overlay_cache = true` in
+   `game.toml`) and the capture above already exists, so this step is done for the ranges that
+   matter; more playthroughs only widen coverage (the stretch is already in it).
+2. **Compile.** The compiler and its CLI are already in the tree, and it can take one region at a
+   time, which is how to start:
+   `python psxrecomp/tools/compile_overlays.py --captures build-release/overlay_captures.json
+   --game-toml game.toml --recompiler psxrecomp/recompiler/build/psxrecomp-game.exe
+   --runtime-include psxrecomp/runtime/include --out-dir build-release/cache --only-region 0x66000`,
+   with `--check` first for a dry run. It writes `<cache>/<game-id>/<crc32>.dll`, namespaced by
+   codegen version so new emitter output reads and writes a fresh directory instead of a stale DLL.
+   Region `0x66000` is the traversal and its two hot blocks, so it is the one to try first.
+3. **Register and run.** The loader `LoadLibrary`s on the first dispatch into the region and
+   registers the exported `func_X` entries ahead of the interpreter. `overlay_loader_status` is
+   the instrument: `registered`, `loads`, `dispatch_native` against `dispatch_interp_fallback`.
+4. **Clear the two documented blockers if they bite.** `docs/internal/overlay-status.md` records
+   OV-1, stale registration when a region is reused, fixed by write-invalidation (Inc1-D), and
+   names Inc2, reload-on-return, as the increment that turns coverage into speed: without it an
+   invalidated region is not re-registered in the same session, which is why the Tomba run there
+   shows `dispatch_native` of order 100 against 31M interpreted dispatches.
+
+Acceptance, in this document's own terms, so the same readings compare:
+
+- **The direct measure is the phase share.** Interpreter down from 63.7 to 66.6 per cent, and
+  interpreted instructions per pair down from 556,199, read exactly as the baselines above were
+  (15 to 30 s `phase_profile` windows, two `dirty_ram_stats` snapshots against the pair counter).
+- **The frame.** `pair_total` p50 9.9 to 10.9 ms headless, and on the headset the p95 with the
+  worst spikes at the stretch: worst pair 19.42 ms and 641 frames above 12 ms in `pr6-attr`.
+- **Correctness.** The campaign's pixel-compare harness at a fixed guest cycle against the current
+  baseline, plus the accepted look on the headset (no missing tiles, no head-turn pop-in, no
+  near-player floor gaps). The overlay path changes which backend executes code, not what is
+  drawn, so byte identity of the pair is the right bar until something else is deliberately
+  changed.
+
+While that is with the framework, the VR-side items left in this document are all small against a
+66 per cent interpreted share: host-replacing the hottest interpreted block (`0x8006DAD8`, 18 per
+cent of interpreted time), the HUD capture's change gating (43 us of a slow frame), PR 5 slice 2
+and PR 4's XR spikes. One consequence to carry forward: every baseline in this document was taken
+with the interpreter inside the frame, so if the overlay work lands they all have to be re-taken
+before any VR comparison is believed again.
+
 ## Next steps
 
 - **The instrument is measured, and the reading rule is a within-session comparison.** The
@@ -636,15 +705,13 @@ remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM cop
      interpreter's rate, which is money, and the hottest interpreted blocks to host-replace are
      named (`0x8006DAD8` at 18 per cent of interpreted time and `0x8006DC48` at 8.9 per cent,
      both inside the traversal the hook already brackets).
-  4. **The bigger lever is the framework's overlay cache, and it is not a VR change.** Capture
-     this game's overlays, compile them (`compile_overlays.py`), and let the loader dispatch
-     them natively, with the Inc2 reload-on-return increment that the framework's own
-     `docs/internal/overlay-status.md` names as its biggest benefit lever. That is worth most of
-     the two thirds of every frame, against 81 us for the selection and single blocks for host
-     replacement, so it should be raised with whoever owns the port rather than absorbed into
-     PR 6 quietly. The evidence for the ask is above: a game whose played code is entirely above
-     its text image, with `registered: 0`, `dispatch_native: 0` and 113019 interpreter
-     fallbacks.
+  4. **DECIDED: the overlay cache is the route, and PR 6 hands off to it.** The ask, the route,
+     the two documented blockers and the acceptance are written out in the section above; the
+     short version is that this game's played code is entirely above its text image, nothing is
+     registered for it, the capture that covers the hot ranges already exists, and the compile
+     step has never run. That is worth most of the two thirds of every frame, against 81 us for
+     the selection and a single-digit percentage for host replacement of one block. PR 6's
+     in-campaign levers stay documented below as the fallback if the overlay route stalls.
   5. **Then the change, held to its acceptance.** Pruning or a cheaper per-object path must
      clear the pixel-compare harness at a fixed guest cycle against the current baseline and
      the accepted look on the headset (no missing tiles, no head-turn pop-in, no near-player
