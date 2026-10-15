@@ -215,9 +215,26 @@ non-guest cost in the frame and two thirds of the checkpoint work.
   6.91 ms p95 per frame, of which the readback half is 2.10 ms p50 and 5.43 ms p95.
   Because the cost is per-call readback overhead and not pixels, the only lever that
   pays is fewer readbacks per frame; the candidates in order:
-  1. **One readback for both mattes.** Render the black matte into one eye slot of the
-     stage surface and the white one into the other, then blit and read both in a
-     single call. Halves the per-call cost, roughly 0.5 to 0.8 ms.
+  1. **One readback for both mattes. CHOSEN, not started.** Render the black matte into
+     one eye slot of the stage surface and the white one into the other, then blit and
+     read both in a single call. Halves the per-call cost, roughly 0.5 to 0.8 ms.
+     Design worked out, no code written yet:
+     - `render_transaction` already takes an eye index and the stage has one target per
+       eye, so capture one becomes eye 0 and capture two becomes eye 1. The matte stays
+       plugin state, so the plugin still owns both draws.
+     - Grow the cached readback target to `w x 2h` (`pass_make_color_fbo` caches by size,
+       so it is made once), blit eye 0 into rows `[0,h)` and eye 1 into `[h,2h)`, then a
+       single `glReadPixels(0,0,w,2h)`. The two planes come back contiguous, so the plugin
+       slices one buffer into black and white and no copy is needed.
+     - `gl_renderer_stereo_stage_readback` is called from `psx_mod_render_capture_rgba`
+       only, so the pair variant can replace it rather than sit beside it. Check
+       `test_gl_readback_region.c`.
+     - `test_render_pass_sandbox.c` and `test_render_pass_abort.c` stub the
+       `gl_renderer_*` entry points, so both need a stub for the new one.
+     - Verification: run the old and new readbacks in the same build behind a temporary
+       flag and `memcmp` each plane, the way the shed-policy fix was proved, then remove
+       the comparison. A byte-identical result is the acceptance test, and the trace's
+       `hud_readback` stage is the measurement.
   2. **Skip the pair when the HUD has not changed.** The HUD shows ammo, health and the
      weapon name; it changes on discrete events, not every frame. This is the largest
      possible win (the whole 3.4 ms on most frames) but it needs a trustworthy change
