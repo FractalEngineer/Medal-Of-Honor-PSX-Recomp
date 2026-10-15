@@ -40,7 +40,7 @@ Branch history, newest first, framework and parent commit per step:
 | PR 3 | Reuse stereo checkpoints safely | Done, exit criteria measured. Gain: `eye_begin_r` 143 to 36 us p50. |
 | PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started, and the measurements now say why it cannot pay for itself as scoped. |
 | PR 4 | GPU capture and submission optimization | Not started as a package, and its first target is now mostly worked: the wrist HUD capture (3.19 ms p50 headless, 2.0 to 2.6 ms on the headset) had its stage cost located, its readback merged, and its checkpoint share removed. What remains on it is change-gated capture, which the headset data puts at 43 us of a slow frame. |
-| PR 6 | Mission/sector hotspots | Attributed twice over: the per-eye replay is split by call, the stretch is 97.8% `game_traverse`, and inside the traversal the hook's own selection is 0.9%. What is left is 8797 us of guest per-object work at the save, which is the lever. Next: find where it goes, then prune the objects or make the per-object path cheaper. |
+| PR 6 | Mission/sector hotspots | Attributed three deep: the per-eye replay is split by call, the stretch is 97.8% `game_traverse`, the hook's own selection inside it is 0.9%, and the guest work that is left is the dirty-RAM interpreter running this game's overlay code at 556k instructions per pair. That is 66% of the frame and it is the framework's overlay-cache work item, not a VR one; the in-campaign levers (prune the objects, host-replace the hottest interpreted blocks) are named with addresses. |
 
 ## Environment
 
@@ -295,6 +295,71 @@ already established above by the guest cycles rising with it.
 How far that goes is bounded by the whole replay: the traversal is 92 per cent of `eye_guest`
 at the save and 95 per cent of it on a slow frame, so the pair's guest drawing is where the
 frame's 4.5 ms of extra time lives and where anything that wants to move the p95 has to work.
+What that guest work actually is turns out to be the biggest finding of this step, and it is
+not a game routine at all: it is the framework's interpreter.
+
+### The guest work is the dirty-RAM interpreter, and it is two thirds of the frame
+
+Profiling the same headless gameplay, with the framework's own always-on instrumentation
+(`phase_profile`, `gcp_ring` exported as CSV, `dirty_ram_stats`, `overlay_loader_status`):
+
+| measure | value |
+| --- | --- |
+| execution phases, 15 to 30 s windows | interp **63.7 to 66.6%**, static 30.7 to 34.1%, native overlay **0.0000**, gpu 2.5 to 2.7%, exception 2.1% |
+| interpreted instructions, session | 113018 blocks, **459,522,240 instructions** |
+| two snapshots 20 s apart | **556,199 interpreted instructions per pair**, 149 blocks per pair, over 510 pairs at 25.5 pairs/s (`avg_pair_ms` 10.88) |
+| guest cycle ring, last 500 gameplay frames | interp 65.95%, static 34.05%, and **99.9% of the interpreted weight is at phys >= 0x3A000** (the runtime-loaded overlay region) against 0.10% in the main-EXE text band |
+
+`game.toml` says why: this game loads at `0x80010000` with `text_size 0x2A000`, so the
+statically recompiled main-EXE text ends at phys `0x3A000` and everything the game actually
+plays from is streamed in above it. The framework interprets runtime-loaded overlay code
+unless a compiled variant is registered for the region, and for this game nothing is:
+`overlay_loader_status` reports `registered: 0`, `regions: 0`, `loads: 0`, `dispatch_native: 0`,
+`dispatch_interp_fallback: 113019`, `file_found: 0` and no candidates, and
+`overlay_static_entries` says `no static overlay dispatcher linked (GAME_OVERLAY_STATIC_C
+unset)`.
+
+The per-eye replay dispatches that same overlay code twice per frame: the interpreter's per-PC
+table shows the traversal `0x6C714` with **1648 hits, which is exactly two per pair**, and
+11.27M instructions, and the world pass `0x64550` likewise at 1648 hits. In the gameplay ring
+window the hottest interpreted block is `0x8006DAD8` at 18 per cent of all interpreted time,
+and it is inside the `0x8006C714` traversal the hook replays; the next three are `0x8006DC48`
+(8.9%), `0x8003DD6C` (6.6%) and `0x8006DAC8` (5.6%). For contrast, the hottest statically
+dispatched block is `0x80011214` (`vertex_project`, 7.3 per cent of the window), which is the
+main-EXE text band and runs compiled.
+
+So the 8797 us of guest work in the traversal is emulated machine work in the sense the earlier
+section already established, and now it is named: it is the interpreter running overlay code at
+roughly 17 to 20 ns per instruction, about 556k instructions per pair across the frame. The
+earlier host profile of the pass says the same from the other side: its top entries are the
+interpreter's own machinery (`psx_cyc_step` 13.9%, `exec_one_fetched`, `psx_icache_fetch`,
+`ls_at_leader`, `psx_dispatch_impl`, `dirty_ram_dispatch`) and not one hot game function.
+
+Two limits on that reading, both recorded rather than glossed. The ring has no pass filter, so
+these shares are every frame's execution, native path and both replays together; what ties the
+replay to the interpreter is the per-PC dispatch counts (two per pair on the replay's own
+calls) and the pass profile. And the interpreter's cost per instruction here is derived from
+the pair rate and instruction counts, not measured directly: 556k instructions inside a
+10.88 ms pair bounds it at under 20 ns per instruction, which is the console's own rate, far
+from the ~300 ns per instruction the framework's DirtyRam header cites for the worst case.
+
+**This is the framework's own documented work item, not a VR one.** `docs/internal/overlay-status.md`
+in the framework tracks the overlay capture, compile and cache feature: it works on Tomba (one
+region captured, 88 functions compiled into a DLL and dispatched natively), and its own note
+says the payoff there is correctness so far, because only one overlay is compiled and an
+invalidated region is not re-registered in the same session: "speed payoff needs broad overlay
+coverage + Inc2 reload-on-return". Medal of Honor has no coverage at all, which is what these
+counters show. The route from here is the framework's own: capture this game's overlays, compile
+them with `compile_overlays.py`, and let the loader dispatch them natively, with the Inc2 work
+that keeps them registered across re-visits.
+
+For PR 6 that changes the value of the two levers it had, without changing which they are. Every
+object the eyes stop processing also stops being interpreted, so pruning is worth its
+instructions at the interpreter's rate rather than at some abstract guest-work rate, and the host
+replacement pattern this campaign already uses at `8008B3E8` has a named target list now: the
+hottest interpreted blocks are the traversal's own `0x8006DAD8` and `0x8006DC48`. Neither is the
+two thirds of the frame that the overlay cache is worth, but both are inside the campaign's
+reach, and the second one is the pattern already in the tree.
 
 ### The pr6-attr session felt shakier, and what that measured as
 
@@ -563,19 +628,28 @@ remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM cop
      left, and the `-NoHeadFrustumDiagnostic` control run now has one job instead of two:
      it sizes the guest cost of the objects the eye frustum adds over the native body
      camera, which is the whole prize the pruning route plays for.
-  3. **Find out where that 8797 us goes before choosing between the two ways in.** The guest
-     traversal is 92 per cent of `eye_guest` at the save, so it is worth knowing which guest
-     functions hold it. Fewer objects (pruning) keeps the traversal and shrinks its input;
-     a cheaper per object path is a host replacement for a hot guest function inside the
-     traversal, which is the pattern this campaign already uses at `8008B3E8` and for the
-     HUD unlink, and which would pay on every frame rather than only on the stretch. This is
-     a headless measurement, on the deterministic save bench, and it should come before any
-     change is built.
-  4. **Then the change, held to its acceptance.** Pruning or a cheaper per-object path must
+  3. **Where that 8797 us goes is answered, and it reprices both levers.** DONE: it is the
+     dirty-RAM interpreter executing this game's runtime-loaded overlay code, 63 to 67 per cent
+     of the frame, 556,199 interpreted instructions per pair, with the replay's own calls
+     (`0x6C714` traversal, `0x64550` world pass) dispatched into it exactly twice per pair. The
+     in-campaign levers keep their shape: pruning now removes interpreted instructions at the
+     interpreter's rate, which is money, and the hottest interpreted blocks to host-replace are
+     named (`0x8006DAD8` at 18 per cent of interpreted time and `0x8006DC48` at 8.9 per cent,
+     both inside the traversal the hook already brackets).
+  4. **The bigger lever is the framework's overlay cache, and it is not a VR change.** Capture
+     this game's overlays, compile them (`compile_overlays.py`), and let the loader dispatch
+     them natively, with the Inc2 reload-on-return increment that the framework's own
+     `docs/internal/overlay-status.md` names as its biggest benefit lever. That is worth most of
+     the two thirds of every frame, against 81 us for the selection and single blocks for host
+     replacement, so it should be raised with whoever owns the port rather than absorbed into
+     PR 6 quietly. The evidence for the ask is above: a game whose played code is entirely above
+     its text image, with `registered: 0`, `dispatch_native: 0` and 113019 interpreter
+     fallbacks.
+  5. **Then the change, held to its acceptance.** Pruning or a cheaper per-object path must
      clear the pixel-compare harness at a fixed guest cycle against the current baseline and
      the accepted look on the headset (no missing tiles, no head-turn pop-in, no near-player
      floor gaps). Anything that only moves bytes must keep the pair byte-identical.
-  5. The stretch reproduces in the same part of the level in every session, so the route can
+  6. The stretch reproduces in the same part of the level in every session, so the route can
      be walked again deliberately. The two things not to do: treat the HUD capture as a
      suspect (it moves 115 us of that 4.8 ms), and treat it as a submission problem (the
      runtime never missed one: `empty` held through the whole session, and the slow frames
@@ -639,11 +713,20 @@ remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM cop
 5. The primitive counter used to report only the last eye of the pair. `prims_l`/`prims_r`,
    `tex_prims_l`/`tex_prims_r` and `cycles_l`/`cycles_r` are recorded now, so a change to
    what one eye selects can be checked on that eye. Closed in `571a8f10`.
-6. Which guest functions hold the traversal's 8797 us, and whether this campaign's
-   host-replacement pattern reaches them. At `8008B3E8` the pattern replaced one routine
-   with a known entry, and inside the traversal the hot code may be spread across the level
-   draw and the entity loop instead. That is the next measurement, and it decides between
-   pruning and a cheaper per-object path.
+6. Answered, and replaced by the choice it implies: the traversal's 8797 us is the dirty-RAM
+   interpreter running this game's overlay code, so the in-campaign question is now which route
+   to build, pruning the objects the eyes process or host-replacing the hottest interpreted
+   blocks (`0x8006DAD8`, `0x8006DC48`). Pruning has a measured price per object and is a
+   fidelity trade; host replacement is this campaign's existing pattern, but each block is
+   bespoke work and the blocks are inside interpreted overlay code rather than at a stable
+   entry.
+7. Whether this port's overlay cache can be brought up for Medal of Honor, and what it is worth
+   once it is. `overlay_loader_status` shows the loader active with nothing registered, no
+   candidates, and no static overlay dispatcher linked into this build, while the framework's
+   own `docs/internal/overlay-status.md` says the feature works on Tomba and that its speed
+   payoff needs broad coverage plus reload-on-return. If it can be brought up here, it is worth
+   most of the two thirds of the frame the interpreter holds, which is more than every other
+   item in this document put together.
 
 ## Reproducing
 
@@ -671,6 +754,23 @@ directly there even though frame timing does not. Start the recorder first (it o
 debug port), resume to gameplay until `openxr_stats.submitted_layer` reads 1, let the ring
 fill, then read the split with `vr/hitch_report.py`, which prints `game_select` against the
 traversal it nests in.
+
+The same session is the profile bench, and its readings come from the framework's own
+always-on instrumentation over the debug socket (port 4370), with no instrumentation of ours
+involved:
+
+- `phase_profile` tells which backend is executing: 1 the dirty-RAM interpreter, 2 native
+  overlay shards, 3 static dispatch of recompiled code, 4 the GPU path.
+- `psxrecomp/tools/host_profile.py --port 4370 --exe build-release\Medal_of_Honor__Recompiled.exe
+  --frames 900 --pass 1` names the hot host functions inside a render pass, which is how the
+  pass profile above was read.
+- `gcp_ring` with no arguments gives the retained frame range; with `frame_lo`, `frame_hi` and
+  a `path` it writes the ring as CSV, whose `phase`, `block` (a basic-block leader, phys) and
+  `fn` columns are what the phase-by-block view above aggregates. Read `block`, not `fn`, for
+  interpreted samples: the function stamp is a static-dispatch stamp and goes stale there.
+- `dirty_ram_stats` has the interpreter's cumulative blocks and instructions (two snapshots
+  plus the pair counter give interpreted instructions per pair) and its per-PC dispatch table,
+  and `overlay_loader_status` says whether any overlay variant is registered.
 
 **A recorded headset session wants the recorder started first**, because it waits for the
 debug port rather than missing the boot, and `-Seconds` works outside `-Headless` too:
