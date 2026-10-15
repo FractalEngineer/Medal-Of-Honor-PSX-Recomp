@@ -130,6 +130,8 @@ def summarize(records, period_us=0):
         "guest_sim": stats(series(lambda r: r["stages_us"]["guest_sim"])),
         "pair_total": stats(series(lambda r: r["stages_us"]["pair_total"])),
         "hud_capture": stats(series(lambda r: r["stages_us"].get("hud_capture", 0))),
+        "hud_draw": stats(series(lambda r: r["stages_us"].get("hud_draw", 0))),
+        "hud_readback": stats(series(lambda r: r["stages_us"].get("hud_readback", 0))),
         "eye_left_total": stats(series(lambda r: eye_total(r, "l"))),
         "eye_right_total": stats(series(lambda r: eye_total(r, "r"))),
         "xr_wait_frame": stats(series(lambda r: r["stages_us"]["xr_wait_frame"])),
@@ -176,7 +178,8 @@ def main():
     print(json.dumps({k: summary[k] for k in
                       ("frames", "stale_frames", "shed_frames", "failed_frames",
                        "xr_repeat_frames", "max_pair_age_ms", "cadence", "pose_age",
-                       "pair_total", "hud_capture", "xr_wait_frame")}, indent=2))
+                       "pair_total", "hud_capture", "hud_draw", "hud_readback",
+                       "xr_wait_frame")}, indent=2))
 
 
 if __name__ == "__main__":
