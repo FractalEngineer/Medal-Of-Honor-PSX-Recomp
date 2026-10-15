@@ -38,7 +38,7 @@ int moh_vr_menu_input_map(const PSXModOpenXRInput *input,double deadzone,
     uint32_t left=input->buttons[0]&input->buttons_active[0];
     uint32_t right=input->buttons[1]&input->buttons_active[1],pressed=0;
     if(right&PSX_MOD_XR_PRIMARY)pressed|=0x4000; /* A: Cross/confirm */
-    if(right&PSX_MOD_XR_SECONDARY)pressed|=0x2000; /* B: Circle/back */
+    if(right&PSX_MOD_XR_SECONDARY)pressed|=0x1000; /* B: Triangle/back (menus use Triangle, not Circle) */
     if(left&PSX_MOD_XR_MENU)pressed|=8; /* Menu: Start/skip */
     if(input->trigger_active[1] && isfinite(input->trigger[1]) &&
        input->trigger[1]>=.55f && input->trigger[1]<=1)pressed|=0x4000;

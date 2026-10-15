@@ -89,7 +89,7 @@ int main(void) {
     input.buttons_active[1]=PSX_MOD_XR_CLICKS;input.buttons[1]=PSX_MOD_XR_PRIMARY;
     assert(moh_vr_menu_input_map(&input,.2,&pad) && pad.buttons==0xbfff);
     input.buttons[1]=PSX_MOD_XR_SECONDARY;
-    assert(moh_vr_menu_input_map(&input,.2,&pad) && pad.buttons==0xdfff);
+    assert(moh_vr_menu_input_map(&input,.2,&pad) && pad.buttons==0xefff);
     input.buttons[1]=0;input.active[0]=1;input.stick[0][0]=-1;input.stick[0][1]=1;
     assert(moh_vr_menu_input_map(&input,.2,&pad) && pad.buttons==0xff6f);
     input.stick[0][0]=NAN;input.stick[0][1]=.2f;
