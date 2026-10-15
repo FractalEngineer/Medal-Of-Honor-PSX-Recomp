@@ -32,8 +32,10 @@ KEYS = ["pair_total", "guest_sim", "eye_begin_l", "eye_guest_l", "eye_end_l", "e
 # eye_guest_l + eye_guest_r minus these is the remainder: host work between the
 # calls (the ammo mask restore, the HUD unlink) plus anything the hook left
 # unpaired, so a mis-mapped entry cannot hide.
+# game_select is the hook's own level visibility override, which runs inside the
+# guest traversal: it is a subset of game_traverse, not a sibling of it.
 GUEST = ["game_env", "game_world", "game_text", "game_traverse", "game_icon",
-         "game_submit", "game_laser"]
+         "game_submit", "game_laser", "game_select"]
 
 
 def stage(r, k):
@@ -114,5 +116,14 @@ if slow and fast:
     print(f"  {'eye_guest sum':<14s} slow {eye_slow:>7d}  fast {eye_fast:>7d}  "
           f"delta {eye_slow - eye_fast:>+7d}")
     print(f"  {'remainder':<14s} slow {eye_slow - parts_slow:>7d}  "
-          f"fast {eye_fast - parts_fast:>7d}  delta {eye_slow - eye_fast - parts_slow + parts_fast:>+7d}"
+          f"fast {eye_fast - parts_fast:>7d}  "
+          f"delta {eye_slow - eye_fast - parts_slow + parts_fast:>+7d}"
           "  (unmeasured host work and unpaired spans)")
+    # The selection nests in the traversal, so it is reported against it rather
+    # than beside it: what is left of game_traverse once the hook's own override
+    # is taken out is emulated machine work on whatever the override selected.
+    sel = median([stage(r, "game_select") for r in recs])
+    tra = median([stage(r, "game_traverse") for r in recs])
+    if tra:
+        print(f"  {'game_select':<14s} {sel:>7d} of that traversal, "
+              f"{100.0 * sel / tra:.1f}%  (guest work in it: {tra - sel})")

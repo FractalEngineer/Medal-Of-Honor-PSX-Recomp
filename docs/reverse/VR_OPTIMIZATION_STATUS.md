@@ -6,10 +6,10 @@ in the `psxrecomp` branch `vr-perf-pr1-pr2`.
 
 ## Branches and pins
 
-- Parent branch `vr-perf-pr1-pr2`. Framework pinned at **`d2554481`**, and the parent's
+- Parent branch `vr-perf-pr1-pr2`. Framework pinned at **`87a3e822`**, and the parent's
   `psxrecomp` gitlink matches it. The parent tip is whatever commit last touched this file:
   naming it here would only be one commit stale, since recording it changes it.
-- Framework branch `vr-perf-pr1-pr2`, tip `d2554481`.
+- Framework branch `vr-perf-pr1-pr2`, tip `87a3e822`.
 - One commit per PR, one pin bump per PR, no PRs opened. The parent's
   `psxrecomp` gitlink always matches the framework branch tip used for that build.
 
@@ -28,7 +28,8 @@ Branch history, newest first, framework and parent commit per step:
 | headset recording tools | | `ed4a0d1` | session recorder and hitch report, in `vr/` |
 | per-eye replay split | `571a8f10` | `3c4d769` | guest sub-stages, per-eye prims and cycles |
 | attribution report | | `e416d45` | the split read out of the raw windows |
-| status sync | | `6031f0a`, `59dfca0` | the record catching up with the branch |
+| attribution result | | `f7dae7f`, `ad79640`, `00ebe30` | the split, the stretch, and what the shakier session measured as |
+| traversal split | `87a3e822` | `d86a678` | a nested span for the hook's own visibility override |
 
 ## Work package status
 
@@ -39,7 +40,7 @@ Branch history, newest first, framework and parent commit per step:
 | PR 3 | Reuse stereo checkpoints safely | Done, exit criteria measured. Gain: `eye_begin_r` 143 to 36 us p50. |
 | PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started, and the measurements now say why it cannot pay for itself as scoped. |
 | PR 4 | GPU capture and submission optimization | Not started as a package, and its first target is now mostly worked: the wrist HUD capture (3.19 ms p50 headless, 2.0 to 2.6 ms on the headset) had its stage cost located, its readback merged, and its checkpoint share removed. What remains on it is change-gated capture, which the headset data puts at 43 us of a slow frame. |
-| PR 6 | Mission/sector hotspots | Attributed: the per-eye replay is split by call and the stretch is 97.8% `game_traverse`, with guest cycles, primitives and `tex_bytes` saying it is emulated per-object work. Next: the selector control run that says whether the lever is the per-eye selection or pruning what it returns. |
+| PR 6 | Mission/sector hotspots | Attributed twice over: the per-eye replay is split by call, the stretch is 97.8% `game_traverse`, and inside the traversal the hook's own selection is 0.9%. What is left is 8797 us of guest per-object work at the save, which is the lever. Next: find where it goes, then prune the objects or make the per-object path cheaper. |
 
 ## Environment
 
@@ -201,10 +202,12 @@ measuring the same.
 
 The eye term is the one that matters, so it is now split rather than reported whole. The
 hook brackets each guest call it replays and the runtime times the spans with the eye's own
-clock, seven slots that sum against `eye_guest`: `game_env` (draw environment, clear,
+clock, eight slots that sum against `eye_guest`: `game_env` (draw environment, clear,
 ordering-table setup), `game_world`, `game_text`, `game_traverse` (the scene traversal:
-level groups and entities), `game_icon`, `game_submit` (DrawOTag) and `game_laser` (the
-hook's own per-eye raycast). The record also carries `prims_l`/`prims_r`,
+level groups and entities), `game_icon`, `game_submit` (DrawOTag), `game_laser` (the
+hook's own per-eye raycast) and `game_select` (its level visibility override, added later;
+it nests inside `game_traverse`, so it is a subset of it rather than a sibling). The record
+also carries `prims_l`/`prims_r`,
 `tex_prims_l`/`tex_prims_r` and `cycles_l`/`cycles_r`, the guest cycles each eye's replay
 executed, which separates emulated machine work from host submission time. All of it is off
 unless `PSX_FRAME_TRACE` is on, and the runtime refuses the spans outside a traced stereo
@@ -251,7 +254,47 @@ insertion) rather than at per-primitive or per-pixel work. Second, the remainder
 so the seven calls account for the whole eye replay and nothing is hiding between them.
 
 That selects the first branch of the decision gate in the next steps: the lever is what the
-eye selects and how much of the scene the traversal has to process.
+eye selects and how much of the scene the traversal has to process. It turns out to be the
+second half of that sentence, which the next measurement settles.
+
+### Where the traversal goes: the hook's own selection is 0.9 per cent of it
+
+The two candidate levers inside `game_traverse` are different in kind, so they were separated
+the way the guest calls were. The hook's level visibility override is host work executed
+inside the eye's guest traversal, so its span nests in `game_traverse` and what is left of
+that stage is emulated machine work on whatever the override selected. Framework `87a3e822`
+adds `PSX_TRACE_GAME_SELECT` and lets one span nest in another (an outer span still measures
+wall time, so a nested stage is a subset of its parent, and the sandbox test fails against
+the single span version that would have truncated the outer one). Parent `d86a678` brackets
+the override, which is where `moh_vr_collect_tree` and the leaf queue it writes live.
+
+Headless, save slot 1 resumed to gameplay, one 1024 frame window. This scene is a usable
+bench because it is the same every run: per-eye prims 1143 and 1142 and per-eye guest cycles
+638657 and 637929, unchanged from the earlier reading of the same save.
+
+| pair total, medians over 1024 frames | us |
+| --- | --- |
+| `game_traverse` | 8878 |
+| `game_select`, inside it | **81** |
+| guest work inside the traversal | 8797 |
+| `eye_guest` sum, the whole per-eye replay | 9591 |
+| `game_env` / `game_submit` / `game_text` / `game_world` / `game_icon` | 73 / 577 / 30 / 7 / 10 |
+
+The override is 0.9 per cent of the traversal and 0.8 per cent of the replay, and the
+containment check holds in all 1024 frames, so it is not running anywhere else and the
+subtraction is sound. The worst frame of the window says the same at the other end: 14042 us
+of traversal, 110 us of it selection.
+
+That retires the first candidate. Sharing one selection across the pair, or tightening the
+frustum's conservatism, can return at most 81 us per pair here, which is nothing against a
+4.5 ms rise and not worth any fidelity risk. **The lever is the guest work inside the
+traversal**: 8797 us of per-object processing of the set the override returns, on a scene
+where nothing is even moving. That it is emulated machine work and not host submission is
+already established above by the guest cycles rising with it.
+
+How far that goes is bounded by the whole replay: the traversal is 92 per cent of `eye_guest`
+at the save and 95 per cent of it on a slow frame, so the pair's guest drawing is where the
+frame's 4.5 ms of extra time lives and where anything that wants to move the p95 has to work.
 
 ### The pr6-attr session felt shakier, and what that measured as
 
@@ -291,9 +334,28 @@ round, which followed a VDXR restart and a headless run on the same GPU that als
 headset streamer.
 
 The campaign's own rule is that instrumentation must not disturb what it measures, so the
-first session of the next round measures the instrument: same route, tracing off, no raw
-windows. That still records pair times, sheds and empty submissions, and the player's report
-decides the rest.
+instrument was measured rather than guessed at. The in-game half of it is the debug server's
+export, and `handle_frame_trace` builds it twice, once to size the text and once for real,
+every time the recorder asks for a window. Timing that exact path offline, filled with 1024
+records through the module's own API, costs **5.4 ms** of CPU (2.7 to measure, 2.7 to build,
+for 0.94 MB of text), and the recorder's own share is 6.1 ms to parse the same window plus
+the file write. So a window costs the machine about 12 ms of CPU per ten seconds, split
+across two processes.
+
+That bounds the harness. At worst one frame per window is pushed past the 45 ms stall line,
+so about nine of the 50 extra stalled frames in the table above, and realistically fewer,
+because the block has to land on a frame that was already heavy for it to cross the line. It
+cannot be the other 41, and it is not the 4.5 per cent slower median pair either.
+
+The tracing-off session that was planned to settle this is dropped, for a plain reason:
+`guest_sim` is a trace field, so the stall count, which is the number the acceptance was
+written against, does not exist without the trace, and the pair-time numbers it could still
+measure are already bounded above. What replaces it is a rule for reading the record. The
+spread between sessions is 43 to 93 stalled frames and 4.5 per cent on the pair median for
+the same build on the same route, which is larger than the change any of this work is
+chasing, so a comparison that is going to be believed has to be within a single session
+(slow frames against fast frames, which is how the attribution above is read) or repeated
+across sessions before it is trusted.
 
 ## Shedding latch defect: found, fixed, A/B measured
 
@@ -475,15 +537,14 @@ remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM cop
 
 ## Next steps
 
-- **Measure the instrument before trusting the next comparison.** The session above felt
-  heavier than earlier ones (stalled frames 43 to 93, p50 +4.5%, slow seconds 22 to 31), and
-  the record cannot say whether that was the machine, the route or the recording. Same route,
-  one session, `PSX_FRAME_TRACE` unset and no raw windows: `vr/record_session.py` still
-  records pair times, sheds and empty submissions from `stereo_stats` and `openxr_stats`. If
-  the stall count lands back near 43 of 2441 the instrumentation is disturbing what it
-  measures and every session has to be read with that in mind; if it lands near 93 the spread
-  is the machine or the route and the recorded numbers stand. One 90 s session, and it
-  protects every measurement after it.
+- **The instrument is measured, and the reading rule is a within-session comparison.** The
+  harness costs about 12 ms of CPU per ten second window (5.4 ms of in-game export, 6.1 ms of
+  recorder parsing), which bounds it at roughly one stall per window, so it cannot explain the
+  session that felt shakier. The tracing-off session planned for this is dropped because the
+  stall count it was written against is a trace field and does not exist without the trace.
+  What matters now is that cross-session comparisons have to clear a spread of 4.5 per cent on
+  the pair median and 43 to 93 stalled frames on the same build and route: read the record
+  within a session, or repeat it before believing it.
 - **PR 6 has its first measured target, and it is the only thing on the critical path
   for what the player feels.** The stutter is the pair's per-eye guest replay: 4.3 ms per
   eye at the median, 6.1 and 6.0 ms on the frames above 12 ms, and 4.5 ms of the 4.9 ms
@@ -495,22 +556,26 @@ remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM cop
      cycles rising with it, the primitive count up 30% and the traversal cost up 64%, and
      `tex_bytes` 0. The submission, the draw environment and the host remainder are all
      under 3%.
-  2. **Narrow it inside the traversal.** `game_traverse` is the guest's scene traversal, so
-     the two candidate levers inside it are different in kind: the hook's own per-eye
-     AABB/PVS selection (`moh_vr_collect_tree`, called from `vr_head_frustum_filter`, host
-     work that a pair-shared selection could do once per frame), or the guest's per-object
-     processing of whatever the selection returns (fewer objects, which needs pruning). The
-     cheapest way to weigh them is the existing selector control: a run over the same route
-     with `-NoHeadFrustumDiagnostic` (the launcher switch that turns `PSX_VR_HEAD_FRUSTUM`
-     off) bounds the whole per-eye selection, and needs its own session because the switch is
-     launcher scoped. If the traversal stays heavy with the selector off, the cost is the
-     guest's own per-object work and the lever is pruning; if it collapses, the selection's
-     conservatism is the lever and it can be tightened without touching what is drawn.
-  3. **Then the change, held to its acceptance.** Pruning or a tighter frustum must clear the
-     pixel-compare harness at a fixed guest cycle against the current baseline and the
-     accepted look on the headset (no missing tiles, no head-turn pop-in, no near-player
+  2. **Inside the traversal, the hook's own selection is retired as a lever.** DONE: the
+     override is 81 us of an 8878 us traversal (0.9 per cent), with containment holding in
+     every frame, so sharing the selection across the pair or tightening the frustum can
+     return 81 us and no more. The lever is the 8797 us of guest per-object work that is
+     left, and the `-NoHeadFrustumDiagnostic` control run now has one job instead of two:
+     it sizes the guest cost of the objects the eye frustum adds over the native body
+     camera, which is the whole prize the pruning route plays for.
+  3. **Find out where that 8797 us goes before choosing between the two ways in.** The guest
+     traversal is 92 per cent of `eye_guest` at the save, so it is worth knowing which guest
+     functions hold it. Fewer objects (pruning) keeps the traversal and shrinks its input;
+     a cheaper per object path is a host replacement for a hot guest function inside the
+     traversal, which is the pattern this campaign already uses at `8008B3E8` and for the
+     HUD unlink, and which would pay on every frame rather than only on the stretch. This is
+     a headless measurement, on the deterministic save bench, and it should come before any
+     change is built.
+  4. **Then the change, held to its acceptance.** Pruning or a cheaper per-object path must
+     clear the pixel-compare harness at a fixed guest cycle against the current baseline and
+     the accepted look on the headset (no missing tiles, no head-turn pop-in, no near-player
      floor gaps). Anything that only moves bytes must keep the pair byte-identical.
-  4. The stretch reproduces in the same part of the level in every session, so the route can
+  5. The stretch reproduces in the same part of the level in every session, so the route can
      be walked again deliberately. The two things not to do: treat the HUD capture as a
      suspect (it moves 115 us of that 4.8 ms), and treat it as a submission problem (the
      runtime never missed one: `empty` held through the whole session, and the slow frames
@@ -574,6 +639,11 @@ remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM cop
 5. The primitive counter used to report only the last eye of the pair. `prims_l`/`prims_r`,
    `tex_prims_l`/`tex_prims_r` and `cycles_l`/`cycles_r` are recorded now, so a change to
    what one eye selects can be checked on that eye. Closed in `571a8f10`.
+6. Which guest functions hold the traversal's 8797 us, and whether this campaign's
+   host-replacement pattern reaches them. At `8008B3E8` the pattern replaced one routine
+   with a known entry, and inside the traversal the hot code may be spread across the level
+   draw and the entity loop instead. That is the next measurement, and it decides between
+   pruning and a cheaper per-object path.
 
 ## Reproducing
 
@@ -594,6 +664,13 @@ vr\run_vr.ps1 -Runtime vdxr -Slot 1 -WeaponPoseDiagnostic -WristHud -WristHudRep
 # export while the game is alive (the ring is only reachable over TCP)
 python vr\trace_frames.py analysis\vr-proof\<name> --max 1024
 ```
+
+That save is also the composition bench. The scene is identical every run (per-eye prims
+1143 and 1142, per-eye guest cycles 638657 and 637929), so stage compositions compare
+directly there even though frame timing does not. Start the recorder first (it only needs the
+debug port), resume to gameplay until `openxr_stats.submitted_layer` reads 1, let the ring
+fill, then read the split with `vr/hitch_report.py`, which prints `game_select` against the
+traversal it nests in.
 
 **A recorded headset session wants the recorder started first**, because it waits for the
 debug port rather than missing the boot, and `-Seconds` works outside `-Headless` too:
@@ -617,6 +694,12 @@ uses `runtime.cmake`, not `runtime/CMakeLists.txt`). Compile them directly, for 
 ```powershell
 gcc -O1 -std=gnu99 -I psxrecomp\runtime\include -o out.exe `
   psxrecomp\runtime\tests\test_frame_trace.c psxrecomp\runtime\src\frame_trace.c
+# the sandbox test needs the target's own sources (from runtime/CMakeLists.txt):
+gcc -O1 -std=gnu99 -I psxrecomp\runtime\include -o sandbox.exe `
+  psxrecomp\runtime\tests\test_render_pass_sandbox.c psxrecomp\runtime\src\render_pass.c `
+  psxrecomp\runtime\src\frame_trace.c psxrecomp\runtime\src\stereo_shed_policy.c `
+  psxrecomp\runtime\src\render_pass_plan.c psxrecomp\runtime\src\psx_cycles.c `
+  psxrecomp\runtime\src\timers.c psxrecomp\runtime\src\psx_video_timing.c -lm
 python psxrecomp\runtime\tests\test_frame_trace_guard.py
 ```
 
