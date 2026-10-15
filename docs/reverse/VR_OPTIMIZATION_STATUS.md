@@ -16,7 +16,7 @@ in the `psxrecomp` branch `vr-perf-pr1-pr2`.
 | PR | Scope | Status |
 | --- | --- | --- |
 | PR 1 | Low-overhead frame-time tracing | Done. Trace ring, TCP export, `vr/trace_frames.py`. |
-| PR 2 | Stereo shedding, recovery, stale-pair policy | Done. Exit criteria measured, see below. |
+| PR 2 | Stereo shedding, recovery, stale-pair policy | Done. Exit criteria measured, and a latch defect found later and fixed (framework `b6a671c1`), see below. |
 | PR 3 | Reuse stereo checkpoints safely | Done. Exit criteria measured, see below. |
 | PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started. |
 | PR 4 | GPU capture and submission optimization | Not started. |
@@ -39,6 +39,58 @@ Captures: `analysis/vr-proof/pr1-2-live`, `analysis/vr-proof/pr3-live`.
 - The budget came from the runtime (`budget_source` 1), not the VBlank: it reported
   11.111 ms early and settled at 22.222 ms.
 - No long induced stale-pair streak after a one-off spike, which is the criterion.
+
+## Test harness: headless SteamVR with a save slot
+
+`vr\run_vr.ps1 -Headless -Slot 1` runs a real OpenXR session on SteamVR's null HMD
+driver, with no headset and no VDXR, and loads save slot 1. This is the harness for
+perf work from here: deterministic, repeatable without wearing anything, and it
+reaches actual gameplay instead of boot and menus. SteamVR must be closed first, and
+the switch manages its own start and stop.
+
+Two things about it that cost a measurement each to learn:
+
+- **A loaded save sits on the native pause screen.** That sets `g_menu_flat`, which
+  skips the stereo pair and the whole HUD capture path, and `pending` submissions go
+  out as a quad layer (the readiness dump shows `submitted_layer: 2`,
+  `quad_submitted` climbing). Resume through native Start before sampling, the way
+  `capture_stereo.py --resume` does (`resume_if_paused` in `vr/weapon_state.py`,
+  documented as "Existing measured native pause flag; resume through Start, never a
+  RAM edit"). Traces taken without that step are pause-screen numbers.
+- **The grant differs from VDXR's.** The null driver asks for 11.111 ms (one 90 Hz
+  display frame); VDXR granted 22.222 ms (two). The shed policy compares against this
+  deadline, so the same build behaves differently under the two runtimes, and the
+  90 Hz grant is the harsher case.
+
+## Shedding latch defect: found, fixed, A/B measured
+
+Found with the harness above, and fixed in framework `b6a671c1`.
+
+`stereo_shed_policy_should_shed` enters shedding when the pair-time estimate exceeds
+the budget, and leaves it when the estimate drops below `budget * hysteresis`. Between
+those two it holds whatever state it is in. The recovery probe's exit test used the
+band's lower edge as well, so a pair time that settles *inside* the band is a latch: a
+streak entered during any heavy moment never ends, because every probe resets the
+streak timer and then fails its own exit test. The probe's exit test now uses the
+deadline itself.
+
+Identical scenario, `-Headless -Slot 1`, 1024 traced frames, 42 to 54 s live window:
+
+| measure | pre-fix | post-fix |
+| --- | --- | --- |
+| shed frames of 1024 | 895 | 62 |
+| published pairs per second | 3.8 | 28.4 |
+| sheds per second | 26.2 | 1.6 |
+| `avg_pair_ms` | 10.33 | 10.64 |
+| budget (headset deadline) | 11.111 ms | 11.111 ms |
+| `shedding` state | 1 (latched) | 0 |
+| XR empty submissions | 895 | 86 |
+
+Captures: `analysis/vr-proof/shed-prefix-paused`, `analysis/vr-proof/shed-fixed-paused`.
+`test_stereo_shed_policy.c` gained the case that reproduces this; it fails against the
+previous policy and passes against the new one. The heavy-scene behaviour PR 2 targeted
+is unchanged: an over-deadline estimate is still required to enter shedding, and a
+persistent overload still probes on the same streak and time bounds.
 
 ## PR 3 exit criteria: met
 
@@ -95,36 +147,63 @@ New measurement from the same capture:
   pair. The flag is exercised by the unit test only, so far.
 - `xr_wait_frame` p50 2 us. The app never blocks on the runtime, so the app is the slow side.
 
+## Frame budget, with the HUD term finally measured
+
+The HUD capture cost was invisible until `PSX_TRACE_HUD_CAPTURE` existed (framework
+`5c67dced`). It is the wrist HUD's two per-frame capture transactions, one per matte
+colour, each a full render transaction with its own checkpoint. Gameplay on the null
+HMD, save slot 1 resumed, 1024 frames:
+
+| term | p50 | p95 |
+| --- | --- | --- |
+| frame interval (one guest frame) | 33.4 ms (3.005 granted periods) | |
+| guest logic and native present (derived) | 18.0 ms | |
+| stereo pair, both eyes | 10.35 ms | 11.04 ms |
+| wrist HUD captures, both transactions | 4.14 ms | 8.16 ms |
+| XR acquire, copy, release, end frame | 0.86 ms | |
+| submitted pose age | 16.01 ms | 22.85 ms |
+
+`pose_age` is now fully explained: pair plus HUD captures plus the XR tail, with about
+1 ms left for view maths and HUD preparation. The captures are also two of the three
+per-pair checkpoint saves, so the HUD path is simultaneously the largest measured
+non-guest cost in the frame and two thirds of the checkpoint work.
+
 ## What the trace says is left
 
-1. **Cadence.** One rendered pair serves about 1.5 granted periods, so roughly a third of
-   display periods carry nothing new and rely on reprojection of a pose up to 33 ms old.
-   This is the residual behind "less and shorter slowdowns, but still some".
-2. **Budget arithmetic.** Inside a 33 ms frame: guest logic and native present about 22.7 ms,
-   stereo pair 10.0 ms p50, XR copy and end about 0.5 ms. Guest-only work is already at the
-   22.222 ms grant, so the grant cannot be met while advancing the guest without reducing
-   guest work (PR 6). PR 5 can only present at the granted cadence without advancing the
-   guest, and must pay for that honestly.
-3. **HUD captures.** Two of every three per-pair checkpoint saves, and about 3.5 ms of the
-   pose age, are the wrist HUD's per-frame black/white captures.
-4. **XR spikes.** `xr_end_frame` p50 0.22 ms but p95 1.4 to 1.5 ms and max 3.2 to 3.5 ms,
-   with `xr_copy` p50 0.31 ms. PR 4 territory.
-5. **Per-eye guest draw** is 3.9 to 4.5 ms per eye of a 9 to 10 ms pair, the single largest
-   term and inherent guest drawing (PR 6).
+1. **Wrist HUD captures, 4.14 ms per frame at p50 and 8.16 ms at p95.** Two
+   transactions that re-run the same guest slice with a different matte colour. This is
+   the largest measured non-guest cost, it is inside the frame rather than guest
+   drawing, and it is the same code that dominates the checkpoint counters.
+2. **Cadence.** One rendered pair serves about 1.5 granted periods under VDXR and 3.0
+   under the null HMD's 90 Hz grant, so a large share of display periods carry nothing
+   new and rely on reprojection of a pose up to 33 ms old.
+3. **The grant itself is the constraint.** Guest work alone is 18.0 ms against an
+   11.111 ms 90 Hz grant, and the full frame is 33.4 ms against either grant. Added
+   presentation work cannot be free here: `xr_wait_frame` is p50 11 us, so the app
+   never blocks today and any extra `xrWaitFrame` is time taken from the guest.
+4. **XR spikes.** `xr_end_frame` mean 0.80 ms with a long tail, `xr_acquire` mean
+   0.46 ms and `xr_copy` mean 0.06 ms. PR 4 territory, but smaller than the HUD term.
+5. **Per-eye guest draw** is the bulk of the 10.35 ms pair, and inherent guest drawing
+   (PR 6).
 
 ## Next steps
 
-- **PR 5 slice 2 (design in the plan).** Opt-in `PSX_OPENXR_RESUBMIT=1`: re-present the
-  retained pair at the granted cadence with the pose it was rendered from. Needs per-pair
-  rendering views retained in `gpu_gl_renderer.c`, a `psx_openxr_resubmit` entry point that
-  runs WaitFrame, BeginFrame and EndFrame without locating views or touching the stereo
-  budget, `psx_mod_openxr_resubmit` for the plugin, and the cadence policy in
-  `vr/psx_vr_stereo.c` from the existing vblank hook. `psx_frame_trace_source` is
-  first-writer-wins, so a repeat can label its record with its own source value.
-- **Alternate candidate with better measured support:** make the per-frame HUD captures
-  reuse the baseline or skip when unchanged. Two thirds of the checkpoint work and about
-  3.5 ms of pose age sit there, both inside the frame, and neither is guest drawing.
-- PR 4 and PR 6 as scoped in the plan.
+- **Wrist HUD captures, now the top measured non-guest cost.** 4.14 ms p50 and 8.16 ms
+  p95 per frame, two transactions re-running one guest slice with a different matte
+  colour, and two of the three per-pair checkpoint saves. Candidates, in order of how
+  much they change: capture both mattes inside a single transaction so there is one
+  checkpoint instead of two; skip the capture pair when the HUD content has not changed;
+  derive the second matte on the host instead of re-running the guest slice.
+- **PR 5 slice 2, with a caution that the measurements now support.** Re-presenting the
+  retained pair at the granted cadence needs an extra `xrWaitFrame` per added frame, and
+  `xr_wait_frame` is p50 11 us, so the app never blocks today and any added frame's wait
+  and copy come out of guest time. Guest work is already 18.0 ms against an 11.111 ms
+  90 Hz grant, so the added frames cannot fit for free. Build it only as a measured
+  prototype, with the guest frame interval as a first-class reported metric.
+- **The grant arithmetic is the real ceiling.** 33.4 ms of frame against an 11.111 ms
+  grant cannot be fixed from the presentation side; it needs less work in the frame
+  (HUD, pair, XR tail) or fewer guest cycles (PR 6).
+- PR 4 (XR spikes) and PR 6 (per-eye guest draw) as scoped in the plan.
 
 ## Open questions
 
@@ -143,12 +222,24 @@ New measurement from the same capture:
 git -C psxrecomp checkout vr-perf-pr1-pr2
 cmake --build build-release --target psx-runtime
 
-# one traced run, then export while it is alive (the ring is only on TCP)
+# headless: SteamVR null HMD, save slot 1, no headset. SteamVR must be closed first.
 $env:PSX_FRAME_TRACE='1'; $env:PSX_FRAME_TRACE_CAP='1024'
-vr\run_vr.ps1 -Runtime vdxr -WeaponPoseDiagnostic -WristHud -WristHudReplace `
-  -BuildDirectory build-release -Seconds 100
+vr\run_vr.ps1 -Headless -Slot 1 -WeaponPoseDiagnostic -WristHud -WristHudReplace `
+  -BuildDirectory build-release -Seconds 200
+
+# with a headset on VDXR instead: drop -Headless and -Slot, or keep the slot
+vr\run_vr.ps1 -Runtime vdxr -Slot 1 -WeaponPoseDiagnostic -WristHud -WristHudReplace `
+  -BuildDirectory build-release -Seconds 200
+
+# export while the game is alive (the ring is only reachable over TCP)
 python vr\trace_frames.py analysis\vr-proof\<name> --max 1024
 ```
+
+A headless `-Slot` run loads the save onto the **native pause screen**, so resume
+before sampling or the trace will describe the pause screen. The published tools do
+this through `vr/weapon_state.py`'s `resume_if_paused`, which presses native Start and
+refuses a RAM edit; the session harness did the same and then waited 36 s so the ring
+(1024 records, about 34 s at 30 frames/s) held gameplay.
 
 The framework render-pass and trace tests are not targets in `build-release` (that build
 uses `runtime.cmake`, not `runtime/CMakeLists.txt`). Compile them directly, for example:
