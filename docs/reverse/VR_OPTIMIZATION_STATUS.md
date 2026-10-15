@@ -40,7 +40,7 @@ Branch history, newest first, framework and parent commit per step:
 | PR 3 | Reuse stereo checkpoints safely | Done, exit criteria measured. Gain: `eye_begin_r` 143 to 36 us p50. |
 | PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started, and the measurements now say why it cannot pay for itself as scoped. |
 | PR 4 | GPU capture and submission optimization | Not started as a package, and its first target is now mostly worked: the wrist HUD capture (3.19 ms p50 headless, 2.0 to 2.6 ms on the headset) had its stage cost located, its readback merged, and its checkpoint share removed. What remains on it is change-gated capture, which the headset data puts at 43 us of a slow frame. |
-| PR 6 | Mission/sector hotspots | Attributed three deep: the per-eye replay is split by call, the stretch is 97.8% `game_traverse`, the hook's own selection inside it is 0.9%, and the guest work that is left is the dirty-RAM interpreter running this game's overlay code at 556k instructions per pair. That is 66% of the frame and it is the framework's overlay-cache work item, not a VR one; the in-campaign levers (prune the objects, host-replace the hottest interpreted blocks) are named with addresses. |
+| PR 6 | Mission/sector hotspots | Attributed four layers deep and then handed off: the replay is split by call, the stretch is 97.8% `game_traverse`, the hook's own selection inside it is 0.9%, and the guest work that is left is the dirty-RAM interpreter running this game's overlay code (556,199 instructions per pair, 66% of the frame). The overlay cache was then compiled and measured: interpreter share down to 0.517 to 0.526, interpreted instructions per pair down 46.2%, settled pair time down 12 to 14%, every replay dispatch entry off the interpreter. It is blocked on fidelity, not perf: two shard-free runs fingerprint bit-identical, the shard run differs in all 96 frames, so the framework owns the fix and the in-campaign levers stay documented as the fallback. |
 
 ## Environment
 
@@ -669,6 +669,67 @@ and PR 4's XR spikes. One consequence to carry forward: every baseline in this d
 with the interpreter inside the frame, so if the overlay work lands they all have to be re-taken
 before any VR comparison is believed again.
 
+## The overlay cache measured: a large win, blocked on fidelity
+
+The route above was run, end to end, on the same headless bench. Two things came out of it, and
+the second one decides what happens next.
+
+**First, it works.** The overlay compiler refused at first, with its own guard: the recompiler
+binary was stale against the runtime tree's cache tag (emitter hash `baa243b3` against runtime
+`1b6950cb`), so it was rebuilt (`cmake --build psxrecomp\recompiler\build --target
+psxrecomp-game`, a gitignored build directory) and then compiled the capture that already
+existed: 41 shards for `0x66000` alone, then all six regions for 67 shards, 4 skipped as
+data-only or cached. Measured against the baselines above, on the deterministic save:
+
+| measure | baseline | `0x66000` only | all six regions |
+| --- | --- | --- | --- |
+| interpreter share | 0.637 to 0.666 | 0.580 | **0.517 to 0.526** |
+| static share | 0.307 to 0.341 | 0.350 | 0.370 to 0.377 |
+| native overlay share | 0.0000 | 0.039 to 0.043 | **0.075** |
+| interpreted instructions per pair | 556,199 | 376,990 | **299,445 (-46.2%)** |
+| `avg_pair_ms`, settled headless | 10.88 to 11.13 | 9.44 to 9.79 | **9.52 to 9.59 (-12 to -14%)** |
+| loader | `registered 0`, `dispatch_native 0`, 113019 interpreter fallbacks | `registered 29`, native 275232 | **`registered 89`, native 1,874,950**, 280846 fallbacks, 0 invalidations, 0 stale-blocked |
+
+The sharpest structural check agrees: the interpreter's per-PC table no longer contains any of
+the replay's dispatch entries. Before, the traversal `0x6C714` and the world pass `0x64550` had
+1648 hits each, two per pair, at 11.27M and 0.43M instructions, and `0x8BFCC` had 15694 hits. With
+all six regions compiled, every one of them is absent: those dispatches run native now. So the
+prize is at the top of the estimate, and the per-eye replay that PR 6 chased is largely off the
+interpreter.
+
+**Second, the shards move guest-visible state.** The acceptance is byte identity of the guest
+work, so the runtime's own judge was run, `frame_fingerprint` (per-frame write, MMIO, SPU and
+memcard hashes and counts, plus per-frame guest cycles) through
+`vr/compare_frame_fingerprints.py`, with the cache directory as the only variable:
+
+- Two shard-free runs on the same bench: **equal, 0 of 96 frames differ**
+  (`fingerprint_nocache2` against `nocache3`).
+- Shard-free against shards: **all 96 frames differ** (`fingerprint_nocache2` against
+  `shards2`), in `wc`, `ws`, `mmio`, `sp`, `sc`, `wr` and `pc`, while per-frame cycles and quiet
+  counts are equal. The magnitudes are small but structural: write count +0.04 per cent, SPU
+  count -0.2 per cent, and the write and MMIO hashes differ in every single frame.
+- Both windows sit on the same guest frame labels, 203 to 298, so the runs are frame-for-frame
+  aligned, and all three loaded at the same guest frame.
+
+That is a fork by this project's own standard, and it is not the known cycle-model one: the
+compiler already builds shards with `PSX_ENABLE_BLOCK_CYCLES=1` specifically to match the
+interpreter and the BIOS (its "CYCLE MODEL UNIFICATION" note, the Tomba2 Timer1 fork), and the
+per-frame cycle counts do match. The interpreter's deferred load-delay writeback
+(`dirty_ram_interp.h`) has no counterpart in the shard compile line and is the first thing to
+suspect.
+
+Two limits on that reading, recorded rather than glossed. A later pair of runs loaded at
+different guest frames (231 against 9) and differed in the cycle column as well, so load-timing
+parity matters and the protocol should wait for a fixed guest frame before arming and loading,
+not just for the debug port to answer. And no pixel or headset check was attempted, deliberately:
+measuring the look of a backend that moves the guest's own write stream would be premature.
+
+So the route stays the recommendation and is now measured, but it is blocked on fidelity work in
+the framework, not on anything the VR campaign can do. Everything needed to reproduce it is in
+the tree: `build-release/overlay_captures.json`, `build-release/cache/SLUS-00974/` with its 67
+shards (move it aside to turn the route off), the compile command above, the fingerprint A/B
+method, and the comparison receipts under `analysis/vr-proof/`.
+
 ## Next steps
 
 - **The instrument is measured, and the reading rule is a within-session comparison.** The
@@ -705,13 +766,16 @@ before any VR comparison is believed again.
      interpreter's rate, which is money, and the hottest interpreted blocks to host-replace are
      named (`0x8006DAD8` at 18 per cent of interpreted time and `0x8006DC48` at 8.9 per cent,
      both inside the traversal the hook already brackets).
-  4. **DECIDED: the overlay cache is the route, and PR 6 hands off to it.** The ask, the route,
-     the two documented blockers and the acceptance are written out in the section above; the
-     short version is that this game's played code is entirely above its text image, nothing is
-     registered for it, the capture that covers the hot ranges already exists, and the compile
-     step has never run. That is worth most of the two thirds of every frame, against 81 us for
-     the selection and a single-digit percentage for host replacement of one block. PR 6's
-     in-campaign levers stay documented below as the fallback if the overlay route stalls.
+  4. **DECIDED, RUN, AND NOW BLOCKED IN THE FRAMEWORK: the overlay cache is the route.** It was
+     compiled and measured on this bench (section above): interpreter share 0.637 to 0.666 down to
+     0.517 to 0.526, interpreted instructions per pair 556,199 down to 299,445, settled
+     `avg_pair_ms` 10.88 to 11.13 down to 9.52 to 9.59, 89 functions registered and every one of
+     the replay's dispatch entries gone from the interpreter. The acceptance then failed: the
+     runtime's own frame fingerprint is bit-identical across two shard-free runs and differs in
+     all 96 frames against the shards, so the route is worth the two thirds only once the shard
+     and interpreter semantics agree. That is framework work, not VR work, and the first suspect
+     is the interpreter's deferred load-delay writeback, which the shard compile line has no
+     counterpart for. To turn the route off, move `build-release/cache/SLUS-00974` aside.
   5. **Then the change, held to its acceptance.** Pruning or a cheaper per-object path must
      clear the pixel-compare harness at a fixed guest cycle against the current baseline and
      the accepted look on the headset (no missing tiles, no head-turn pop-in, no near-player
@@ -838,6 +902,16 @@ involved:
 - `dirty_ram_stats` has the interpreter's cumulative blocks and instructions (two snapshots
   plus the pair counter give interpreted instructions per pair) and its per-PC dispatch table,
   and `overlay_loader_status` says whether any overlay variant is registered.
+
+Anything that changes which backend executes guest code wants the runtime's own fingerprint
+judge, which is what caught the shard fork above. In one process: `frame_fingerprint
+reset_on_load=1`, then `savestate slot=1 op=load`, polling `savestate_status` until the
+generation advances with `last_ok` and `last_slot=1`; resume to gameplay; then `frame_fingerprint
+count=4096` and slice the ring by ordinal. The ring restarts when the load completes, so ordinal
+N is the same guest moment in any run. Compare with `vr/compare_frame_fingerprints.py`, and
+always compare two runs of the *same* backend against each other first, because the method only
+means something once that pair is equal. Wait for a fixed guest frame before arming and loading,
+or the pre-load history leaks into the window.
 
 **A recorded headset session wants the recorder started first**, because it waits for the
 debug port rather than missing the boot, and `-Seconds` works outside `-Headless` too:
