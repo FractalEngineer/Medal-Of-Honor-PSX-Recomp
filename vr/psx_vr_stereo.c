@@ -667,9 +667,9 @@ static int vr_stereo_fn(CPUState* cpu, void* user, uint32_t eye) {
     return rendered;
 }
 
-#if defined(PSX_MOD_RENDER_CAPTURE_RGBA)
+#if defined(PSX_MOD_RENDER_CAPTURE_RGBA_PAIR)
 typedef struct {const PSXModRenderPass *rect;uint32_t matte;} VrHudCapture;
-static uint8_t g_hud_black[512*240*4],g_hud_white[512*240*4];
+static uint8_t g_hud_mattes[2][512*240*4];
 static int vr_hud_only_draw(CPUState *cpu,void *user,uint32_t alpha) {
     (void)alpha;const VrHudCapture *capture=user;const PSXModRenderPass *pass=capture->rect;
     const uint32_t ctx=0x8009a620u,ra=cpu->gpr[31];
@@ -706,12 +706,11 @@ static void vr_capture_native_hud(CPUState *cpu,const PSXModRenderPass *rect) {
     /* The SP overlay owns these producers; refuse a different overlay. */
     if(psx_mod_read_word(0x80060afcu)!=0x3c02800au ||
        psx_mod_read_word(0x80060b00u)!=0x8c42a5e0u)return;
-    VrHudCapture capture={rect,0};g_in_pass=1;g_stereo_eye=0;
-    int black=psx_mod_render_capture_rgba(cpu,rect,vr_hud_only_draw,&capture,g_hud_black,sizeof g_hud_black);
-    capture.matte=0xffffffu;
-    int white=black && psx_mod_render_capture_rgba(cpu,rect,vr_hud_only_draw,&capture,g_hud_white,sizeof g_hud_white);
+    VrHudCapture black={rect,0},white={rect,0xffffffu};g_in_pass=1;g_stereo_eye=0;
+    int ok=psx_mod_render_capture_rgba_pair(cpu,rect,vr_hud_only_draw,&black,&white,
+                                            g_hud_mattes[0],sizeof g_hud_mattes);
     g_in_pass=0;
-    (void)moh_vr_hud_set_native(black&&white?g_hud_black:NULL,black&&white?g_hud_white:NULL);
+    (void)moh_vr_hud_set_native(ok?g_hud_mattes[0]:NULL,ok?g_hud_mattes[1]:NULL);
 }
 #endif
 
@@ -841,7 +840,7 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
         }
         moh_vr_hud_frame(g_eye_view[0].fy_q16>0?(float)g_eye_view[0].fx_q16/g_eye_view[0].fy_q16:1);
         if(g_openxr && !g_menu_flat) {
-#if defined(PSX_MOD_RENDER_CAPTURE_RGBA)
+#if defined(PSX_MOD_RENDER_CAPTURE_RGBA_PAIR)
             vr_capture_native_hud(cpu,&pass);
 #endif
             moh_vr_hud_prepare();
