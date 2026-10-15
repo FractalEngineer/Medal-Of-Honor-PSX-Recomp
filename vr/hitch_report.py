@@ -52,6 +52,15 @@ print("              " + "  ".join(f"{k}={med[k]}" for k in KEYS[8:]))
 pairs = sorted(stage(r, "pair_total") for r in recs)
 print(f"\npair_total: p50 {median(pairs)}  p95 {pairs[int(0.95 * (len(pairs) - 1))]}  max {pairs[-1]}")
 
+# A stall is a frame that missed a display period badly enough that the pair did not
+# arrive: guest_sim (host time between traced frames) past ~45 ms at 30 Hz pairs. It is
+# the number that matches what a player calls judder, so it is reported on its own rather
+# than left inside the percentiles.
+STALL_MS = 45
+stalls = [stage(r, "guest_sim") for r in recs if stage(r, "guest_sim") > STALL_MS * 1000]
+print(f"stalled frames (guest_sim > {STALL_MS} ms): {len(stalls)} of {len(recs)}"
+      + (f", worst {max(stalls) // 1000} ms" if stalls else ""))
+
 print(f"\ntop 8 frames above {THRESHOLD_US} us and where their pair time sits:")
 for r in sorted(recs, key=lambda r: -stage(r, "pair_total"))[:8]:
     total = stage(r, "pair_total")

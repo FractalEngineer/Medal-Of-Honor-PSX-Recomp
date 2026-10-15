@@ -253,6 +253,48 @@ so the seven calls account for the whole eye replay and nothing is hiding betwee
 That selects the first branch of the decision gate in the next steps: the lever is what the
 eye selects and how much of the scene the traversal has to process.
 
+### The pr6-attr session felt shakier, and what that measured as
+
+The player reported the session above as shakier and less smooth than the earlier runs. The
+record agrees with the feel, and rules out the explanations that would have been convenient.
+
+| | live-90s-2 | pr6-attr |
+| --- | --- | --- |
+| gameplay seconds | 87 | 87 |
+| `pair_ms` p50 / p95 / worst second | 9.76 / 15.96 / 19.31 | 10.20 / 16.51 / 17.92 |
+| seconds above 12 ms | 22 | 31 |
+| frames stalled past 45 ms (`guest_sim`) | 43 of 2441 | 93 of 2409 |
+| sheds during gameplay | 1 | 1 |
+| empty submissions during gameplay | 1 | 1 |
+| `hud_capture` p50 | 2.03 ms | 2.37 ms |
+| `hud_readback` p50 | 0.87 ms | 1.29 ms |
+
+Two things follow from that table.
+
+- **Shedding is not the cause, and the raw counters are misleading here.** `shed` and
+  `empty` are cumulative, and both sessions already read 15 or 16 and 2 or 3 in the
+  recorder's *first* row: the difference is the load and save-screen phase before gameplay,
+  not the session. Through the 87 s of gameplay each session shed once.
+- **The degradation is spread across the frame, and its largest relative rise is the HUD
+  readback, which is the driver's.** The pair is 4.5% slower at p50, the HUD capture 17%,
+  and the readback 48%, while stalled frames double. A synchronous `glReadPixels` taking
+  half as long again reads as the machine or its GPU being busier, not as this change: the
+  instrumentation adds fourteen clock samples per frame (under a microsecond) and a trace
+  export once per ten seconds that is 40% larger than before, which cannot account for 50
+  extra stalled frames spread through the session, and the stalls show no ten-second period
+  that an export artefact would produce.
+
+So the position is: the session was heavier, the feel is corroborated by the stall count,
+and the cause is not in the record. What the record cannot separate is the route (only the
+guest frame counter ties a frame to a position) and the state of the machine the second time
+round, which followed a VDXR restart and a headless run on the same GPU that also drives the
+headset streamer.
+
+The campaign's own rule is that instrumentation must not disturb what it measures, so the
+first session of the next round measures the instrument: same route, tracing off, no raw
+windows. That still records pair times, sheds and empty submissions, and the player's report
+decides the rest.
+
 ## Shedding latch defect: found, fixed, A/B measured
 
 Found with the harness above, and fixed in framework `b6a671c1`.
@@ -433,6 +475,15 @@ remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM cop
 
 ## Next steps
 
+- **Measure the instrument before trusting the next comparison.** The session above felt
+  heavier than earlier ones (stalled frames 43 to 93, p50 +4.5%, slow seconds 22 to 31), and
+  the record cannot say whether that was the machine, the route or the recording. Same route,
+  one session, `PSX_FRAME_TRACE` unset and no raw windows: `vr/record_session.py` still
+  records pair times, sheds and empty submissions from `stereo_stats` and `openxr_stats`. If
+  the stall count lands back near 43 of 2441 the instrumentation is disturbing what it
+  measures and every session has to be read with that in mind; if it lands near 93 the spread
+  is the machine or the route and the recorded numbers stand. One 90 s session, and it
+  protects every measurement after it.
 - **PR 6 has its first measured target, and it is the only thing on the critical path
   for what the player feels.** The stutter is the pair's per-eye guest replay: 4.3 ms per
   eye at the median, 6.1 and 6.0 ms on the frames above 12 ms, and 4.5 ms of the 4.9 ms
