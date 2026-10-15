@@ -26,6 +26,8 @@ Branch history, newest first, framework and parent commit per step:
 | HUD one readback | `a876bae3` | `efa32b4` | both mattes in one capture, one read |
 | HUD shared checkpoint | `d2554481` | `48fc640` | one checkpoint for a capture's two mattes |
 | headset recording tools | | `ed4a0d1` | session recorder and hitch report, in `vr/` |
+| per-eye replay split | `571a8f10` | `3c4d769` | guest sub-stages, per-eye prims and cycles |
+| attribution report | | `e416d45` | the split read out of the raw windows |
 | status sync | | `6031f0a`, `59dfca0` | the record catching up with the branch |
 
 ## Work package status
@@ -37,7 +39,7 @@ Branch history, newest first, framework and parent commit per step:
 | PR 3 | Reuse stereo checkpoints safely | Done, exit criteria measured. Gain: `eye_begin_r` 143 to 36 us p50. |
 | PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started, and the measurements now say why it cannot pay for itself as scoped. |
 | PR 4 | GPU capture and submission optimization | Not started as a package, and its first target is now mostly worked: the wrist HUD capture (3.19 ms p50 headless, 2.0 to 2.6 ms on the headset) had its stage cost located, its readback merged, and its checkpoint share removed. What remains on it is change-gated capture, which the headset data puts at 43 us of a slow frame. |
-| PR 6 | Mission/sector hotspots | Not started, and it now holds the critical path: the stutter is the pair's per-eye guest replay (4.3 ms per eye at the median, 6.1 and 6.0 ms on slow frames), reproducible in the same part of the level every session. |
+| PR 6 | Mission/sector hotspots | Instrumented and in progress: the per-eye replay is split by the call the hook replays, and the first reading puts 92% of it in the scene traversal even at the save. Waiting on the headset session over the known stretch to see which term grows. |
 
 ## Environment
 
@@ -113,7 +115,9 @@ Four things they taught, each of which cost a run or a reading:
   of slow frames does not move its median: a per-window view of a session the player
   describes as stuttering reported "no slow windows" at `p50 pair 6.3 to 9.2 ms`. The
   hitches only appear when the raw frames are ranked, which is what `hitch_report.py`
-  does and why the raw windows are kept.
+  does and why the raw windows are kept. It now also prints the per-eye replay split (the
+  seven `game_*` sub-stages, the per-eye prims and guest cycles) against the fast frames,
+  plus the remainder the measured calls leave, so a mis-mapped entry cannot hide.
 
 ## Headset sessions: panels submit, and where the stutters are
 
@@ -190,8 +194,33 @@ the eyes are drawing rather than at asset streaming.
 It is also not a missed submission: `empty` held at 3 for the whole run, so the runtime
 always presented something and covered the late frames by reprojecting a slightly older
 pose (`pose_age` 11.5 ms on fast frames against 16.8 on slow). That is why 24% slow frames
-can read as a moment of softness rather than a stall, and why the two sessions felt
-different while measuring the same.
+can read as softness rather than a stall, and why the two sessions felt different while
+measuring the same.
+
+## Where the per-eye replay goes: instrumented, and the first reading
+
+The eye term is the one that matters, so it is now split rather than reported whole. The
+hook brackets each guest call it replays and the runtime times the spans with the eye's own
+clock, seven slots that sum against `eye_guest`: `game_env` (draw environment, clear,
+ordering-table setup), `game_world`, `game_text`, `game_traverse` (the scene traversal:
+level groups and entities), `game_icon`, `game_submit` (DrawOTag) and `game_laser` (the
+hook's own per-eye raycast). The record also carries `prims_l`/`prims_r`,
+`tex_prims_l`/`tex_prims_r` and `cycles_l`/`cycles_r`, the guest cycles each eye's replay
+executed, which separates emulated machine work from host submission time. All of it is off
+unless `PSX_FRAME_TRACE` is on, and the runtime refuses the spans outside a traced stereo
+eye, so a HUD capture's replay of the same scene cannot write them.
+
+First reading, from a headless verification run (a 256-frame window at the save, not the
+busy stretch): per-eye prims 1143 and 1142, per-eye guest cycles 638657 and 637929, and of
+9662 us of per-eye replay, **`game_traverse` is 8943 us**. `game_submit` is 576 us,
+`game_env` 72, `game_text` 31, `game_icon` 10, `game_world` 7 and `game_laser` under a
+microsecond in that scene. The worst frame of the window (pair 12684 us) has the same
+shape: 10491 us of its 11286 us of replay is the traversal.
+
+So the replay is dominated by the scene traversal even where nothing is moving, and the
+ordering-table submission and the draw environment are minor. That makes the traversal the
+hypothesis for the stretch, and the headset session below is what decides it: the split is
+only useful where the frames are heavy.
 
 ## Shedding latch defect: found, fixed, A/B measured
 
@@ -378,15 +407,28 @@ remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM cop
   eye at the median, 6.1 and 6.0 ms on the frames above 12 ms, and 4.5 ms of the 4.9 ms
   extra pair time on a slow frame. The counters say the extra drawing is geometry: 947
   primitives against 669 (one eye's count, see the caveat above), with `tex_bytes` 0 in
-  both. It reproduces in the same part of the level in every session (t 44 to 93 s from the
-  save), so the route can be walked again deliberately. Next step is the visibility question
-  the plan already scoped: with the primitive counts in hand, profile that stretch for what
-  the eyes are drawing (per-eye
-  AABB and sector traversal, conservative pruning without reintroducing missing tiles or
-  head-turn pop-in). The two things not to do: treat the HUD capture as a suspect (it moves
-  43 us of that 4.9 ms), and treat it as a submission problem (the runtime never missed one:
-  `empty` held at 3 through the whole session, and the slow frames were covered by
-  reprojection at a pose 5 ms older). Both are already measured, so neither needs a run.
+  both.
+  1. **The replay is now split per call, and the split is what the next session is for.**
+     `vr/record_session.py` (recorder first) plus `vr/hitch_report.py` print the seven guest
+     sub-stages, the per-eye prims and the per-eye guest cycles against the fast frames. The
+     static headless reading above already puts 92% of the replay in `game_traverse`, so the
+     question the session answers is whether that is the term that grows in the stretch, or
+     whether the submission, the world passes or the host remainder grows with it.
+  2. **Then the decision gate.** If `game_traverse` (or `game_world`) grows with the scene
+     and the guest cycles grow with it, the cost is emulated machine work and the lever is
+     what the eye selects: the level AABB/PVS filter's conservatism (`vr/moh_vr_frustum.h`,
+     its guard band and saturated-coordinate fallback) or a pair-shared selection, held to
+     no missing tiles and no new pop-in by the pixel-compare harness plus the accepted look
+     on the headset. If `game_submit` or the host remainder grows instead, the lever is the
+     framework's submission and batching path, held to a byte-identical pair. If nothing
+     dominates and the guest cycles track the pair time, the cost is inherent scene work and
+     the honest answer is to document the ceiling rather than trade fidelity.
+  3. It reproduces in the same part of the level in every session (t 44 to 93 s from the
+     save), so the route can be walked again deliberately. The two things not to do: treat
+     the HUD capture as a suspect (it moves 43 us of that 4.9 ms), and treat it as a
+     submission problem (the runtime never missed one: `empty` held at 3 through the whole
+     session, and the slow frames were covered by reprojection at a pose 5 ms older). Both
+     are already measured, so neither needs a run.
 - **Wrist HUD captures, the top measured non-guest cost.** 3.19 ms p50 and 5.93 ms p95
   per frame headless, 2.0 to 2.6 ms p50 on the headset, of which the readback is 2.16 ms
   p50 headless and 0.87 to 1.17 ms on the headset.
@@ -442,10 +484,9 @@ remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM cop
 4. Why the same slow stretch appears at t 44 to 93 s in every session, at the same level
    position from the same save. If it is a fixed part of the level rather than the player's
    route, the route can be walked deliberately for profiling instead of played.
-5. The primitive counter is one field written per eye, so it reports the last eye of the
-   pair. If PR 6 wants left and right separately (`psx_frame_trace_draw` already receives
-   each eye's delta, at `render_pass.c:965`), the record needs a second field. The eye
-   *timings* are already separate (`eye_guest_l`, `eye_guest_r`), only the counts are not.
+5. The primitive counter used to report only the last eye of the pair. `prims_l`/`prims_r`,
+   `tex_prims_l`/`tex_prims_r` and `cycles_l`/`cycles_r` are recorded now, so a change to
+   what one eye selects can be checked on that eye. Closed in `571a8f10`.
 
 ## Reproducing
 
