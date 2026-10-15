@@ -446,11 +446,16 @@ static int g_trace_spans;
  * The sandbox owns rollback. This opt-in candidate never changes native play. */
 static int vr_head_frustum_filter(CPUState *cpu,uint32_t address) {
     vr_lvtx_entry(cpu,address);
-    if(!g_head_frustum||!g_in_pass||address!=LVTX_8008B3E8||g_stereo_eye>1||
-       psx_mod_read_word(address)!=0x27bdfee0u||
+    if(!g_head_frustum||!g_in_pass||address!=LVTX_8008B3E8||g_stereo_eye>1)return 0;
+    /* This override is host work executed inside the eye's guest traversal, so
+     * its span nests in game_traverse: game_traverse minus game_select is the
+     * guest's own traversal work for the set this selected. */
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_SELECT);
+    if(psx_mod_read_word(address)!=0x27bdfee0u||
        psx_mod_read_word(address+4)!=0x3c02800au||
        psx_mod_read_word(address+8)!=0x3c03800au||
-       psx_mod_read_word(address+12)!=0x8c42d638u) return 0;
+       psx_mod_read_word(address+12)!=0x8c42d638u){
+        VR_SPAN_END(PSX_TRACE_GAME_SELECT);return 0;}
     uint32_t queue[1000];unsigned count=0;
     double matrix[9],tr[3];
     for(int i=0;i<9;i++)matrix[i]=(int16_t)(cpu->gte_ctrl[i/2]>>((i%2)*16))/4096.0;
@@ -459,10 +464,12 @@ static int vr_head_frustum_filter(CPUState *cpu,uint32_t address) {
     uint32_t masks[2]={psx_mod_read_word(0x800aa178u),psx_mod_read_word(0x800aa17cu)};
     int bypass_masks=psx_mod_read_word(0x800aa180u)!=0;
     if(!moh_vr_collect_tree(cpu->gpr[4],queue,&count,matrix,tr,&g_eye_view[g_stereo_eye],
-                            cx,cy,masks,bypass_masks))return 0;
+                            cx,cy,masks,bypass_masks)){
+        VR_SPAN_END(PSX_TRACE_GAME_SELECT);return 0;}
     for(unsigned i=0;i<count;i++)psx_mod_write_word(0x800aa1a0u+i*4,queue[i]);
     psx_mod_write_word(0x800aa19cu,count);psx_mod_write_word(0x800ab140u,0);
     cpu->gte_ctrl[26]=(uint16_t)psx_mod_read_word(0x8009a628u);
+    VR_SPAN_END(PSX_TRACE_GAME_SELECT);
     return 1;
 }
 static uint32_t g_stereo_success;
