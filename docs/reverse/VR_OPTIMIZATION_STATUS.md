@@ -6,8 +6,8 @@ in the `psxrecomp` branch `vr-perf-pr1-pr2`.
 
 ## Branches and pins
 
-- Parent branch `vr-perf-pr1-pr2`, tip `6031f0a`, which pins the framework at `a876bae3`.
-- Framework branch `vr-perf-pr1-pr2`, tip `a876bae3`.
+- Parent branch `vr-perf-pr1-pr2`, tip `48fc640`, which pins the framework at `d2554481`.
+- Framework branch `vr-perf-pr1-pr2`, tip `d2554481`.
 - One commit per PR, one pin bump per PR, no PRs opened. The parent's
   `psxrecomp` gitlink always matches the framework branch tip used for that build.
 
@@ -22,6 +22,8 @@ Branch history, newest first, framework and parent commit per step:
 | shed latch fix | `b6a671c1` | | exit shedding on the deadline, not the band edge |
 | HUD stage split | `63271ce7` | `9a146f5` | where the capture's time goes |
 | HUD one readback | `a876bae3` | `efa32b4` | both mattes in one capture, one read |
+| HUD shared checkpoint | `d2554481` | `48fc640` | one checkpoint for a capture's two mattes |
+| status sync | | `6031f0a`, `59dfca0` | the record catching up with the branch |
 
 ## Work package status
 
@@ -31,7 +33,7 @@ Branch history, newest first, framework and parent commit per step:
 | PR 2 | Stereo shedding, recovery, stale-pair policy | Done, exit criteria measured, and a latch defect found later and fixed (framework `b6a671c1`). |
 | PR 3 | Reuse stereo checkpoints safely | Done, exit criteria measured. Gain: `eye_begin_r` 143 to 36 us p50. |
 | PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started, and the measurements now say why it cannot pay for itself as scoped. |
-| PR 4 | GPU capture and submission optimization | Not started as a package, but its first real target was found and its first change landed: the wrist HUD capture, 3.26 ms p50 per frame, of which the readback is 2.05 ms. See below. |
+| PR 4 | GPU capture and submission optimization | Not started as a package, but its first target is mostly worked: the wrist HUD capture (3.19 ms p50, readback 2.16 ms of it) had its stage cost located, its readback merged, and its checkpoint share removed. What remains on it is change-gated capture. |
 | PR 6 | Mission/sector hotspots | Not started. Guest work is the largest single term in the frame (18.0 ms), so this is where the remaining ceiling is. |
 
 ## Environment
@@ -211,30 +213,41 @@ mattes now stage into one capture call and come back from a single read
 (framework `a876bae3`, pinned here as `efa32b4`), verified byte-identical: the two
 dumped mattes and the two reconstructed panels hash the same as the per-eye build.
 
-| same scenario, 1024 frames | per-eye build | one readback |
-| --- | --- | --- |
-| hud_capture | p50 3.41 ms | p50 3.26 ms |
-| hud_draw | p50 1.30 ms | p50 1.22 ms |
-| hud_readback | p50 2.10 ms, p95 5.43 ms | p50 2.05 ms, p95 4.66 ms |
+| same scenario, 1024 frames | per-eye build | one readback | shared checkpoint |
+| --- | --- | --- | --- |
+| hud_capture | p50 3.41 ms | p50 3.26 ms | p50 3.19 ms, p95 5.10 |
+| hud_draw | p50 1.30 ms | p50 1.22 ms | p50 1.09 ms, p95 1.27 |
+| hud_readback | p50 2.10 ms, p95 5.43 ms | p50 2.05 ms, p95 4.66 | p50 2.16 ms, p95 4.00 |
+| checkpoint saves per pair | 2.79 | 2.79 | **1.945** |
+| checkpoint reuses per pair | 1.0 | 1.0 | **1.945** |
 
 The p50 readback does not move, so at the median the two blits and the transfer
 dominate and the per-call overhead is small; halving the number of calls shows up
-only in the tail, where one stop-the-world read replaces two. The change is kept
+only in the tail, where one stop-the-world read replaces two. That change is kept
 because it is byte-identical, simpler and no slower, not because it moves the
-budget. What the trace does show is the captures' checkpoint share: 2.79 saves per
-pair against 1.0 for the pair itself.
+budget.
+
+The checkpoint share is where the measurable win was, and the capture's second matte
+now reuses the baseline the first one captured (framework `d2554481`, pinned here as
+`48fc640`), which is one 2 MiB RAM copy per frame less. `hud_draw` is the stage that
+holds it, and it drops 1220 to 1087 us at p50, 1455 to 1265 at p95, while
+`checkpoint_reuses` rises to match `checkpoint_saves` at 1.945 per pair: one save for
+the capture and one for the pair, each reused once. Both changes were held to the
+same acceptance test, byte identity, and the two dumped mattes and two reconstructed
+panels hash the same as before in both.
 
 `pose_age` is now fully explained: pair plus HUD captures plus the XR tail, with about
-1 ms left for view maths and HUD preparation. The captures are also two of the three
-per-pair checkpoint saves, so the HUD path is simultaneously the largest measured
-non-guest cost in the frame and two thirds of the checkpoint work.
+1 ms left for view maths and HUD preparation. The checkpoint work per pair is now one
+save for the capture and one for the pair, down from three saves, and `hud_draw`'s
+remaining 1.09 ms is the guest slice plus the blit setup rather than the RAM copy.
 
 ## What the trace says is left
 
-1. **Wrist HUD captures, 4.14 ms per frame at p50 and 8.16 ms at p95.** Two
+1. **Wrist HUD captures, 3.19 ms per frame at p50 and 5.10 ms at p95.** Two
    transactions that re-run the same guest slice with a different matte colour. This is
-   the largest measured non-guest cost, it is inside the frame rather than guest
-   drawing, and it is the same code that dominates the checkpoint counters.
+   the largest measured non-guest cost and it is inside the frame rather than guest
+   drawing. Its checkpoint share is gone (one save per frame, reused by the second
+   matte), which leaves the draw's guest slice and the readback's two blits.
 2. **Cadence.** One rendered pair serves about 1.5 granted periods under VDXR and 3.0
    under the null HMD's 90 Hz grant, so a large share of display periods carry nothing
    new and rely on reprojection of a pose up to 33 ms old.
@@ -255,21 +268,18 @@ non-guest cost in the frame and two thirds of the checkpoint work.
   1. **One readback for both mattes. DONE** (framework `a876bae3`, pin `efa32b4`).
      Byte-identical output; the saving is in the tail, not at p50, and the per-call
      overhead hypothesis behind it was wrong. See the frame-budget table above.
-  2. **Let the second matte reuse the first capture's checkpoint. NEXT, and now the
-     best-supported lever.** The trace counts 2.79 checkpoint saves per pair against
-     1.0 for the pair itself, so the two HUD capture transactions are two thirds of
-     the checkpoint work: each saves a RAM checkpoint that the HUD-only path refuses to
-     reuse because `s_capture_only` forces `reuse_baseline = 0` for every capture
-     (`render_pass.c`, the line that also clears the trace and the baseline). The
-     second matte draws from the same guest state the first one just restored, which is
-     exactly the argument the pair's right eye already relies on (`063b082a`), so the
-     reuse should extend to the second capture when the first succeeded and its
-     restore verified. The acceptance test is the same one that just passed: the mattes
-     must stay byte-identical, on top of the checkpoint counters dropping to 2.0 per
-     pair.
-  3. **Skip the capture pair when the HUD has not changed.** Still the largest possible
-     win, the whole 3.26 ms on most frames, but it needs a trustworthy change signal
-     from the guest HUD state, and a stale HUD would be a visible bug.
+  2. **Let the second matte reuse the first capture's checkpoint. DONE** (framework
+     `d2554481`, pin `48fc640`). Saves per pair 2.79 to 1.945 and reuses 1.0 to 1.945,
+     `hud_draw` p50 1220 to 1087 us, byte identity held. See the frame-budget table
+     above. The scope the change introduced is the part worth keeping in mind: the
+     capture's shared baseline is cleared before it returns, so the pair that follows
+     in the same frame still captures its own first eye, and the sandbox test now
+     asserts exactly that alongside the shared checkpoint.
+  3. **Skip the capture pair when the HUD has not changed.** Now the only lever left on
+     this term, and worth the whole 3.19 ms on the frames it would skip, but it needs a
+     trustworthy change signal from the guest HUD state, and a stale HUD would be a
+     visible bug. The counters are no longer the argument for it: they are already at
+     their floor of one save per capture.
   Ruled out by measurement: rendering the capture at display resolution (0.5 ms, and it
   costs the capture its supersampling).
   **Panel rendering stays out of the headless harness, by decision.** The wrist panels
