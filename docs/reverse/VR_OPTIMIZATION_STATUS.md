@@ -50,13 +50,21 @@ the switch manages its own start and stop.
 
 Two things about it that cost a measurement each to learn:
 
-- **A loaded save sits on the native pause screen.** That sets `g_menu_flat`, which
-  skips the stereo pair and the whole HUD capture path, and `pending` submissions go
-  out as a quad layer (the readiness dump shows `submitted_layer: 2`,
-  `quad_submitted` climbing). Resume through native Start before sampling, the way
+- **A loaded save sits on the native save screen, not in gameplay.** That sets
+  `g_menu_flat`, which skips the stereo pair and the whole HUD capture path, and the
+  submissions go out as a quad layer (the readiness dump shows `submitted_layer: 2`,
+  `quad_submitted` climbing). Resume through native Start, the way
   `capture_stereo.py --resume` does (`resume_if_paused` in `vr/weapon_state.py`,
   documented as "Existing measured native pause flag; resume through Start, never a
-  RAM edit"). Traces taken without that step are pause-screen numbers.
+  RAM edit"). Traces taken without that step are save-screen numbers.
+  **Check the state, do not trust the helper's return value.** `resume_if_paused`
+  reports True whenever the native pause word is already 0, which is also true of the
+  save screen in some states, so a run can report a successful resume and still never
+  reach gameplay. The check that works is `openxr_stats.submitted_layer`: 2 is the menu
+  quad, 1 is the stereo pair. Resume in a loop until it reads 1, then sample. This cost
+  two runs: the first measurement of the single-readback capture produced no HUD record
+  at all because the capture path was never entered, and the HUD diagnostic added for
+  it printed nothing rather than failing.
 - **The grant differs from VDXR's.** The null driver asks for 11.111 ms (one 90 Hz
   display frame); VDXR granted 22.222 ms (two). The shed policy compares against this
   deadline, so the same build behaves differently under the two runtimes, and the
@@ -186,6 +194,24 @@ for a 512x240 blit and a 491 KB read at either scale. Rendering the capture at t
 display's own resolution would therefore buy 0.5 ms and cost the capture its 5x
 supersampling.
 
+**That per-call estimate was wrong, and the fix built on it underdelivered.** Both
+mattes now stage into one capture call and come back from a single read
+(framework `a876bae3`, pinned here as `efa32b4`), verified byte-identical: the two
+dumped mattes and the two reconstructed panels hash the same as the per-eye build.
+
+| same scenario, 1024 frames | per-eye build | one readback |
+| --- | --- | --- |
+| hud_capture | p50 3.41 ms | p50 3.26 ms |
+| hud_draw | p50 1.30 ms | p50 1.22 ms |
+| hud_readback | p50 2.10 ms, p95 5.43 ms | p50 2.05 ms, p95 4.66 ms |
+
+The p50 readback does not move, so at the median the two blits and the transfer
+dominate and the per-call overhead is small; halving the number of calls shows up
+only in the tail, where one stop-the-world read replaces two. The change is kept
+because it is byte-identical, simpler and no slower, not because it moves the
+budget. What the trace does show is the captures' checkpoint share: 2.79 saves per
+pair against 1.0 for the pair itself.
+
 `pose_age` is now fully explained: pair plus HUD captures plus the XR tail, with about
 1 ms left for view maths and HUD preparation. The captures are also two of the three
 per-pair checkpoint saves, so the HUD path is simultaneously the largest measured
@@ -211,39 +237,37 @@ non-guest cost in the frame and two thirds of the checkpoint work.
 
 ## Next steps
 
-- **Wrist HUD captures, now the top measured non-guest cost.** 3.41 ms p50 and
-  6.91 ms p95 per frame, of which the readback half is 2.10 ms p50 and 5.43 ms p95.
-  Because the cost is per-call readback overhead and not pixels, the only lever that
-  pays is fewer readbacks per frame; the candidates in order:
-  1. **One readback for both mattes. CHOSEN, not started.** Render the black matte into
-     one eye slot of the stage surface and the white one into the other, then blit and
-     read both in a single call. Halves the per-call cost, roughly 0.5 to 0.8 ms.
-     Design worked out, no code written yet:
-     - `render_transaction` already takes an eye index and the stage has one target per
-       eye, so capture one becomes eye 0 and capture two becomes eye 1. The matte stays
-       plugin state, so the plugin still owns both draws.
-     - Grow the cached readback target to `w x 2h` (`pass_make_color_fbo` caches by size,
-       so it is made once), blit eye 0 into rows `[0,h)` and eye 1 into `[h,2h)`, then a
-       single `glReadPixels(0,0,w,2h)`. The two planes come back contiguous, so the plugin
-       slices one buffer into black and white and no copy is needed.
-     - `gl_renderer_stereo_stage_readback` is called from `psx_mod_render_capture_rgba`
-       only, so the pair variant can replace it rather than sit beside it. Check
-       `test_gl_readback_region.c`.
-     - `test_render_pass_sandbox.c` and `test_render_pass_abort.c` stub the
-       `gl_renderer_*` entry points, so both need a stub for the new one.
-     - Verification: run the old and new readbacks in the same build behind a temporary
-       flag and `memcmp` each plane, the way the shed-policy fix was proved, then remove
-       the comparison. A byte-identical result is the acceptance test, and the trace's
-       `hud_readback` stage is the measurement.
-  2. **Skip the pair when the HUD has not changed.** The HUD shows ammo, health and the
-     weapon name; it changes on discrete events, not every frame. This is the largest
-     possible win (the whole 3.4 ms on most frames) but it needs a trustworthy change
-     signal from the guest HUD state, and a stale HUD would be a visible bug.
-  3. **One capture transaction instead of two.** The second capture re-saves a
-     checkpoint that the first one just restored, so it can reuse it the way the pair's
-     right eye reuses the left's (PR 3). Worth roughly 0.1 to 0.15 ms.
+- **Wrist HUD captures, still the top measured non-guest cost.** 3.26 ms p50 and
+  5.93 ms p95 per frame at the current tip, of which the readback is 2.05 ms p50 and
+  4.66 ms p95.
+  1. **One readback for both mattes. DONE** (framework `a876bae3`, pin `efa32b4`).
+     Byte-identical output; the saving is in the tail, not at p50, and the per-call
+     overhead hypothesis behind it was wrong. See the frame-budget table above.
+  2. **Let the second matte reuse the first capture's checkpoint. NEXT, and now the
+     best-supported lever.** The trace counts 2.79 checkpoint saves per pair against
+     1.0 for the pair itself, so the two HUD capture transactions are two thirds of
+     the checkpoint work: each saves a RAM checkpoint that the HUD-only path refuses to
+     reuse because `s_capture_only` forces `reuse_baseline = 0` for every capture
+     (`render_pass.c`, the line that also clears the trace and the baseline). The
+     second matte draws from the same guest state the first one just restored, which is
+     exactly the argument the pair's right eye already relies on (`063b082a`), so the
+     reuse should extend to the second capture when the first succeeded and its
+     restore verified. The acceptance test is the same one that just passed: the mattes
+     must stay byte-identical, on top of the checkpoint counters dropping to 2.0 per
+     pair.
+  3. **Skip the capture pair when the HUD has not changed.** Still the largest possible
+     win, the whole 3.26 ms on most frames, but it needs a trustworthy change signal
+     from the guest HUD state, and a stale HUD would be a visible bug.
   Ruled out by measurement: rendering the capture at display resolution (0.5 ms, and it
   costs the capture its supersampling).
+  **Panel rendering stays out of the headless harness, by decision.** The wrist panels
+  are OpenXR surfaces gated on a tracked grip: `moh_vr_hud_prepare` needs the hand
+  session focused with a valid origin and an age under 100 ms, and each side needs an
+  active grip with all four tracking flags, while `native_ready` is rebuilt every frame
+  by the capture. A null-HMD run has no controllers, so it submits nothing and the
+  game's own HUD is what you would be looking at. The capture itself is still checkable
+  headless through `PSX_VR_WRIST_DUMP_DIRECTORY`, which is how the byte identity above
+  was proved, but the panels are verified on a headset instead.
 - **PR 5 slice 2, with a caution that the measurements now support.** Re-presenting the
   retained pair at the granted cadence needs an extra `xrWaitFrame` per added frame, and
   `xr_wait_frame` is p50 11 us, so the app never blocks today and any added frame's wait
