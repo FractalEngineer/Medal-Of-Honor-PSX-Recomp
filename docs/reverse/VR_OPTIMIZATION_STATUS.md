@@ -159,9 +159,32 @@ HMD, save slot 1 resumed, 1024 frames:
 | frame interval (one guest frame) | 33.4 ms (3.005 granted periods) | |
 | guest logic and native present (derived) | 18.0 ms | |
 | stereo pair, both eyes | 10.35 ms | 11.04 ms |
-| wrist HUD captures, both transactions | 4.14 ms | 8.16 ms |
+| wrist HUD captures, both transactions | 3.41 ms | 6.91 ms |
+| ... of which the draw half (checkpoint, guest slice, verify) | 1.30 ms | 1.58 ms |
+| ... of which the readback half (blit plus synchronous read) | 2.10 ms | 5.43 ms |
 | XR acquire, copy, release, end frame | 0.86 ms | |
 | submitted pose age | 16.01 ms | 22.85 ms |
+
+Framework `63271ce7` splits the capture into those two halves, and the split says
+where the cost is: the readback, 62% of the capture at p50 and 79% at p95, is the
+driver's, not the guest's.
+
+**The obvious fix is already ruled out by measurement.** The pair target is
+2560x1200 (5x internal scale), so each capture blits 2560x1200 down to 512x240
+before reading. Re-running with the internal scale clamped to 1, same scene class
+(pair_total 10.41 vs 10.54 ms, so a fair comparison):
+
+| | scale 5 | scale 1 |
+| --- | --- | --- |
+| capture | 3.41 ms | 2.80 ms |
+| draw | 1.30 ms | 1.24 ms |
+| readback | 2.10 ms | 1.56 ms |
+
+The five-times downscale costs about 0.5 ms, and the guest HUD draw does not move
+at all, so it is not pixel-bound. The readback is per-call overhead, about 0.78 ms
+for a 512x240 blit and a 491 KB read at either scale. Rendering the capture at the
+display's own resolution would therefore buy 0.5 ms and cost the capture its 5x
+supersampling.
 
 `pose_age` is now fully explained: pair plus HUD captures plus the XR tail, with about
 1 ms left for view maths and HUD preparation. The captures are also two of the three
@@ -188,12 +211,22 @@ non-guest cost in the frame and two thirds of the checkpoint work.
 
 ## Next steps
 
-- **Wrist HUD captures, now the top measured non-guest cost.** 4.14 ms p50 and 8.16 ms
-  p95 per frame, two transactions re-running one guest slice with a different matte
-  colour, and two of the three per-pair checkpoint saves. Candidates, in order of how
-  much they change: capture both mattes inside a single transaction so there is one
-  checkpoint instead of two; skip the capture pair when the HUD content has not changed;
-  derive the second matte on the host instead of re-running the guest slice.
+- **Wrist HUD captures, now the top measured non-guest cost.** 3.41 ms p50 and
+  6.91 ms p95 per frame, of which the readback half is 2.10 ms p50 and 5.43 ms p95.
+  Because the cost is per-call readback overhead and not pixels, the only lever that
+  pays is fewer readbacks per frame; the candidates in order:
+  1. **One readback for both mattes.** Render the black matte into one eye slot of the
+     stage surface and the white one into the other, then blit and read both in a
+     single call. Halves the per-call cost, roughly 0.5 to 0.8 ms.
+  2. **Skip the pair when the HUD has not changed.** The HUD shows ammo, health and the
+     weapon name; it changes on discrete events, not every frame. This is the largest
+     possible win (the whole 3.4 ms on most frames) but it needs a trustworthy change
+     signal from the guest HUD state, and a stale HUD would be a visible bug.
+  3. **One capture transaction instead of two.** The second capture re-saves a
+     checkpoint that the first one just restored, so it can reuse it the way the pair's
+     right eye reuses the left's (PR 3). Worth roughly 0.1 to 0.15 ms.
+  Ruled out by measurement: rendering the capture at display resolution (0.5 ms, and it
+  costs the capture its supersampling).
 - **PR 5 slice 2, with a caution that the measurements now support.** Re-presenting the
   retained pair at the granted cadence needs an extra `xrWaitFrame` per added frame, and
   `xr_wait_frame` is p50 11 us, so the app never blocks today and any added frame's wait
