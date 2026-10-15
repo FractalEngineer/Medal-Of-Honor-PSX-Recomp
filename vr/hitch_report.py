@@ -28,6 +28,12 @@ print(f"{len(recs)} distinct frames, seq {recs[0]['seq']} to {recs[-1]['seq']}, 
 KEYS = ["pair_total", "guest_sim", "eye_begin_l", "eye_guest_l", "eye_end_l", "eye_restore_l",
         "eye_begin_r", "eye_guest_r", "eye_end_r", "eye_restore_r", "hud_capture", "hud_draw",
         "hud_readback", "xr_end_frame", "xr_wait_frame", "pose_age"]
+# The guest scene rebuild one eye replays, bracketed by the hook (pair totals).
+# eye_guest_l + eye_guest_r minus these is the remainder: host work between the
+# calls (the ammo mask restore, the HUD unlink) plus anything the hook left
+# unpaired, so a mis-mapped entry cannot hide.
+GUEST = ["game_env", "game_world", "game_text", "game_traverse", "game_icon",
+         "game_submit", "game_laser"]
 
 
 def stage(r, k):
@@ -74,7 +80,30 @@ if slow and fast:
 # Whether the extra eye time is geometry or uploads, which is the question the stage
 # split cannot answer on its own. These are per-frame record counters, not stages.
 print("\nper-frame counters that say what the eye replay was doing:")
-for k in ("prims", "tex_prims", "tex_bytes", "vram_leaks"):
+for k in ("prims", "tex_prims", "prims_l", "prims_r", "tex_prims_l", "tex_prims_r",
+          "cycles_l", "cycles_r", "tex_bytes", "vram_leaks"):
     s = median([r.get(k, 0) for r in slow])
     f = median([r.get(k, 0) for r in fast])
     print(f"  {k:<11s} slow {s:>9d}  fast {f:>9d}  delta {s - f:>+9d}")
+
+# Which guest call of the replay grew, per eye pair, and what is left over. The
+# guest cycles above separate emulated machine work from host submission time, so
+# a rise here with flat cycles is the host's, and a rise in both is the machine's.
+print("\nthe per-eye replay, split by the call the hook replays "
+      "(pair totals, medians per group):")
+if slow and fast:
+    eye_slow = median([stage(r, "eye_guest_l") + stage(r, "eye_guest_r") for r in slow])
+    eye_fast = median([stage(r, "eye_guest_l") + stage(r, "eye_guest_r") for r in fast])
+    parts_slow = parts_fast = 0
+    for k in GUEST:
+        s = median([stage(r, k) for r in slow])
+        f = median([stage(r, k) for r in fast])
+        parts_slow += s
+        parts_fast += f
+        share = (100.0 * (s - f) / (eye_slow - eye_fast)) if eye_slow != eye_fast else 0.0
+        print(f"  {k:<14s} slow {s:>7d}  fast {f:>7d}  delta {s - f:>+7d}  {share:>6.1f}% of the eye rise")
+    print(f"  {'eye_guest sum':<14s} slow {eye_slow:>7d}  fast {eye_fast:>7d}  "
+          f"delta {eye_slow - eye_fast:>+7d}")
+    print(f"  {'remainder':<14s} slow {eye_slow - parts_slow:>7d}  "
+          f"fast {eye_fast - parts_fast:>7d}  delta {eye_slow - eye_fast - parts_slow + parts_fast:>+7d}"
+          "  (unmeasured host work and unpaired spans)")
