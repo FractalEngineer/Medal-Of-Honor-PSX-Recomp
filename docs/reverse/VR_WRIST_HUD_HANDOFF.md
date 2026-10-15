@@ -14,7 +14,8 @@ presentation preference, not a change to the framework's general default.
 Published branch `FractalEngineer/psxrecomp:feat/vr-hud-surfaces` is now based on
 upstream/fork master `f9c287f5`, with three grouped commits: `062d6e39` isolated
 capture, `890fed78` positioned surfaces, `99dd1eee` head-facing billboards.
-The game pins framework `99dd1eee` in `psxrecomp/` and compatible upstream UI
+After framework PR #666 merged, the game pins framework master `8d1c983b` in
+`psxrecomp/` and tracks branch `master`, with compatible upstream UI
 `41c88ff` in `recomp-ui/`. Current framework requires the newer launcher fields.
 The successful `build-vr-wrist` rebuild used identical commits in separate
 worktrees; those worktrees are historical development material. Batch launchers
