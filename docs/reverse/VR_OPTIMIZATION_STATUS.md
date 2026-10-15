@@ -6,21 +6,33 @@ in the `psxrecomp` branch `vr-perf-pr1-pr2`.
 
 ## Branches and pins
 
-- Parent branch `vr-perf-pr1-pr2`, tip `08334ad`, which pins the framework at `0e0d2de8`.
-- Framework branch `vr-perf-pr1-pr2`, tip `0e0d2de8`.
+- Parent branch `vr-perf-pr1-pr2`, tip `6031f0a`, which pins the framework at `a876bae3`.
+- Framework branch `vr-perf-pr1-pr2`, tip `a876bae3`.
 - One commit per PR, one pin bump per PR, no PRs opened. The parent's
   `psxrecomp` gitlink always matches the framework branch tip used for that build.
+
+Branch history, newest first, framework and parent commit per step:
+
+| step | framework | parent | what it is |
+| --- | --- | --- | --- |
+| PR 1 | `022eb1ed` | `8b77fae` | trace ring and TCP export |
+| PR 2 | `cae62891` | | stereo shedding, recovery, stale-pair policy |
+| PR 3 | `063b082a` | | reuse one stereo checkpoint baseline across the pair |
+| PR 5 slice 1 | `0e0d2de8` | `08334ad` | pose age and repeat tracing |
+| shed latch fix | `b6a671c1` | | exit shedding on the deadline, not the band edge |
+| HUD stage split | `63271ce7` | `9a146f5` | where the capture's time goes |
+| HUD one readback | `a876bae3` | `efa32b4` | both mattes in one capture, one read |
 
 ## Work package status
 
 | PR | Scope | Status |
 | --- | --- | --- |
-| PR 1 | Low-overhead frame-time tracing | Done. Trace ring, TCP export, `vr/trace_frames.py`. |
-| PR 2 | Stereo shedding, recovery, stale-pair policy | Done. Exit criteria measured, and a latch defect found later and fixed (framework `b6a671c1`), see below. |
-| PR 3 | Reuse stereo checkpoints safely | Done. Exit criteria measured, see below. |
-| PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started. |
-| PR 4 | GPU capture and submission optimization | Not started. |
-| PR 6 | Mission/sector hotspots | Not started. |
+| PR 1 | Low-overhead frame-time tracing | Done. Trace ring, TCP export, `vr/trace_frames.py`. No frame-time gain by design; it is what makes every later number attributable. |
+| PR 2 | Stereo shedding, recovery, stale-pair policy | Done, exit criteria measured, and a latch defect found later and fixed (framework `b6a671c1`). |
+| PR 3 | Reuse stereo checkpoints safely | Done, exit criteria measured. Gain: `eye_begin_r` 143 to 36 us p50. |
+| PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started, and the measurements now say why it cannot pay for itself as scoped. |
+| PR 4 | GPU capture and submission optimization | Not started as a package, but its first real target was found and its first change landed: the wrist HUD capture, 3.26 ms p50 per frame, of which the readback is 2.05 ms. See below. |
+| PR 6 | Mission/sector hotspots | Not started. Guest work is the largest single term in the frame (18.0 ms), so this is where the remaining ceiling is. |
 
 ## Environment
 
