@@ -34,6 +34,7 @@ FLAG_BITS = {
     1 << 6: "io",
     1 << 7: "no_telemetry",
     1 << 8: "baseline_reused",
+    1 << 9: "xr_repeat",
 }
 
 
@@ -71,14 +72,16 @@ def write_csv(path, records):
     stages = list(records[0]["stages_us"].keys()) if records else []
     head = ["seq", "open_ms", "guest_frame", "guest_cycle", "attempt", "pair_id",
             "pair_age_ms", "source", "eye_failed", "flags", "shed", "shed_ms",
-            "prims", "tex_prims", "vram_leaks", "tex_bytes"] + stages + \
+            "prims", "tex_prims", "vram_leaks", "tex_bytes",
+            "xr_display_delta_us", "xr_submit_fresh"] + stages + \
            ["failure", "note"]
     lines = [",".join(head)]
     for r in records:
         row = [r["seq"], r["open_ms"], r["guest_frame"], r["guest_cycle"],
                r["attempt"], r["pair_id"], r["pair_age_ms"], r["source"],
                r["eye_failed"], r["flags"], r["shed"], r["shed_ms"], r["prims"],
-               r["tex_prims"], r["vram_leaks"], r["tex_bytes"]]
+               r["tex_prims"], r["vram_leaks"], r["tex_bytes"],
+               r.get("xr_display_delta_us", 0), r.get("xr_submit_fresh", 0)]
         row += [r["stages_us"][name] for name in stages]
         row += ['"%s"' % r["failure"], '"%s"' % r["note"]]
         lines.append(",".join(str(v) for v in row))
@@ -87,7 +90,7 @@ def write_csv(path, records):
     return head
 
 
-def summarize(records):
+def summarize(records, period_us=0):
     def series(fn):
         return [fn(r) for r in records]
 
@@ -99,12 +102,30 @@ def summarize(records):
     stale = [r for r in records if "stale" in flag_names(r["flags"])]
     shed = [r for r in records if "shed" in flag_names(r["flags"])]
     failed = [r for r in records if "failed" in flag_names(r["flags"])]
+    repeats = [r for r in records if "xr_repeat" in flag_names(r["flags"])]
     worst = sorted(records, key=lambda r: r["stages_us"]["pair_total"], reverse=True)[:8]
+    # The runtime's own clock: how many granted display periods one presented
+    # frame consumed. Above 1.0 means the compositor had to repeat a pair.
+    deltas = [r.get("xr_display_delta_us", 0) for r in records
+              if r.get("xr_display_delta_us")]
+    cadence = {"n": len(deltas)}
+    if deltas and period_us:
+        ratios = [d / float(period_us) for d in deltas]
+        cadence.update({
+            "period_us": period_us,
+            "periods_per_frame_p50": round(percentile(ratios, 50), 3),
+            "periods_per_frame_p95": round(percentile(ratios, 95), 3),
+            "periods_per_frame_mean": round(sum(ratios) / len(ratios), 3),
+            "periods_served_by_a_repeat": round(sum(ratios) - len(ratios), 1),
+        })
     return {
         "frames": len(records),
         "stale_frames": len(stale),
         "shed_frames": len(shed),
         "failed_frames": len(failed),
+        "xr_repeat_frames": len(repeats),
+        "cadence": cadence,
+        "pose_age": stats(series(lambda r: r["stages_us"].get("pose_age", 0))),
         "max_pair_age_ms": max((r["pair_age_ms"] for r in records), default=0),
         "guest_sim": stats(series(lambda r: r["stages_us"]["guest_sim"])),
         "pair_total": stats(series(lambda r: r["stages_us"]["pair_total"])),
@@ -134,7 +155,7 @@ def main():
     records = trace.get("records", [])
     save(directory, "frame_trace.json", result)
     write_csv(directory, records)
-    summary = summarize(records)
+    summary = summarize(records, trace.get("target_period_us") or 0)
     summary["enabled"] = result["enabled"]
     summary["ring_count"] = result["count"]
     summary["ring_dropped"] = result["dropped"]
@@ -153,7 +174,8 @@ def main():
 
     print(json.dumps({k: summary[k] for k in
                       ("frames", "stale_frames", "shed_frames", "failed_frames",
-                       "max_pair_age_ms", "pair_total", "xr_wait_frame")}, indent=2))
+                       "xr_repeat_frames", "max_pair_age_ms", "cadence", "pose_age",
+                       "pair_total", "xr_wait_frame")}, indent=2))
 
 
 if __name__ == "__main__":
