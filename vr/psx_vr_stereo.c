@@ -67,6 +67,9 @@
 #include "cpu_state.h"
 #include "psx_cycles.h"
 #include "vr_pose_math.h"
+/* The guest sub-stages this hook brackets (PSX_TRACE_GAME_*) and the record the
+ * runtime writes them into. See psx_mod_frame_trace_stage_begin. */
+#include "frame_trace.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -427,6 +430,16 @@ static PSXModRenderView g_eye_view[2];
 static uint32_t g_stereo_eye;
 static int g_head_frustum;
 
+/* Frame-trace guest sub-stages: which call of the per-eye replay is costing.
+ * PSX_FRAME_TRACE is read once, so a normal launch pays one flag test per guest
+ * call and nothing else; the runtime also refuses these spans outside a traced
+ * stereo eye, so a HUD capture's replay can never write them. */
+static int g_trace_spans;
+#define VR_SPAN_BEGIN(stage) \
+    do { if (g_trace_spans) psx_mod_frame_trace_stage_begin(stage); } while (0)
+#define VR_SPAN_END(stage) \
+    do { if (g_trace_spans) psx_mod_frame_trace_stage_end(stage); } while (0)
+
 /* Measured SLUS-00974 tree: bbox shorts at +0/+6, leaf count at +12,
  * PVS masks at +16/+20, children +24/+32/+28; native output queue has
  * 1000 words before 800AB140. Preflight everything before writing guest RAM.
@@ -575,12 +588,14 @@ static int vr_draw_scene(CPUState* cpu, const PSXModRenderPass* pass) {
     /* Set the game's current draw environment without PutDispEnv or a wait.
      * Then clear the entire pass rect: untouched baseline pixels cannot hide
      * missing coverage in the first replay image. */
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_ENV);
     vr_guest_call(cpu, 0x80017348u, ctx + 16u + 184u * index, 0, 0, ra);
     psx_mod_write_word(0x1f801810u, 0x02000000u);
     psx_mod_write_word(0x1f801810u, ((uint32_t)pass->y << 16) | pass->x);
     psx_mod_write_word(0x1f801810u, ((uint32_t)pass->h << 16) | pass->w);
-    if (g_pass_draw == 2) return 1;
+    if (g_pass_draw == 2) { VR_SPAN_END(PSX_TRACE_GAME_ENV); return 1; }
     vr_guest_call(cpu, 0x80050548u, psx_mod_read_word(0x8009d638u), 0, 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_ENV);
     if (g_pass_draw == 3) {
         /* Resolve the level callback's entity from the current scene list.
          * Do not pin the observed slot-1 entity address. */
@@ -592,16 +607,22 @@ static int vr_draw_scene(CPUState* cpu, const PSXModRenderPass* pass) {
         }
         if (entity < 0x80000000u || entity >= 0x801ff000u ||
             psx_mod_read_word(entity + 880u) != 0x80053c20u) return 0;
+        VR_SPAN_BEGIN(PSX_TRACE_GAME_TRAVERSE);
         vr_guest_call(cpu, 0x80053c20u, entity, ctx, 0, ra);
+        VR_SPAN_END(PSX_TRACE_GAME_TRAVERSE);
+        VR_SPAN_BEGIN(PSX_TRACE_GAME_SUBMIT);
         vr_guest_call(cpu, 0x800172d8u,
                       psx_mod_read_word(ctx + 8728u) + 511u * 4u, 0, 0, ra);
+        VR_SPAN_END(PSX_TRACE_GAME_SUBMIT);
         return 1;
     }
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_WORLD);
     if ((g_draw_mask & 1u) && psx_mod_read_byte(world + 1423u))
         vr_guest_call(cpu, 0x80088368u, ctx, 0, 0, ra);
     if ((g_draw_mask & 2u) && (psx_mod_read_word(world + 1420u) & 0x00ffffffu))
         vr_guest_call(cpu, 0x80089a0cu, ctx, 0, 0, ra);
     vr_guest_call(cpu, 0x80064550u, 0, 0, 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_WORLD);
     unsigned hud_mask=g_menu_flat?0:moh_vr_hud_replacement_mask();
     uint32_t ammo_entries[64],ammo_flags[64],ammo_count=0;
     if(hud_mask&2u) {
@@ -614,17 +635,25 @@ static int vr_draw_scene(CPUState* cpu, const PSXModRenderPass* pass) {
             }
         }
     }
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_TEXT);
     if (g_text_visible && (g_draw_mask & 4u)) vr_guest_call(cpu, 0x8005f86cu, psx_mod_read_word(ctx + 8728u),
                   psx_mod_read_word(ctx + 8732u), 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_TEXT);
     for(uint32_t i=0;i<ammo_count;i++)psx_mod_write_word(ammo_entries[i],ammo_flags[i]);
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_TRAVERSE);
     vr_guest_call(cpu, 0x8006c714u, ctx, psx_mod_read_word(0x8009d64cu), 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_TRAVERSE);
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_ICON);
     if (g_icon_visible && (g_draw_mask & 8u) && !(hud_mask&2u))
         vr_guest_call(cpu, 0x8008019cu, camera, ctx, 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_ICON);
     /* ClearOTagR initializes 512 entries; DrawOTag starts from the final one.
      * 0x800172D8 is DrawOTag, confirmed by its own debug-string producer. */
     if(hud_mask&1u)vr_hud_unlink_health(psx_mod_read_word(ctx+8728u),psx_mod_read_word(ctx+8732u));
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_SUBMIT);
     vr_guest_call(cpu, 0x800172d8u, psx_mod_read_word(ctx + 8728u) + 511u * 4u,
                   0, 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_SUBMIT);
     return 1;
 }
 
@@ -663,7 +692,11 @@ static int vr_stereo_fn(CPUState* cpu, void* user, uint32_t eye) {
     if (!psx_mod_render_view(&g_eye_view[eye])) return 0;
     if (!user) return 0;
     int rendered = vr_draw_scene(cpu, user);
-    if (rendered) vr_laser_draw();
+    if (rendered) {
+        VR_SPAN_BEGIN(PSX_TRACE_GAME_LASER);
+        vr_laser_draw();
+        VR_SPAN_END(PSX_TRACE_GAME_LASER);
+    }
     return rendered;
 }
 
@@ -1284,6 +1317,7 @@ static void vr_entity_activate(void) {
 PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     const char* e;
     if ((e = getenv("PSX_VR_PROBE"))) g_probe = (e[0] && e[0] != '0');
+    if ((e = getenv("PSX_FRAME_TRACE"))) g_trace_spans = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_TARGET"))) g_target = (uint32_t)strtoul(e, NULL, 0);
     if ((e = getenv("PSX_VR_AXIS"))) g_axis = atoi(e);
     if ((e = getenv("PSX_VR_OFFSET"))) g_offset = (int32_t)strtol(e, NULL, 0);
