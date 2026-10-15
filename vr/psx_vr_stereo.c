@@ -846,6 +846,17 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
 #endif
             moh_vr_hud_prepare();
         }
+        /* Frame-trace annotation (PSX_FRAME_TRACE): with a headset the runtime
+         * opened this frame's record in psx_mod_openxr_begin, so a scene/state
+         * change is tagged on the frame it happens. Desktop stereo opens its own
+         * record later, where this is a no-op. */
+        if (g_openxr) {
+            static int prev_flat = -1, prev_mp = -1;
+            if (g_menu_flat != prev_flat || (int)g_scene_mp != prev_mp) {
+                prev_flat = g_menu_flat; prev_mp = (int)g_scene_mp;
+                psx_mod_frame_trace_note(g_menu_flat ? "menu" : "scene");
+            }
+        }
         g_in_pass = 1;
         int rendered = psx_mod_render_stereo(cpu, &frame, vr_stereo_fn, &pass);
         if (rendered) g_stereo_success++;
