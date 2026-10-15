@@ -66,7 +66,9 @@ if ($Headless) {
 $vrRoot = Split-Path $PSScriptRoot -Parent
 $vrBuild = Join-Path $vrRoot $BuildDirectory
 $vrExe = Join-Path $vrBuild 'Medal_of_Honor__Recompiled.exe'
-if (-not $Build -and -not $WristHud -and -not $WristHudTest -and -not $PSBoundParameters.ContainsKey('BuildDirectory') -and (Test-Path -LiteralPath (Join-Path $vrRoot 'Medal_of_Honor__Recompiled.exe'))) {
+# A packaged release has its executable at the root, with no build directory.
+# Prefer an existing selected build; otherwise use the packaged executable.
+if (-not $Build -and -not (Test-Path -LiteralPath $vrExe) -and (Test-Path -LiteralPath (Join-Path $vrRoot 'Medal_of_Honor__Recompiled.exe'))) {
     $vrExe = Join-Path $vrRoot 'Medal_of_Honor__Recompiled.exe'
 }
 

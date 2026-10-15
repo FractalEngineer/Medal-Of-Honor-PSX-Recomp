@@ -4,8 +4,11 @@ This is a Windows x64 testing release. Flat play is the default; VR is optional.
 Quest 3 through Virtual Desktop with VDXR is the tested headset/runtime setup;
 SteamVR/OpenXR also renders correctly. Oculus / Meta Quest Link is untested.
 
-v0.1.4 adds a barrel laser sight and one-stick aiming for the mounted machine
-gun, and swaps the stick clicks (left clicks jump, right clicks crouch).
+v0.1.5 adds the original HUD anchored to your hands and always facing your head,
+a desktop spectator mirror, Luger tracking, and faster smooth turning. Left stick
+click jumps; right stick click toggles crouch. The VR launchers enable the hand HUD
+by default and keep PS1 dithering off for a clean headset image.
+v0.1.4 added a barrel laser sight and one-stick aiming for the mounted machine gun.
 v0.1.3 added tracking profiles for all ten supplied weapons, accepted
 visually in the Quest 3 / VDXR batch on 2026-10-06. `BUILD_INFO.json` identifies
 the exact source commit and executable hash.

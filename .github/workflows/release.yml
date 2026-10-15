@@ -712,10 +712,12 @@ jobs:
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
           # Quoted: titles may contain ':' (e.g. "Marvel vs. Capcom: …").
-          name: "Medal of Honor Recompiled ${{ needs.prepare.outputs.tag }}"
+          name: "${{ needs.prepare.outputs.tag }} - Native VR Alpha"
           files: |
             dist/moh-*.zip
-          generate_release_notes: true
+          body_path: docs/reverse/VR_RELEASE_V${{ needs.prepare.outputs.version }}.md
+          generate_release_notes: false
           fail_on_unmatched_files: true
           target_commitish: ${{ github.sha }}
-          prerelease: true
+          prerelease: false
+          make_latest: true
