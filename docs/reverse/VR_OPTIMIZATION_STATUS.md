@@ -959,6 +959,36 @@ rebuild the recompiler, recompile the shards, then read the ring tail (target: w
 interp's 135) and the A/B pair times for the cost. Nothing in that path touches static generated code, so the
 baseline stays comparable.
 
+**The budget was implemented, and its real cost turned out to be the cache tag, not the check.** The emitter
+change is small and env-gated: with `PSX_IRQ_CHECK_BUDGET=<guest cycles>` set at generate time, a check is
+also emitted inside a block once the accumulated cost since the last such check crosses the budget, at an
+instruction boundary that is not a delay slot; default 0 emits byte-identical code, and the recompiler's own
+tests pass (10 passed). It is preserved on framework branch `vr-irq-check-budget` (commit `89dade95`).
+
+Three costs came out of trying to measure with it, and they matter more than the check itself.
+
+1. Any emitter change moves the codegen source hash, so the overlay cache tag moves with it (`1b6950cb` to
+   `25935d6f` here). Every existing shard is stale by construction, so the route needs a **full re-capture**
+   under the new tag, not just a recompile. The capture file in the tree is a subset: compiling it built 21
+   shards where the shipped set is 67, and the full set came from a longer session.
+2. Bumping the tag also broke the session: with the new tag the runtime no longer loads slot 1 (the
+   harness's probe load returns `last_ok: 0` with no shards present at all, so it is not shard-related).
+   The savestate is bound to the build the shards belong to, which makes an emitter change the opposite of a
+   cheap experiment on this title.
+3. Building refreshes the framework's `overlay_toolchain/` mirror (53 modified files plus 49 new ones here),
+   so a clean-tree claim needs `git -C psxrecomp checkout -- overlay_toolchain` and
+   `git clean -fdq overlay_toolchain` after any build.
+
+The workspace is restored: framework back on `59c3fb3d` with the change safe on its branch, tag back to
+`1b6950cb` with its 67 shards, and a verification run reaches frame 186 with the ring populated.
+
+**Recommendation, therefore: take the tail, do not pay for the budget.** The measured tail is 4 deliveries
+of 294 above 1,024 cycles, worst 3,059 (0.09 ms), with no gates anywhere and the guest continuing correctly
+from a different pc; the price of removing it is a full re-capture plus a fresh savestate on top of a
+forwarded check per budget spent, which is a large fraction of what the route buys. The budget stays on its
+branch for whenever a re-capture is cheap anyway. Next step is the campaign's own acceptance for the route
+as it stands: pixel compare at a fixed guest cycle against the current baseline, then the headset look.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
