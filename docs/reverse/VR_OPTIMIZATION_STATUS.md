@@ -816,6 +816,20 @@ publication asymmetry in `psx_cyc.h` (the shard build compiles `psx_cyc_bb_defer
 compiled game code defers per block and the interp charges per instruction) stays the leading candidate,
 now with a reference that can be trusted.
 
+**First bracket from the accounting diff.** Recording frames 239 and 240 in both backends with
+shedding pinned: at the last recorded access of frame 239 the shard is 14 cycles *behind* the interp
+(24327394526 against 24327394540) and at the first access of frame 240 it is 6 cycles *ahead*
+(24327394594 against 24327394588), so the relative gain across that window is 20 cycles and the window
+is bracketed by pc `0x80010EE0` (shard-executed game code) and the vblank ISR entry at pc `0x27D4`.
+The ordered streams also differ in *delivery order* already inside frame 239: identical for 4047
+accesses, then one backend is still in game code while the other is saving the interrupted context.
+That is why the per-frame fingerprint columns can match while the ordered stream does not, and it
+reprices the earlier reading: the columns are per-frame sets, the recorder is a sequence, so the fork's
+first *countable* effect (frame 240, three extra accesses) is later than its first *observable* effect.
+Next: arm `PSX_CYC_WATCH` region anchors across that window (`PSX_CYC_WATCH="0xA-0xB"`,
+`PSX_CYC_WATCH_N`) in both backends and compare the charged deltas to name the block, then the
+instruction.
+
 So the route's win is measured and its fidelity verdict is in: the compiled shards fork the guest from
 frame 240 on a **six-cycle phase** against the interpreted path, with the kernel's interrupted context
 saved differently, reproducible once the pair policy is pinned (`PSX_STEREO_SHED=0`, without which this
