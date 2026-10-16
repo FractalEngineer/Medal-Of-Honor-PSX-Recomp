@@ -849,6 +849,29 @@ comment at `dirty_ram_interp.c:86`), `PSX_CYC_WATCH_N` high enough to cover seve
 the per-frame entry cycles. A constant few-cycle difference there is the interrupt-delivery granularity
 and nothing else, and it decides whether the fix is in the emitted check sites or an accepted phase.
 
+**And the offset is a pure guest-clock phase, proven by the timer reads.** The recorder's `mmior` stream
+(device *reads*, which no fingerprint column covers) shows the first real difference at read 11 of frame
+240: `0x1F801120`, Timer 2's counter, at the same pc `0x80023F38`, shard `0x00000885` against interp
+`0x0000087F`, exactly **6** apart. Every later Timer 2 read differs by exactly 6 as well
+(`0x00000D00`/`0x00000CFA`, `0x00000D70`/`0x00000D6A`, `0x00000E34`/`0x00000E2E`), while everything that
+is not clock-derived is identical: `0x1F801070` I_STAT, `0x1F801074` I_MASK, `0x1F801044` and
+`0x1F80104A` SIO, `0x1F801814` GPU status, all at the same pcs and the same values. So the two backends
+execute the same code, see the same device state, and charge the same cycles per span, and the entire
+difference is that the guest's own clock reads 6 higher at the same instruction in the shard. That is the
+whole fork: this title's kernel reads a timer, its interrupted context carries the difference, and the
+frame's access count follows.
+
+The origin is still open but tightly bounded: the rate is identical (the traversal span above), the
+absolute cycle at every frame boundary is identical, and the offset appears as a 20-cycle swing across
+one frame boundary (14 behind at the last access of frame 239, 6 ahead at the first of frame 240). With
+the charge rate equal, the offset has to be created by where the runtime's own frame flip and pacing
+land relative to guest execution rather than by any per-instruction charge. The idle-loop cycle skip is
+not it by default: it is opt-in (`psx_cycles.c:569`, `PSX_IDLE_SKIP=1` or the `idle_skip` command), so a
+default run does not have it. Next measurement: watch the guest cycle around the flip itself,
+`PSX_CYC_WATCH="0x27BC"` single-anchor at the vblank ISR entry plus the `frame_fingerprint` `cyc` for the
+same frames, and read whether the runtime advances the guest clock by a different amount in the two
+backends before the guest resumes.
+
 So the route's win is measured and its fidelity verdict is in: the compiled shards fork the guest from
 frame 240 on a **six-cycle phase** against the interpreted path, with the kernel's interrupted context
 saved differently, reproducible once the pair policy is pinned (`PSX_STEREO_SHED=0`, without which this
