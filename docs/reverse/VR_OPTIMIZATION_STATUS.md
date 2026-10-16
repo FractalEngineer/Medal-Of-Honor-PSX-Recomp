@@ -989,6 +989,23 @@ forwarded check per budget spent, which is a large fraction of what the route bu
 branch for whenever a re-capture is cheap anyway. Next step is the campaign's own acceptance for the route
 as it stands: pixel compare at a fixed guest cycle against the current baseline, then the headset look.
 
+**The acceptance's correctness half ran, and what it finds is ordering-level, not state-level.** Four
+fingerprint windows with the pair policy pinned and the load seeded at boot, compared by
+`vr/compare_frame_fingerprints.py` over 300 frames from the load frame: the same-backend control pair is
+byte-identical on **both** sides (interp equal, shard equal), so the cross-backend reading is readable.
+Against that reference, the shard is byte-identical to the interp for the **first 238 frames**, and from
+relative frame 238 (guest frame 240, where the late IRQ lands) **62 of 300 frames** differ. The differing
+columns are `ws` and `wr` in all 62, `wc` in 58, `pc` in 61, and `sp`/`sc` in 24 each. **`mmio`, `mc`, `qc`
+and `cyc` never differ**, so device writes and the cycle timeline stay equal throughout, and the magnitudes
+are one guest write per frame (`wc` 3,058,456 against 3,058,455) plus at most a dozen scratchpad accesses
+(`sc` 3,243,271 against 3,243,283). That is the delivered-late-interrupt signature and nothing else: the same
+writes happen, one of them belongs to a different frame, and no device state or timing column moves.
+
+Read strictly, the campaign's bar for this route ("byte identity of the pair is the right bar") is met for
+238 frames after the load and not afterwards, exactly where the delivery lag begins. The remaining item is
+the visual tiebreak, the accepted look on the headset (no missing tiles, no head-turn pop-in, no near-player
+floor gaps), which the fingerprint columns cannot speak to.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
