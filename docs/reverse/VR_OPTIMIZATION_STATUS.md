@@ -1006,6 +1006,27 @@ Read strictly, the campaign's bar for this route ("byte identity of the pair is 
 the visual tiebreak, the accepted look on the headset (no missing tiles, no head-turn pop-in, no near-player
 floor gaps), which the fingerprint columns cannot speak to.
 
+**The visual half passed headlessly, with byte-identical eyes at matched guest cycles.** The mirror harness
+(`vr/run_vr.ps1 -Headless -HeadlessMirrorCheck -Verify -Slot 0`, shedding pinned) was run twice, once with the
+shard directory moved aside and once with it present, and both runs are `passed: true`: advancing stereo
+projection submissions, application focus, nonblank compositor images, and zero `verify_mismatch`,
+`vram_leaks`, `nesting_repairs` and `watchdog` in `render_pass_stats.json`. Both runs captured the **same two
+guest pairs**, `p000033` at guest cycle 4,140,319,241 and `p000034` at 4,141,453,436, with identical metadata
+(pair id, 2560x1200, the same view offsets). All six PNGs, left, right and the composed SBS for both pairs,
+are **SHA256-identical** between the two runs. Their 96-frame fingerprint receipts differ in one frame (a
+one-write boundary shift, `wc` off by one at frame 11), the same ordering-level signature as the 300-frame
+window.
+
+The two runs demonstrably executed differently, so this is not a comparison of a run against itself:
+`stereo_stats` reports the route run at `avg_pair_ms` 19.107 against 20.763 and `checkpoint_ram_bytes`
+111,149,056 against 115,343,360. (Both are far above the 11.111 ms budget because mirror mode adds the dumps,
+so that is a relative signal, not the campaign's benchmark.)
+
+So the correctness bar is met at pixel level at a fixed guest cycle: the route changes which backend executes
+code, and the rendered stereo output at matched cycles is byte-for-byte the same. The residual is the
+write-attribution shift, which changes no pixel in the captured pairs. The accepted look on the headset
+remains, which is the owner's run.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
