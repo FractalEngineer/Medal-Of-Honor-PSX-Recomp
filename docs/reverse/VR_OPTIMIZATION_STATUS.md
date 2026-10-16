@@ -46,7 +46,7 @@ Branch history, newest first, framework and parent commit per step:
 | PR 3 | Reuse stereo checkpoints safely | Done, exit criteria measured. Gain: `eye_begin_r` 143 to 36 us p50. |
 | PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started, and the measurements now say why it cannot pay for itself as scoped. |
 | PR 4 | GPU capture and submission optimization | Not started as a package, and its first target is now mostly worked: the wrist HUD capture (3.19 ms p50 headless, 2.0 to 2.6 ms on the headset) had its stage cost located, its readback merged, and its checkpoint share removed. What remains on it is change-gated capture, which the headset data puts at 43 us of a slow frame. |
-| PR 6 | Mission/sector hotspots | Attributed four layers deep and then handed off: the replay is split by call, the stretch is 97.8% `game_traverse`, the hook's own selection inside it is 0.9%, and the guest work that is left is the dirty-RAM interpreter running this game's overlay code (556,199 instructions per pair, 66% of the frame). The overlay cache was compiled and measured: interpreter share down to 0.517 to 0.526, interpreted instructions per pair down 46.2%, settled pair time down 12 to 14%, every replay dispatch entry off the interpreter. Its fidelity then failed, readably: on the boot-seeded protocol two shard runs are identical across 393 frames and shard against interp forks at frame 240, first at a RAM write from store PC `0x27DC` into the OpenBIOS kernel save frame at `0x909C`, the interrupted `$v1`. The mechanism is a cycle publication schedule split, site `psx_cyc.h` under `PSX_OVERLAY_DLL_BUILD`; see the Layer 3 section above. Framework work owns it and the next experiment is one change plus the seeded A/B; the in-campaign levers stay the fallback. |
+| PR 6 | Mission/sector hotspots | Attributed four layers deep and then handed off: the replay is split by call, the stretch is 97.8% `game_traverse`, the hook's own selection inside it is 0.9%, and the guest work that is left is the dirty-RAM interpreter running this game's overlay code (556,199 instructions per pair, 66% of the frame). The overlay cache was compiled and measured: interpreter share down to 0.517 to 0.526, interpreted instructions per pair down 46.2%, settled pair time down 12 to 14%, every replay dispatch entry off the interpreter. Its fidelity is **undecided**: the boot-seeded A/B first read as a shard fork at frame 240 (first divergent RAM write `0x0000909C` from store PC `0x000027DC`, the OpenBIOS exception prologue saving the interrupted `$v1`), and that attribution is retracted because the same-backend control was only run on the shard side. Run on both sides, the shard pair is bit-identical at frame 240 (18321 accesses, value and cycle) while the **interp pair is not** (diverge after 13690 accesses, same rewind sites, cycle base 1131 apart), so the reference was moving and nothing is attributed to the shards either way. Next is a control, not a fix: read the shed and replay counters across an interp pair, then re-run the A/B with the stereo policy pinned. The in-campaign levers stay the fallback while the route stays off. |
 
 ## Environment
 
@@ -785,44 +785,49 @@ attempting to arm frame 240 from the probe recorded zero accesses because the fr
 passed, and seeded at boot it recorded 18404. Everything below is on that protocol, which needs no
 probe load, no resume and no input.
 
-**The verdict from the seeded protocol.** Two runs of the shard backend agree on every column across
-393 compared frames: their windows start one frame apart and match exactly at a one-frame shift,
-which is a window offset and not a divergence. Shard against the interp reference then forks at
-**frame 240**, in `wc`, `ws`, `wr`, `pc`, `sp` and `sc`, with `cyc`, `qc`, `mmio` and `mc` equal
-throughout. Layer 2 on that frame names the first divergent RAM write: **`0x0000909C`, from the same
-store PC `0x000027DC` in both runs, shard `0xFFFFFCBC` against interp `0x00000EC6`**, with the
-frame's first access six cycles apart and index 4 differing in value again at the same pc. So the
-shards do fork this game's guest, in the write stream rather than in the cycle budget.
+**The verdict is retracted, because the reference was never controlled.** Two runs of the shard
+backend agree on every column across 393 compared frames, and shard against the interp reference
+forks at **frame 240**, in `wc`, `ws`, `wr`, `pc`, `sp` and `sc` with `cyc`, `qc`, `mmio` and `mc`
+equal. Layer 2 named `0x0000909C` from store PC `0x000027DC` as the first divergent RAM write, and
+Layer 3 read that store sequence as the OpenBIOS exception prologue (`k0 = *(*(0x108)) + 8`, then
+`SW $at/$v0/$v1`, `SW $ra,124($k0)`), so the divergent word is the interrupted context's `$v1` in the
+kernel save frame at `0x9090`, with the shard six cycles ahead at every recorded access of the frame
+while the absolute cycle at every frame boundary is equal. All of that reproduces in its own run.
+None of it is attributable to the shards, because the same-backend control was only ever run on the
+shard side.
 
-**Layer 3 named the mechanism.** `0x27B0`..`0x2820` is the OpenBIOS exception prologue,
-`k0 = *(*(0x108)) + 8` then `SW $at/$v0/$v1` and `SW $ra,124($k0)`, so `0x9090` is the kernel save frame
-and the divergent word `0x909C` is the **interrupted context's `$v1`**; index 4 is `$v1` again after the
-callee returns and differs by `0x68`. The shard is a **constant 6 cycles ahead at every recorded access
-of frame 240** (594/595/596/604/645/676/677/678 against 588/589/590/598/639/670/671/672) while the
-absolute cycle at every frame boundary is **equal** (the fingerprint's `cyc` column, every frame), so
-this is a cycle *publication schedule* difference and not a cycle budget difference. The site is
-`runtime/include/psx_cyc.h`: under `PSX_OVERLAY_DLL_BUILD`, which is how the shards are built,
-`psx_cyc_bb_defer_begin()` compiles to a **no-op** and the shard's charges publish at host callback edges
-through `overlay_flush_cycles()`, while compiled game and BIOS code takes the `g_psx_cyc_bb_defer`
-per-block defer and flushes at `PSX_CYC_BATCH_SOFT` (64) or a device deadline, and the dirty-interp
-charges per instruction. Three publication schedules, one guest: `psx_get_cycle_count()` adds the pending
-batch, so totals match at barriers, but a guest instruction that observes a clock or a device register
-inside a disagreeing window sees a value a few cycles off. This kernel reads timer 1 (`0x1F801110` sits
-beside the divergence) on the interrupt path and saves the interrupted context, which is how the
-difference becomes guest-visible. The same comment block records this exact class from netplay: a
-few-cycle `clk/tim` fork with `cpu/ram` equal, matching with the batch off. Frame 2 shows it earlier and
-more plainly: the two backends are identical in value **and cycle** for 11142 recorded accesses and
-re-run the frame identically (rewinds `-7502`, `-7502`, `-637443`), and the first difference is the eye
-re-run's restore point, `24193275544` against `24193274413`, **1131 cycles** further back, after which
-the re-run executes different code (`0x80015DD4` against `0x80090B8C`). The framework's record of the
-recipe, the measurements and the next experiment is in `psxrecomp/tools/divergence/README.md`.
+The control that decides it, same protocol and same shard set, ordered frame-240 recordings:
 
-So the route's win is measured and its fidelity verdict is now in as well: the shards fork the guest
-240 frames into gameplay, in the write stream, because the shard build's cycle charges publish on a
-different schedule from the interpreted path. One experiment decides it: give the overlay build the
-same publication schedule as compiled game code (or as the interp), then re-run the seeded A/B and
-require frame 240 to come back clean in both the value columns and the cycle stamps. Until then the
-route cannot be turned on and the in-campaign levers stay the fallback. To turn it off, move
+| pair | result |
+| --- | --- |
+| shard run 1 against shard run 2 | identical, 18321 accesses, value *and* cycle |
+| interp run 1 against interp run 2 | **not identical**, matching for 13690 accesses then diverging |
+| shard against interp | matching for 13652 accesses then diverging |
+
+All three divergences have the same shape and land on the runtime's mid-frame guest re-runs: a `ramw`
+at PC `0x80090B8C` on one side against an `mmio` read of GPU status at PC `0x80015DD4` on the other,
+with the cycle base after the rewind **1131 cycles** apart. The shard backend is self-consistent and
+the interp backend is not, so the frame-240 difference measures the reference moving, not the shards.
+The publication-schedule site found earlier (`psx_cyc.h` compiling `psx_cyc_bb_defer_begin()` to a
+no-op under `PSX_OVERLAY_DLL_BUILD`) is still a real asymmetry worth knowing, but it is no longer a
+supported cause of a shard defect and is not to be fixed on this evidence.
+
+**The mechanism to test next, not to assume.** The runtime re-runs the guest inside a frame (the eye
+replay, visible as cycle rewinds of `-7502`, `-7502`, `-637443`) and sheds stereo work when the frame
+budget is tight (PR 2 and the shed latch fix). Both decisions are host-timing dependent, so a slower
+backend can make different ones from run to run: the interp pair differs, the faster shard pair does
+not, and every divergence lands on a rewind boundary. The test is to read the runtime's own shed and
+replay counters across an interp pair inside one session, then re-run the A/B with the stereo policy
+pinned. Until that is done, no cross-backend A/B on this title is readable.
+
+So the route's win is measured and its fidelity is **undecided again**: the frame-240 fork was the
+interp reference moving, not the shards, so nothing yet says the shards are unfaithful and nothing
+says they are faithful either. One test decides the next step and it is a control, not a fix: read
+the runtime's shed and replay counters across an interp pair inside one session, then re-run the
+seeded A/B with the stereo policy pinned. If the interp becomes self-consistent, the route can be
+judged; if it does not, the acceptance test is the thing that needs work before the shards can be
+judged at all. The in-campaign levers stay the fallback meanwhile, and the route stays off. To turn
+it off, move
 `build-release/cache/SLUS-00974` aside. Everything needed to reproduce all of this is in the tree:
 `build-release/overlay_captures.json`, the cache directory, the compile command above, the seeded
 protocol, and the receipts under `analysis/vr-proof/`.
@@ -870,16 +875,14 @@ protocol, and the receipts under `analysis/vr-proof/`.
      the replay's dispatch entries gone from the interpreter. The acceptance then failed in a way
      that is now readable: with the seeded protocol (`PSX_LOAD_SLOT=1`), two runs of the shard
      backend are identical on every column across 393 frames while shard against interp forks at
-     frame 240, first at the RAM write from store PC `0x000027DC` to `0x0000909C`, which Layer 3
-     identified as the OpenBIOS exception prologue saving the interrupted `$v1` into the kernel save
-     frame at `0x9090`. The mechanism is a cycle *publication schedule* difference: the shard is a
-     constant 6 cycles ahead at every recorded access of the frame while the absolute cycle at every
-     frame boundary is equal, and `psx_cyc.h` compiles `psx_cyc_bb_defer_begin()` to a no-op under
-     `PSX_OVERLAY_DLL_BUILD`, publishing shard charges at host callback edges instead of through the
-     per-block defer that compiled game code and the interp use. Framework side and specific: make the
-     shard's publication schedule match, then re-run the seeded A/B requiring frame 240 clean in both
-     the value columns and the cycle stamps. Until that lands the route cannot be turned on, and the
-     in-campaign levers below stay the fallback. To turn the route off, move
+     frame 240, first at the RAM write from store PC `0x000027DC` to `0x0000909C`, the OpenBIOS
+     exception prologue saving the interrupted `$v1`. That attribution is retracted: with the
+     same-backend control run on both sides, the shard pair is identical at frame 240 (18321
+     accesses, value and cycle) and the interp pair is not (diverging after 13690 accesses at the
+     same rewind sites with the cycle base 1131 apart), so the reference was moving. Next is the
+     control that pins that down (shed and replay counters across an interp pair, then the A/B with
+     the stereo policy pinned), not a shard fix. The route stays off and the in-campaign levers
+     below stay the fallback. To turn the route off, move
      `build-release/cache/SLUS-00974` aside.
   5. **Then the change, held to its acceptance.** Pruning or a cheaper per-object path must
      clear the pixel-compare harness at a fixed guest cycle against the current baseline and
