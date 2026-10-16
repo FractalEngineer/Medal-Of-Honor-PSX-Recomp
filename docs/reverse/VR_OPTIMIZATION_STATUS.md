@@ -1027,6 +1027,32 @@ code, and the rendered stereo output at matched cycles is byte-for-byte the same
 write-attribution shift, which changes no pixel in the captured pairs. The accepted look on the headset
 remains, which is the owner's run.
 
+**A scripted look sweep shows the route renders identical still frames and diverges under camera motion.**
+The headset report was geometry shifting and stretching while moving, plus empty tiles looking down and
+near-plane floor gaps. Both are view and motion dependent, so the look was scripted instead of relying on a
+headset: launch headless on the same save with the load seeded at boot, drive the look axes with
+`openxr_input_override`, and take one screenshot per pose, twice, once with the shards present and once with
+them moved aside (`analysis/vr-proof/vr_sweep.py`, receipts in `sweep_route/` and `sweep_baseline/`).
+
+Nine poses, same script both times. Five are **byte-identical** between the two backends: `level`,
+`bob-down-a`, `bob-down-b`, `look-down`, `look-up`. The four that differ are the ones with **camera motion**:
+`turn-left` (7,752 pixels differing by more than 24), `turn-right` (12,191), and `level-again` (3,271, the
+turn residue after release). In every differing case the difference is spread across the whole frame rather
+than localized, which is the signature of an edge-wise view offset, not of a deformed mesh.
+
+So the route renders the same still frame and a different moving one. That is a real, reproducible,
+route-specific motion difference, and it corrects the method: "byte identity of the pair" was checked on
+pairs captured in a scene at rest, and a still-pair check cannot see this at all. The bar has to include
+pairs captured while the camera moves.
+
+Harness facts worth keeping: `openxr_input_override`'s `ry` axis does nothing here (five pitch cases share
+one image and the pad stayed centred) while `rx` works, and the game's slot 1 save is
+`state_8001DFD4_slot01.pst`, the save with the roof deformation.
+
+**Next measurement.** Dump the camera/player state per pose in both runs and diff the numbers. If the view
+angles differ under identical scripted input and identical frame counts, the route is changing the camera
+math, and the camera code is overlay code, which is exactly what the shards replace.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
