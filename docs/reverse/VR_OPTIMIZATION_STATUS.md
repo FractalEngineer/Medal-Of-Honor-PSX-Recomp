@@ -1152,6 +1152,14 @@ recompiled; the alternative is to drop the flags from measurement runs. The harn
 choice explicit rather than silent, and takes a baseline mode for runs with the shards deliberately moved
 aside.
 
+**The capture is the same with those flags, so the mismatch is not just the capture.** A recapture with
+`-WeaponPoseDiagnostic -WristHud -WristHudReplace` present produced the same 21 entries and the same single
+checked region, and the loader still reported `file_found` 0. So the flag variant does not add a matching
+capture for the region the loader checks. Either that region is not among the 21, or the live content
+differs from the captured content in a way the recapture does not change. That is the next thing to
+determine, and it is cheap now: run the loader check with and without the flags and print `checked`
+alongside `file_found` in both, rather than only the count.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late

@@ -61,8 +61,12 @@ launch = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
           "-File", str(ROOT / "vr" / "run_vr.ps1"), "-Headless"]
 if SLOT != "none":
     launch += ["-Slot", SLOT]
+# The HUD replacement changes guest code, so registration only matches a capture taken with the same
+# flags present. Pass `mods` to capture that variant.
+if "mods" in sys.argv:
+    launch += ["-WeaponPoseDiagnostic", "-WristHud", "-WristHudReplace"]
 launch += ["-BuildDirectory", "build-release", "-Seconds", "600"]
-log = OUT / "harness.log"
+log = ROOT / "analysis" / "vr-proof" / "recapture" / ("harness_mods.log" if "mods" in sys.argv else "harness.log")
 with log.open("w") as fh:
     proc = subprocess.Popen(launch, cwd=str(ROOT), env=env, stdout=fh, stderr=subprocess.STDOUT)
 
