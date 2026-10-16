@@ -1053,6 +1053,29 @@ one image and the pad stayed centred) while `rx` works, and the game's slot 1 sa
 angles differ under identical scripted input and identical frame counts, the route is changing the camera
 math, and the camera code is overlay code, which is exactly what the shards replace.
 
+**And the guest-side view matrices say where it is not: not the camera, but movement.** The same sweep was
+re-run with the level producer's GTE entries recorded per pose (`ra` `0x8008BF84`, the numbers
+`check_movement.snapshot` reads: `RT`, `TR`, `H`). In every case without forward movement the two backends'
+view matrices are **identical to the last digit**: `level`, `bob-down-a`, `bob-down-b`, `look-down`,
+`look-up`, `turn-left`, `turn-right` all agree (`RT` `[288,-2,-8242,-52,5140,-2,8208,82,288]` for `level`, and
+`[2316,...]`/`[5972,...]` for the turns). The divergence appears only where the player **moves forward**:
+`bob-mix` (`lx` 707, `ly` 707) and the `level-again` that follows it differ in `RT`, `TR` and `H` outright
+(`H` `-1230` against `2381`, then `3822` against `6854`). So the route agrees with the baseline on the
+camera and disagrees on movement, which puts the difference in guest movement or physics code, and movement
+code is overlay code, exactly what the shards replace.
+
+Two method notes, one of them a correction of my own reading. First, the screenshots in the earlier sweep
+are not a trustworthy instrument on their own: `screenshot_file` returns the last presented frame, and the
+two backends' presentation timing relative to the guest differs, so in animated cases the images can differ
+from capture timing alone. The view matrices above are guest-side and immune to that, which is why they are
+the reading. Second, the camera struct hash differs in every case and means nothing here: the 256 bytes
+follow a pointer that includes volatile fields, and it is not a view signal.
+
+**Next measurement.** Sample the view-matrix series across a scripted forward move in both backends rather
+than one value per pose, and read where the series first parts. Then attribute that guest pc to a shard or to
+the exe through the `.ranges` manifests, and check it against the host-replaced helper list, since a
+host-replaced fixed-point helper is the shape of bug that deforms geometry.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
