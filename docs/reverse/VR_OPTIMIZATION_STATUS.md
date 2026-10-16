@@ -830,6 +830,25 @@ Next: arm `PSX_CYC_WATCH` region anchors across that window (`PSX_CYC_WATCH="0xA
 `PSX_CYC_WATCH_N`) in both backends and compare the charged deltas to name the block, then the
 instruction.
 
+**That ran, and it killed the charge-model candidate.** `PSX_CYC_WATCH="0x6C714-0x64550"` (the
+traversal entry to the world pass, inside the eye replay), 200 traversals, both backends: the charged
+deltas are **identical element for element** (first twelve 567105, 551918, 572089, 551963, 577809,
+558218 and so on, same min and max). So the compiled shard and the interp charge the same cycles for
+the same overlay code, and the per-block-versus-per-instruction hypothesis does not explain the offset.
+The offset therefore sits around the frame boundary and interrupt delivery, which is also where the
+recorder shows its order divergence (frame 239, after 4047 identical accesses). That fits the two
+architectures as they are written: the dirty interp checks interrupts at its gates and "every 4096
+insns internally" (`dirty_ram_interp.c:2610`), while compiled code checks at block edges (the emitted
+`psx_check_interrupts` sites, for example `generated/OpenBIOS_dispatch.c:9073`), so a pending vblank can
+be delivered at a different guest instruction in the two backends and the kernel's save frame then
+records a different interrupted context.
+
+**Next measurement, narrowed.** Compare the cycle at which the vblank ISR is entered, per frame, in both
+backends: `PSX_CYC_WATCH="0x27BC"` as a single anchor (the interp stamps block leaders too, see the
+comment at `dirty_ram_interp.c:86`), `PSX_CYC_WATCH_N` high enough to cover several frames, then read
+the per-frame entry cycles. A constant few-cycle difference there is the interrupt-delivery granularity
+and nothing else, and it decides whether the fix is in the emitted check sites or an accepted phase.
+
 So the route's win is measured and its fidelity verdict is in: the compiled shards fork the guest from
 frame 240 on a **six-cycle phase** against the interpreted path, with the kernel's interrupted context
 saved differently, reproducible once the pair policy is pinned (`PSX_STEREO_SHED=0`, without which this
