@@ -872,6 +872,47 @@ default run does not have it. Next measurement: watch the guest cycle around the
 same frames, and read whether the runtime advances the guest clock by a different amount in the two
 backends before the guest resumes.
 
+**The flip probe found the onset, and it is delivery lag, not extra charge.** `PSX_CYC_WATCH="0x27BC"`
+(the exception entry, which the interp also observes, `dirty_ram_interp.c:3281`) with 282 hits, both
+backends: the vblank entry cycles are **identical for hits 0 through 261**, every vblank from frame 2 to
+frame 238, with the frame boundaries on the same absolute 564,480-cycle grid in both runs. The first
+difference is hit 262: the interval from hit 261 is **96,217 cycles in the shard against 94,092 in the
+interp**, and the very next interval reverses it, 223,652 against 225,767. The two cancel, and the net
+over hits 258 to 270 is **minus 4 cycles**. So the shard takes the same vblank *event* up to about 3,000
+cycles later than the interp in some frames (another lag event of 3,062 shows at hit 269), the interval
+difference is that lag and not charge, and the pairs of intervals net out. The residual tens of cycles
+(plus 10, minus 6, plus 6, minus 8) are the sub-frame remnant, which is what the timer reads expose as 6.
+
+**Where it shows, and where it does not.** In the onset frame's store stream the first divergence is index
+4047: both backends are identical through pc `0x8003DD54` at cycle 24,326,924,151, then the interp's next
+store is the exception save at pc `0x27D4` (cycle 24,326,924,216) while the shard runs on through
+`0x8003DDAC`, `0x8003DDB0`, `0x8003DD10`, writing a display-list walk, and takes the interrupt later. That
+code is **static**, not an overlay: no `.ranges` manifest in the cache lists `0x8003DDxx` or `0x8003E5xx`,
+so those pcs are exe code compiled in both backends. They are where the *delivery* lands, which is exactly
+what a delivery lag moves, and not where anything is charged.
+
+**The fidelity position that leaves.** The two backends' guest clocks are identical at every vblank entry
+for the first 238 frames and the per-frame totals net out to a handful of cycles; the difference is that a
+shard frame can run up to about 3,000 cycles (0.09 ms) past a pending vblank before the check delivers it,
+so the interrupt lands at a different instruction in that frame and the kernel saves a slightly different
+context. That is a sub-frame delivery-timing difference, not a diverging guest state or a diverging rate.
+
+**The check-granularity explanation does not survive the code, either.** The emitter places an interrupt
+check at *every block leader*, with the comment "Include an interrupt check so tight loops (backward
+branches) can service vblank and other hardware interrupts" (`full_function_emitter.cpp:925`), and the
+overlay shim flushes its pending cycle batch *before* forwarding (`overlay_dispatch_preamble.c.inc:48`
+and `:52`), so a shard never holds a stale clock at a check. The checks are also dense: one shard fragment
+carries 19 in 1676 lines, the same order as the static generated code. So the lag does not come from the
+shard's code missing a check or from a deferred batch being invisible at the check.
+
+**Next measurement, and it moves to the scheduler.** The lag has to come from the runtime's own event
+scheduler, since the per-block checks are there and prompt: the guest is advanced in chunks and a device
+event is only noticed at a chunk boundary (`psx_cycles.c` around lines 318 to 370, "no chunk ever skips
+OVER a device event boundary"), and the compiled path's chunked advancement is a different caller from the
+interpreted path's. Instrument that boundary for one lag frame: record `psx_advance_cycles` chunk sizes and
+the device deadline across the frame that shows the 2,125-cycle lag, and read which side notices the event
+late. That is a runtime-side measurement, no guest code involved.
+
 So the route's win is measured and its fidelity verdict is in: the compiled shards fork the guest from
 frame 240 on a **six-cycle phase** against the interpreted path, with the kernel's interrupted context
 saved differently, reproducible once the pair policy is pinned (`PSX_STEREO_SHED=0`, without which this
