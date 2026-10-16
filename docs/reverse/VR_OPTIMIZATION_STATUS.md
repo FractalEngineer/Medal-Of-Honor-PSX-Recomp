@@ -942,6 +942,23 @@ emitter already checks at every block leader "so tight loops (backward branches)
 IRQ does not wait for the block to end. The test is the event ring: the first divergence must move past this
 frame, and the frame-239 store-stream split (index 4047) must disappear, before the route can be turned on.
 
+**The delivery latency is now quantified, and so is the price of fixing it.** Pairing each `ISTAT_RAISE` with
+the `IRQ_DELIVER` that follows it across roughly 250 frames: the interp delivers in 4 cycles at the median, 35
+at p90, worst 135, and never above 256. The shard is identical at the median (5) and p90 (38) and separates
+only in the tail: **4 deliveries of 294 above 1,024 cycles, worst 3,059** (about 0.09 ms).
+`PSX_EVENT_STEP_CONSERVATIVE` changes nothing (same distribution, 290 deliveries). Neither ring contains a
+single `IRQ_GATE`, so the interrupt is never blocked, only unchecked. The route's fidelity delta is therefore
+1.4 per cent of interrupts, bounded by the longest straight-line shard block.
+
+**That also fixes the shape of the fix.** Per-instruction checks would make the shard bit-exact and destroy
+the win, since they are exactly what makes the interp slow. A check *budget* inside long blocks (128 guest
+cycles, say, which is below the interp's own worst case of 135) bounds the tail at the price of one forwarded
+check per budget spent. Accepting it leaves a sub-frame delivery latency in overlay rendering code. The budget
+is the one to price: emit a check when a block's running cycle count crosses the budget in the emitter,
+rebuild the recompiler, recompile the shards, then read the ring tail (target: worst case at or below the
+interp's 135) and the A/B pair times for the cost. Nothing in that path touches static generated code, so the
+baseline stays comparable.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
