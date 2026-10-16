@@ -6,10 +6,10 @@ in the `psxrecomp` branch `vr-perf-pr1-pr2`.
 
 ## Branches and pins
 
-- Parent branch `vr-perf-pr1-pr2`. Framework pinned at **`87a3e822`**, and the parent's
+- Parent branch `vr-perf-pr1-pr2`. Framework pinned at **`0fe8a425`**, and the parent's
   `psxrecomp` gitlink matches it. The parent tip is whatever commit last touched this file:
   naming it here would only be one commit stale, since recording it changes it.
-- Framework branch `vr-perf-pr1-pr2`, tip `87a3e822`.
+- Framework branch `vr-perf-pr1-pr2`, tip `0fe8a425`.
 - One commit per PR, one pin bump per PR, no PRs opened. The parent's
   `psxrecomp` gitlink always matches the framework branch tip used for that build.
 
@@ -30,6 +30,12 @@ Branch history, newest first, framework and parent commit per step:
 | attribution report | | `e416d45` | the split read out of the raw windows |
 | attribution result | | `f7dae7f`, `ad79640`, `00ebe30` | the split, the stretch, and what the shakier session measured as |
 | traversal split | `87a3e822` | `d86a678` | a nested span for the hook's own visibility override |
+| traversal attribution | | `2850982`, `60391fa` | the guest work is the framework's dirty-RAM interpreter |
+| overlay route | | `bafdba9`, `8e4954b` | the overlay cache compiled and measured |
+| load-frame trap | `f5229748` | `ea80e78`, `84c7e07` | the A/B was confounded, and the new saves recorded |
+| confound list | `1cb15cf4` | `63bf323` | no readable verdict until the load seed exists |
+| seeded protocol | `ce7921f6` | `c92f2c5` | boot seeds pin the load; fork at frame 240, first write named |
+| Layer 3 mechanism | `0fe8a425` | `fdeabb1` | publication schedule site, frame 2 corroboration |
 
 ## Work package status
 
@@ -40,7 +46,7 @@ Branch history, newest first, framework and parent commit per step:
 | PR 3 | Reuse stereo checkpoints safely | Done, exit criteria measured. Gain: `eye_begin_r` 143 to 36 us p50. |
 | PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started, and the measurements now say why it cannot pay for itself as scoped. |
 | PR 4 | GPU capture and submission optimization | Not started as a package, and its first target is now mostly worked: the wrist HUD capture (3.19 ms p50 headless, 2.0 to 2.6 ms on the headset) had its stage cost located, its readback merged, and its checkpoint share removed. What remains on it is change-gated capture, which the headset data puts at 43 us of a slow frame. |
-| PR 6 | Mission/sector hotspots | Attributed four layers deep and then handed off: the replay is split by call, the stretch is 97.8% `game_traverse`, the hook's own selection inside it is 0.9%, and the guest work that is left is the dirty-RAM interpreter running this game's overlay code (556,199 instructions per pair, 66% of the frame). The overlay cache was compiled and measured: interpreter share down to 0.517 to 0.526, interpreted instructions per pair down 46.2%, settled pair time down 12 to 14%, every replay dispatch entry off the interpreter. Its fidelity then failed, readably: on the boot-seeded protocol two shard runs are identical across 393 frames and shard against interp forks at frame 240, first at a RAM write from store PC `0x27DC`, with cycles and device columns equal, which reads as an intra-frame cycle-phase difference rather than a wrong instruction. Framework work owns it; the in-campaign levers stay the fallback. |
+| PR 6 | Mission/sector hotspots | Attributed four layers deep and then handed off: the replay is split by call, the stretch is 97.8% `game_traverse`, the hook's own selection inside it is 0.9%, and the guest work that is left is the dirty-RAM interpreter running this game's overlay code (556,199 instructions per pair, 66% of the frame). The overlay cache was compiled and measured: interpreter share down to 0.517 to 0.526, interpreted instructions per pair down 46.2%, settled pair time down 12 to 14%, every replay dispatch entry off the interpreter. Its fidelity then failed, readably: on the boot-seeded protocol two shard runs are identical across 393 frames and shard against interp forks at frame 240, first at a RAM write from store PC `0x27DC` into the OpenBIOS kernel save frame at `0x909C`, the interrupted `$v1`. The mechanism is a cycle publication schedule split, site `psx_cyc.h` under `PSX_OVERLAY_DLL_BUILD`; see the Layer 3 section above. Framework work owns it and the next experiment is one change plus the seeded A/B; the in-campaign levers stay the fallback. |
 
 ## Environment
 
