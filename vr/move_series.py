@@ -26,6 +26,7 @@ from debug_client import connect, send_cmd  # noqa: E402
 ARGS = [a for a in sys.argv[2:]]
 TAG = sys.argv[1]
 INTERP = "interp" in ARGS
+BASE = "base" in ARGS
 NUMS = [int(a) for a in ARGS if a.isdigit()]
 SLOT = NUMS[0] if NUMS else 1
 FRAMES = NUMS[1] if len(NUMS) > 1 else 150
@@ -110,7 +111,14 @@ while cmd("frame")["frame"] < GATE:
 ov_gate = cmd("overlay_loader_status")
 print("gate frame", cmd("frame")["frame"], "overlay:", json.dumps(
     {k: ov_gate.get(k) for k in ("registered", "dispatch_native", "dispatch_interp_fallback")}))
-if ov_gate.get("registered", 0) <= 0:
+# `base` runs with the shards moved aside on purpose, so for those the expectation is inverted.
+if BASE:
+    if ov_gate.get("registered", 0) > 0:
+        proc.kill()
+        raise SystemExit("baseline run has %r shards registered; the route is not off"
+                         % ov_gate.get("registered"))
+    print("baseline mode: no shards registered, expected")
+elif ov_gate.get("registered", 0) <= 0:
     proc.kill()
     raise SystemExit("route not registered (%r): refusing to compare the interpreter with itself"
                      % ov_gate.get("registered"))
@@ -127,6 +135,7 @@ print("hold forward from frame", start_frame)
 # stream per frame finds the first frame the backends disagree on AND names the code responsible,
 # which is the attribution the manifests then resolve to a shard or the exe.
 KEEP = ("ra", "RT", "TR", "H", "OFX", "OFY", "V0", "V1", "V2", "SZ")
+GRID = 5   # sample only on a fixed frame grid so both backends land on identical frame numbers
 rows = {}
 f = start_frame
 target = start_frame + FRAMES
@@ -134,7 +143,9 @@ shape_printed = False
 while f < target:
     wait_frames(1)
     f = cmd("frame")["frame"]
-    r = cmd("gte_ring_dump", count=256, newest=1, frame=f, render=0)
+    if f % GRID:
+        continue
+    r = cmd("gte_ring_dump", count=512, newest=1, frame=f, render=0)
     ents = sorted(r.get("entries", []), key=lambda e: e["seq"])
     if ents and not shape_printed:
         print("entry keys:", sorted(ents[0].keys()))
@@ -142,7 +153,8 @@ while f < target:
         print("entries in first sampled frame:", len(ents))
         shape_printed = True
     if ents:
-        rows[f] = [{k: e.get(k) for k in KEEP} for e in ents]
+        rows[f] = {"n": len(ents), "seq_lo": ents[0]["seq"], "seq_hi": ents[-1]["seq"],
+                   "entries": [{k: e.get(k) for k in KEEP} for e in ents]}
 end_frame = cmd("frame")["frame"]
 ov2 = cmd("overlay_loader_status")
 print("frames sampled", len(rows), "of", FRAMES, "window", start_frame, "..", end_frame)
@@ -152,8 +164,8 @@ cmd("openxr_input_override", clear=1)
 cmd("clear_input")
 
 (OUT / "series.json").write_text(json.dumps(
-    {"tag": TAG, "interp": INTERP, "slot": SLOT, "start_frame": start_frame,
-     "end_frame": end_frame, "entries": per_frame}, indent=1) + "\n", encoding="utf-8")
-print("wrote", OUT / "series.json", len(per_frame), "frames",
-      (min(per_frame) if per_frame else None), "..", (max(per_frame) if per_frame else None))
+    {"tag": TAG, "interp": INTERP, "base": BASE, "slot": SLOT, "start_frame": start_frame,
+     "end_frame": end_frame, "entries": rows}, indent=1) + "\n", encoding="utf-8")
+print("wrote", OUT / "series.json", len(rows), "frame samples",
+      (min(rows) if rows else None), "..", (max(rows) if rows else None))
 stop_game()

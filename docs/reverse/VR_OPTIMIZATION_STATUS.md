@@ -1140,6 +1140,18 @@ because the level's overlays are already resident in the savestate, so a capture
 only sees what a boot loads. Regions loaded before the savestate have to come from a merge, or from a
 capture taken at a load boundary.
 
+**Why no shard was found: the mod flags change the guest code.** Registration is keyed by region and by
+content. The same seed run without `-WeaponPoseDiagnostic -WristHud -WristHudReplace` registers 41 shards
+and dispatches natively (`dispatch_native` 24,522 by frame 352 and climbing); with them the loader reports
+`registered` 0, `file_found` 0, `loads` 0, and the same single checked region `0x0003A000`, for as long as
+it is asked. `-WristHudReplace` replaces guest HUD code, so that region no longer matches the captured
+content and no shard can match it. Every harness in this campaign passes those flags, which is the second
+reason their A/Bs measured the interpreter, the first being the single-capture index. For the route to be
+live in the runs the harnesses actually make, a capture taken with the same flags has to be merged and
+recompiled; the alternative is to drop the flags from measurement runs. The harness gate now makes that
+choice explicit rather than silent, and takes a baseline mode for runs with the shards deliberately moved
+aside.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
