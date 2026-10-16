@@ -110,6 +110,10 @@ while cmd("frame")["frame"] < GATE:
 ov_gate = cmd("overlay_loader_status")
 print("gate frame", cmd("frame")["frame"], "overlay:", json.dumps(
     {k: ov_gate.get(k) for k in ("registered", "dispatch_native", "dispatch_interp_fallback")}))
+if ov_gate.get("registered", 0) <= 0:
+    proc.kill()
+    raise SystemExit("route not registered (%r): refusing to compare the interpreter with itself"
+                     % ov_gate.get("registered"))
 cmd("openxr_input_override", ly=1000, lx=0, rx=0, ry=0)
 start_frame = cmd("frame")["frame"]
 print("hold forward from frame", start_frame)

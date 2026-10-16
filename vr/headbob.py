@@ -103,6 +103,10 @@ except Exception as exc:
     print("resume skipped:", exc)
 ov = cmd("overlay_loader_status")
 print("overlay:", ov.get("registered"), "shards, native", ov.get("dispatch_native"))
+if ov.get("registered", 0) <= 0:
+    proc.kill()
+    raise SystemExit("route not registered (%r): refusing to compare the interpreter with itself"
+                     % ov.get("registered"))
 
 rows = []
 for phase in ("front-circle", "sagittal-circle"):

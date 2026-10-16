@@ -105,6 +105,10 @@ except Exception as exc:
 ov = cmd("overlay_loader_status")
 print("overlay:", json.dumps({k: ov.get(k) for k in
                               ("registered", "dispatch_native", "dispatch_interp_fallback")}))
+if ov.get("registered", 0) <= 0:
+    proc.kill()
+    raise SystemExit("route not registered (%r): refusing to compare the interpreter with itself"
+                     % ov.get("registered"))
 
 results = []
 for name, axes in CASES:

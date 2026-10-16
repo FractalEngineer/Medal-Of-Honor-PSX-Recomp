@@ -1123,6 +1123,23 @@ unwired, which means every vertical look pose in the sweep, `look-down` and `loo
 all today. The black near-player tiles and the bright untextured patch are present in a frame captured
 with the route off, so they are baseline renderer behaviour and not a shard regression.
 
+**The cause of that, and the fix.** `overlay_cache = true` in `game.toml`, and the loader records a
+capture when the game DMA-loads an overlay, but it writes the JSON only on an explicit
+`overlay_capture_dump` or a clean window close. Compares with the killed runs then: everything the
+loader saw was thrown away, and the index next to the exe had been left holding a single capture. So the
+loader checked regions, found a shard for none of them, and registered nothing. Recapturing on the
+seeded level with the route off, dumping every block (21 captures), merging that with the full set kept
+aside (16), and recompiling gives **85 shards where there were 67**, and registration now works from a
+savestate-seeded headless run: `registered=41`, `loads=14`, `file_found=1`, `dispatch_native` climbing to
+418,187 by frame 1267 and `dispatch_interp_fallback` to 145,343, against 0 and 0 before. The gate that
+would have caught this is now in all three harnesses: each refuses to run when
+`overlay_loader_status.registered` is zero.
+
+For the next capture: roaming the seeded level produced no new regions (`regions_checked` stayed at 1),
+because the level's overlays are already resident in the savestate, so a capture taken from a savestate
+only sees what a boot loads. Regions loaded before the savestate have to come from a merge, or from a
+capture taken at a load boundary.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
