@@ -40,7 +40,7 @@ Branch history, newest first, framework and parent commit per step:
 | PR 3 | Reuse stereo checkpoints safely | Done, exit criteria measured. Gain: `eye_begin_r` 143 to 36 us p50. |
 | PR 5 | Guest/XR pacing | Slice 1 (cadence and pose-age tracing) done and verified. Slice 2 (opt-in resubmission) not started, and the measurements now say why it cannot pay for itself as scoped. |
 | PR 4 | GPU capture and submission optimization | Not started as a package, and its first target is now mostly worked: the wrist HUD capture (3.19 ms p50 headless, 2.0 to 2.6 ms on the headset) had its stage cost located, its readback merged, and its checkpoint share removed. What remains on it is change-gated capture, which the headset data puts at 43 us of a slow frame. |
-| PR 6 | Mission/sector hotspots | Attributed four layers deep and then handed off: the replay is split by call, the stretch is 97.8% `game_traverse`, the hook's own selection inside it is 0.9%, and the guest work that is left is the dirty-RAM interpreter running this game's overlay code (556,199 instructions per pair, 66% of the frame). The overlay cache was then compiled and measured: interpreter share down to 0.517 to 0.526, interpreted instructions per pair down 46.2%, settled pair time down 12 to 14%, every replay dispatch entry off the interpreter. Its acceptance is undecided, not failed: the A/B that would judge fidelity is confounded by the load frame, the sub-frame phase and the resume input, and it needs a framework-side deterministic savestate load seed before a verdict exists. The in-campaign levers stay documented as the fallback. |
+| PR 6 | Mission/sector hotspots | Attributed four layers deep and then handed off: the replay is split by call, the stretch is 97.8% `game_traverse`, the hook's own selection inside it is 0.9%, and the guest work that is left is the dirty-RAM interpreter running this game's overlay code (556,199 instructions per pair, 66% of the frame). The overlay cache was compiled and measured: interpreter share down to 0.517 to 0.526, interpreted instructions per pair down 46.2%, settled pair time down 12 to 14%, every replay dispatch entry off the interpreter. Its fidelity then failed, readably: on the boot-seeded protocol two shard runs are identical across 393 frames and shard against interp forks at frame 240, first at a RAM write from store PC `0x27DC`, with cycles and device columns equal, which reads as an intra-frame cycle-phase difference rather than a wrong instruction. Framework work owns it; the in-campaign levers stay the fallback. |
 
 ## Environment
 
@@ -732,8 +732,8 @@ difference cannot be assigned yet, and the honest status is unattributed rather 
 the load frame was matched by luck rather than by construction, the sub-frame phase at the load
 was never controlled, and the resume pressed Start at backend-dependent frames.
 
-Three confounds decide whether that difference is a shard bug or a measurement artifact, and none
-of them is closed.
+Three confounds decided whether that difference was a shard bug or a measurement artifact. The
+recipe below closes all three, and the verdict then came out readable.
 
 - **The load frame.** Measured: two runs of one backend that loaded on frames 606 and 914 diverge
   from ordinal 69 (`ws`, `wr`) and 72 (`wc`, `pc`, `mmio`, `mc`, `sp`, `sc`), differing in 107 to
@@ -760,22 +760,46 @@ of them is closed.
 
 The void attempts are recorded so nobody re-derives them: a native and an interp run whose loads
 completed on frames 606 and 615 showed a first divergence at ordinal 4, and a repeat pair, 617
-against 620, showed the same early pattern; with parity unverified, neither means anything. What
-removes all three confounds is a boot-time savestate load seed that applies the load at a fixed
-guest frame boundary and starts the fingerprint window there, plus a no-input window compared
-first, presses scripted on fixed frame numbers, and a same-backend A/B required to be bit-identical
-before any cross-backend difference is read as a fork. The seed does not exist yet and is a
-framework work item, so until it lands there is no readable verdict on the shards' fidelity: the
-route's payoff is measured and its correctness is unknown. The framework's copy of this rule is in
-`psxrecomp/tools/divergence/README.md`. Separately, no pixel or headset check was attempted,
-deliberately: measuring the look of a backend whose divergence is unattributed would be premature.
+against 620, showed the same early pattern; with parity unverified, neither means anything. The seed
+that removes all three confounds turned out to be the runtime's own `PSX_LOAD_SLOT`, which has been
+there all along and which this campaign simply was not using: the probe-driven load was the path
+under test and the wrong one to measure with. With it, the protocol is a boot-seeded load, a
+boot-seeded recorder frame, a no-input window, and a same-backend pair required to be bit-identical
+before any cross-backend difference is read as a fork. The framework's copy of this rule and the
+worked example are in `psxrecomp/tools/divergence/README.md`. Separately, no pixel or headset check
+was attempted, deliberately: measuring the look of a backend that forks the guest's own write stream
+would be premature.
 
-So the route stays the recommendation and its win is measured, but the fidelity verdict is not in:
-the A/B that would decide it needs the framework's deterministic savestate load seed, and the
-campaign cannot close that from its side. Everything needed to reproduce it is in
-the tree: `build-release/overlay_captures.json`, `build-release/cache/SLUS-00974/` with its 67
-shards (move it aside to turn the route off), the compile command above, the fingerprint A/B
-method, and the comparison receipts under `analysis/vr-proof/`.
+**The recipe, and it is launch flags rather than framework work.** The probe cannot stage a
+comparable load, because `savestate_poll` applies at the next block-leader boundary and the
+request-to-apply lag is host wall-clock, but the runtime's boot seeds can. `PSX_LOAD_SLOT=1` stages
+the load during init, so it applies at the first safe block boundary before frame 1 in every run,
+and `PSX_RECORD_FRAME=N` seeds the Layer-2 recorder at an absolute guest frame. Both are needed:
+attempting to arm frame 240 from the probe recorded zero accesses because the frame had already
+passed, and seeded at boot it recorded 18404. Everything below is on that protocol, which needs no
+probe load, no resume and no input.
+
+**The verdict from the seeded protocol.** Two runs of the shard backend agree on every column across
+393 compared frames: their windows start one frame apart and match exactly at a one-frame shift,
+which is a window offset and not a divergence. Shard against the interp reference then forks at
+**frame 240**, in `wc`, `ws`, `wr`, `pc`, `sp` and `sc`, with `cyc`, `qc`, `mmio` and `mc` equal
+throughout. Layer 2 on that frame names the first divergent RAM write: **`0x0000909C`, from the same
+store PC `0x000027DC` in both runs, shard `0xFFFFFCBC` against interp `0x00000EC6`**, with the
+frame's first access six cycles apart and index 4 differing in value again at the same pc. So the
+shards do fork this game's guest, in the write stream rather than in the cycle budget, and the shape
+of it is an intra-frame cycle-phase difference between per-block charging in compiled shards and
+per-instruction charging in the dirty-interp: the same addresses and the same store PCs a few cycles
+apart, with a cycle-derived value reading differently. That is a hypothesis with evidence and not a
+proven mechanism; Layer 3, read-watching `0x0000909C` and the block at `0x27DC`, is what would settle
+it. The framework's own record of the recipe and the result is in
+`psxrecomp/tools/divergence/README.md`.
+
+So the route's win is measured and its fidelity verdict is now in as well: the shards fork the guest
+240 frames into gameplay, in the write stream, so the route needs framework work on cycle phase
+before it can be turned on, and the in-campaign levers stay the fallback. To turn it off, move
+`build-release/cache/SLUS-00974` aside. Everything needed to reproduce all of this is in the tree:
+`build-release/overlay_captures.json`, the cache directory, the compile command above, the seeded
+protocol, and the receipts under `analysis/vr-proof/`.
 
 ## Next steps
 
@@ -813,19 +837,18 @@ method, and the comparison receipts under `analysis/vr-proof/`.
      interpreter's rate, which is money, and the hottest interpreted blocks to host-replace are
      named (`0x8006DAD8` at 18 per cent of interpreted time and `0x8006DC48` at 8.9 per cent,
      both inside the traversal the hook already brackets).
-  4. **DECIDED, RUN: the overlay cache is the route, and its acceptance is undecided.** It was
+  4. **DECIDED, RUN, AND NOW MEASURED: the overlay cache forks this game's guest.** It was
      compiled and measured on this bench (section above): interpreter share 0.637 to 0.666 down to
      0.517 to 0.526, interpreted instructions per pair 556,199 down to 299,445, settled
      `avg_pair_ms` 10.88 to 11.13 down to 9.52 to 9.59, 89 functions registered and every one of
-     the replay's dispatch entries gone from the interpreter. The acceptance is then undecided
-     rather than failed: two shard-free runs fingerprint bit-identical, the shard run differs in
-     all 96 frames, but the load frame, the sub-frame phase and the resume input are all
-     uncontrolled, so the difference is unattributed and cannot yet be laid at the shards' door.
-     Closing it needs the framework's boot-time savestate load seed (a fixed frame and sub-frame
-     phase) and then a no-input A/B, after which a same-backend pair must still be bit-identical
-     before any cross-backend difference counts. Until that lands, the route's payoff is proven
-     and its fidelity is unknown, so the in-campaign levers stay documented as the fallback. To
-     turn the route off, move `build-release/cache/SLUS-00974` aside.
+     the replay's dispatch entries gone from the interpreter. The acceptance then failed in a way
+     that is now readable: with the seeded protocol (`PSX_LOAD_SLOT=1`), two runs of the shard
+     backend are identical on every column across 393 frames while shard against interp forks at
+     frame 240, first at the RAM write from store PC `0x000027DC` to `0x0000909C`. The character is
+     an intra-frame cycle-phase difference, not a wrong instruction, so the next work is framework
+     side: Layer 3 on that address and that block. Until it is fixed the route cannot be turned on,
+     and the in-campaign levers below stay the fallback. To turn the route off, move
+     `build-release/cache/SLUS-00974` aside.
   5. **Then the change, held to its acceptance.** Pruning or a cheaper per-object path must
      clear the pixel-compare harness at a fixed guest cycle against the current baseline and
      the accepted look on the headset (no missing tiles, no head-turn pop-in, no near-player
