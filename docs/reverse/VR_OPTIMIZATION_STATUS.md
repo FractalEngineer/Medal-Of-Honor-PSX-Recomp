@@ -1098,6 +1098,31 @@ Method note: `vr_sweep.py`'s screenshots use `screenshot_file`, which is the fla
 byte-identical under head translation, so head-motion checks have to read the trace or the stereo pair
 path, not that screenshot.
 
+**The route is not active in a savestate-seeded headless run, so today's A/Bs compared the
+interpreter against itself.** `overlay_loader_status` reports, from frame 1 and for as long as it is
+asked, `registered: 0`, `regions_checked: 1`, `file_found: 0`, `loads: 0`, `dispatch_native: 0`, with
+`dispatch_interp_fallback` climbing in step with the guest. Slot 1, slot 0, `PSX_LOAD_SLOT` seeding
+before frame 1, and a plain boot with no savestate at all all agree. The plain boot is the informative
+one: `regions_checked` rises to 3 during the level load, so the game does load overlays, and
+`file_found: 0` for every one of them, so the loader finds no shard for any region the game actually
+loads even though 67 shards are present. The consequence is that every comparison run today, the head
+bob circles, the look sweep and the mirror pairs included, was executed by the interpreter on both
+sides. The head bob's "traces identical at all 32 steps" and the look sweep's matrix readings are
+retracted as evidence about the route; they are evidence about the interpreter only.
+
+Two numbers point at the cause. `build-release/overlay_captures.json` holds a single capture while the
+full set sits in `analysis/vr-proof/overlay_captures.full.json`, and `file_found: 0` for every region
+the game loads. Restoring the full index, recompiling the shards from it, and then gating every harness
+on `overlay_loader_status.registered > 0` before sampling is the prerequisite for any further A/B, and
+the gate belongs in the harnesses rather than in a note.
+
+Method corrections found the same way: `screenshot_file` returns the flat guest view and carries no
+head pose, so the head bob it does not show is expected; and `openxr_input_override`'s `ry` axis is
+unwired, which means every vertical look pose in the sweep, `look-down` and `look-up` and the two
+`bob-down` cases, reproduced the level pose exactly, byte for byte. A vertical look cannot be driven at
+all today. The black near-player tiles and the bright untextured patch are present in a frame captured
+with the route off, so they are baseline renderer behaviour and not a shard regression.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
