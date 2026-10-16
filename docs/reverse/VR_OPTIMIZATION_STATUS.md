@@ -1076,6 +1076,28 @@ than one value per pose, and read where the series first parts. Then attribute t
 the exe through the `.ranges` manifests, and check it against the host-replaced helper list, since a
 host-replaced fixed-point helper is the shape of bug that deforms geometry.
 
+**A head bob, scripted, and what it reports.** The pose the renderer uses comes straight from
+`xrLocateViews`, so a headless run cannot move the head at all: the null HMD reports a fixed pose, and
+`openxr_input_override`'s axes drive the game camera rather than the head. That is why the reported motion
+defects had no headless test. The missing knob is now in the framework next to the other test affordances,
+debug-gated and translation only (`openxr_pose_override`, framework `2ed12640`): it offsets both eye
+positions after the origin is taken, and it is runtime-side, so the codegen hash and the cache tag are
+unchanged and no re-capture is needed. `vr/headbob.py` traces two full circles, the frontal one
+right, down, left, up `[60,0,0] [55,-23,0] ...` and the sagittal one forward, down, back, up
+`[0,0,-60] ...`, capturing each step, and it acks every offset it sets.
+
+Both backends ran the same requested circle (`vr/headbob.py bob2_route` against `bob2_baseline`). The guest
+view matrices stay `H=400` throughout, which is correct: the bob is render-space, so the guest camera does
+not move. And the **per-frame render traces are identical at every one of the 32 steps**, including the pose
+age stage that the header describes as "the pose the compositor reprojects from". So the route does not
+change the pose or reprojection timeline at all, which rules out reprojection as the explanation for
+"geometry shifts and stretches when moving" and leaves the divergence where the look sweep put it: guest
+movement code.
+
+Method note: `vr_sweep.py`'s screenshots use `screenshot_file`, which is the flat guest view and is
+byte-identical under head translation, so head-motion checks have to read the trace or the stereo pair
+path, not that screenshot.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
