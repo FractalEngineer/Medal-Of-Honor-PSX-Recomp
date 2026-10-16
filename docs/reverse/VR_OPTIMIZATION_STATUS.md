@@ -740,7 +740,15 @@ of them is closed.
   110 of 179 compared ordinals in every write column, with `cyc` and `qc` equal throughout and
   4926 writes apart in a single frame. That is the signature a real fork leaves, which is exactly
   why it is dangerous. The bullet-list runs all loaded on frame 3, right after boot, so they
-  matched by luck. That is not a protocol.
+  matched by luck. Worse, the frame cannot be matched deliberately: `savestate_poll` applies a load
+  at the next block-leader boundary, so the request-to-apply lag is host wall-clock and therefore a
+  different number of guest frames per backend. Gating both runs on the frame counter, with a
+  4 ms poll against a measured 7.6 ms per command, still produced 8306 on the native at 58 fps
+  against 5004 on the interp, after 606 against 615 and 617 against 620. And it cannot be pinned
+  with a synchronous control, because `pause`, `continue`, `step` and `run_to_frame` are
+  deliberately removed in this runtime and answer `send_err`. So a matched load frame is luck, and
+  even when it happens it does not guarantee a matched sub-frame phase, which means the
+  bullet-list difference is the campaign's best candidate evidence and not proof.
 - **The sub-frame phase.** `savestate.c` applies a load at a safe point inside a guest frame, so
   the guest executes a variable slice of a frame between the restore and the first ring snapshot,
   and ordinal 1 is not automatically the same guest state. A slower backend reaches any gate at a
@@ -753,10 +761,12 @@ of them is closed.
 The void attempts are recorded so nobody re-derives them: a native and an interp run whose loads
 completed on frames 606 and 615 showed a first divergence at ordinal 4, and a repeat pair, 617
 against 620, showed the same early pattern; with parity unverified, neither means anything. What
-removes all three confounds is a boot-time savestate load seed (fixed frame, fixed sub-frame phase)
-plus a no-input window compared first, presses scripted on fixed frame numbers, and a same-backend
-A/B required to be bit-identical before any cross-backend difference is read as a fork. The seed
-does not exist yet and is a framework work item; the framework's copy of this rule is in
+removes all three confounds is a boot-time savestate load seed that applies the load at a fixed
+guest frame boundary and starts the fingerprint window there, plus a no-input window compared
+first, presses scripted on fixed frame numbers, and a same-backend A/B required to be bit-identical
+before any cross-backend difference is read as a fork. The seed does not exist yet and is a
+framework work item, so until it lands there is no readable verdict on the shards' fidelity: the
+route's payoff is measured and its correctness is unknown. The framework's copy of this rule is in
 `psxrecomp/tools/divergence/README.md`. Separately, no pixel or headset check was attempted,
 deliberately: measuring the look of a backend whose divergence is unattributed would be premature.
 
