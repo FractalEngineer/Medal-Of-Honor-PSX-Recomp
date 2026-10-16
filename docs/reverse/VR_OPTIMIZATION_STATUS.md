@@ -1009,28 +1009,29 @@ involved:
   and `overlay_loader_status` says whether any overlay variant is registered.
 
 Anything that changes which backend executes guest code wants the runtime's own fingerprint
-judge, which is what caught the shard fork above. In one process: `frame_fingerprint
-reset_on_load=1`, then `savestate slot=1 op=load`, polling `savestate_status` until the
-generation advances with `last_ok` and `last_slot=1`; resume to gameplay; then `frame_fingerprint
-count=4096` and slice the ring by ordinal. The ring restarts when the load completes, so ordinal
-N is the same guest moment in any run. Compare with `vr/compare_frame_fingerprints.py`, and
-always compare two runs of the *same* backend against each other first, because the method only
-means something once that pair is equal.
+judge. Use the boot seeds, not the probe: `PSX_LOAD_SLOT=1` stages the save load during
+runtime init so it applies at the first safe block boundary before frame 1 in every run, and
+`PSX_RECORD_FRAME=N` seeds the Layer-2 recorder at an absolute guest frame. Then poll
+`frame_fingerprint count=4096` and slice the ring by frame label. Compare with
+`vr/compare_frame_fingerprints.py`, and always compare two runs of the *same* backend against
+each other first, on **both** sides of the comparison, because the method only means
+something once both pairs are equal.
 
-**The load frame is a variable and it has to be matched, and this is the trap that cost a
-reading.** Measured: two runs of the same backend, compiled overlays on, that loaded on frames
-606 and 914, diverge from ordinal 69 (`ws`, `wr`) and 72 (`wc`, `pc`, `mmio`, `mc`, `sp`, `sc`),
-differing in 107 to 110 of 179 compared ordinals in every write column, with `cyc` and `qc`
-equal throughout and a magnitude of 4926 writes in one frame. That is the same signature a real
-fork leaves, so it reads as a codegen bug and it is not one, which is why the rule below is a
-precondition and not a nicety. Print the load frame (`frame_fingerprint count=1` as soon as the
-load completes, `entries[0].frame`, which is ordinal 1) and require it to be equal on both
-sides; issue the load request from a tight poll of a fixed gate, because a loose poll moved the
-completion frame by 8 to 14 frames and a few-millisecond poll kept it at 2; and keep input out,
-because resuming out of a menu presses a button and a probe that decides *when* to press from a
-guest event presses on different frames in the two backends, which swaps the codegen for input
-timing as the thing under test. The framework's own copy of this rule is in
-`psxrecomp/tools/divergence/README.md`.
+**Pin the stereo pair policy or the A/B is unreadable.** `PSX_STEREO_SHED=0` on both sides.
+Measured: with shedding on, an interp pair disagrees with itself (one run sheds a pair inside
+frame 240, 18359 accesses against 18407) and reports 22 to 23 sheds by frame 340 against the
+shard's 8, so a cross-backend difference is indistinguishable from the reference moving. With
+it pinned both pairs are bit-identical (shard 18404 accesses, interp 18407) and the shard
+against interp fork reproduces at the frame's first access, six cycles apart. `stereo_stats`
+is the probe that shows the shedding, including `eye_cycles [x, 0]` for a pair whose second
+eye never ran.
+
+**Copy `overlay_captures.json` aside before a run if the shard set has to be rebuilt.** The
+runtime rewrites that file every run, so a rebuild after a session compiles only the overlays
+that session touched. That is what shrank the cache from 67 shards to 21 mid-experiment.
+
+The load-frame trap itself, with its measurements, is recorded in
+`psxrecomp/tools/divergence/README.md` and above; the boot seeds are what removed it.
 
 **A recorded headset session wants the recorder started first**, because it waits for the
 debug port rather than missing the boot, and `-Seconds` works outside `-Headless` too:
