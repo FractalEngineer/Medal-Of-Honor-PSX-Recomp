@@ -913,18 +913,51 @@ interpreted path's. Instrument that boundary for one lag frame: record `psx_adva
 the device deadline across the frame that shows the 2,125-cycle lag, and read which side notices the event
 late. That is a runtime-side measurement, no guest code involved.
 
-So the route's win is measured and its fidelity verdict is in: the compiled shards fork the guest from
-frame 240 on a **six-cycle phase** against the interpreted path, with the kernel's interrupted context
-saved differently, reproducible once the pair policy is pinned (`PSX_STEREO_SHED=0`, without which this
-title's A/B cannot be read at all). One measurement is queued and it is an instrumentation task, not a
-guess: diff the cycle accounting streams (`psx_cycle_count`, `g_psx_cyc_batch`, `g_psx_cyc_bb_defer`,
-`psx_get_cycle_count()`) per guest instruction across frames 239 to 240 in both backends to name the
-charge site. If that closes, the route can be turned on and the campaign's own acceptance follows; if it
-does not, the shards need a cycle model that matches the interpreter before the win is usable, and the
-in-campaign levers stay the fallback. To turn it off, move
-`build-release/cache/SLUS-00974` aside. Everything needed to reproduce all of this is in the tree:
-`build-release/overlay_captures.json`, the cache directory, the compile command above, the seeded
-protocol, and the receipts under `analysis/vr-proof/`.
+**The event ring then named the site, and it is neither the flip nor the pacing.** The always-on ring exists
+for exactly this (its header: "diff two runs of the SAME route (native-overlay OFF vs ON) and find the FIRST
+interrupt/DMA ordering divergence"). Diffing with a timing-only key (kind, detail, cycle, aux, i_stat,
+i_mask; `pc` and `func` are descriptive and `mode` is expected to differ): the two backends are
+**bit-identical for 12,974 events**, every interrupt, DMA and device event in the session up to cycle
+24,326,919,142, the divergence frame. The first real difference is the CD interrupt. Both backends see the
+`CD_IRQ` dequeue at 24,326,919,142 and the I_STAT raise (bit 2) at 24,326,924,142, and then the shard
+**delivers it at 24,326,926,292, resuming at `0x8003E548`, while the interp delivers at 24,326,924,167,
+resuming at `0x8003DD74`**. Every later event in the ring carries the plus 2,125.
+
+**The site is an interrupt check that does not happen.** At that moment the shard's guest is inside overlay
+code (physical `0x3DDxx`, `mode=NATIVE_OVERLAY` against `INTERP`) and runs a straight-line stretch of about
+2,064 bytes, roughly 500 instructions and 2,125 cycles, before the next emitted check, so the pending CD
+interrupt waits for the block to end; the interp charges one instruction at a time and delivers promptly.
+`PSX_EVENT_STEP_CONSERVATIVE=1`, the framework's own diagnostic for per-block event ordering
+(`psx_cycles.c:193`), does **not** change it: its ring is identical to the default shard's for all 13,932
+entries, because splitting an advance into single cycles does not put a check inside the block.
+
+**What the route's fidelity delta therefore is.** One narrow thing: a long straight-line shard block with no
+interrupt check delays a device IRQ by up to the block's length, here 2,125 cycles or 0.063 ms, and the guest
+resumes at a different pc. Everything downstream follows from that one resume pc: the kernel saves a
+different interrupted context, the timer reads differ by 6, and the frame-240 access count changes. The
+emitter already checks at every block leader "so tight loops (backward branches) can service vblank"
+(`full_function_emitter.cpp:925`), and the gap is a block long enough to hold an event.
+
+**Fix to try, and its test.** A device-deadline or instruction-budget check inside long blocks, so a pending
+IRQ does not wait for the block to end. The test is the event ring: the first divergence must move past this
+frame, and the frame-239 store-stream split (index 4047) must disappear, before the route can be turned on.
+
+So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
+it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
+device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
+because a long straight-line shard block holds no interrupt check: the CD interrupt lands 2,125 cycles later
+in the shard and the guest resumes at `0x8003E548` instead of `0x8003DD74`. That one resume pc is what the
+kernel's save frame, the 6-cycle timer reading and the frame-240 access count all follow from. It is
+reproducible only with the pair policy pinned (`PSX_STEREO_SHED=0`, without which this title's A/B cannot be
+read at all), and it is not the accounting (identical over a measured span), not the flip or pacing
+(identical at every exception entry for 238 frames), and not the conservative event-step diagnostic (its ring
+is identical to the default shard's). One fix is queued and it is a small emitter change, not a guess: give
+long blocks a device-deadline or instruction-budget check so a pending IRQ does not wait for the block to
+end, and prove it by the ring (first divergence moves past this frame, the frame-239 store split at index
+4047 disappears). Only then should the route be turned on, with the campaign's own acceptance after it.
+To turn the route off, move `build-release/cache/SLUS-00974` aside. Everything needed to reproduce all of
+this is in the tree: `build-release/overlay_captures.json`, the cache directory, the compile command above,
+the seeded protocol, and the receipts under `analysis/vr-proof/`.
 
 ## Next steps
 
