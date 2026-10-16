@@ -88,6 +88,18 @@ Two things about it that cost a measurement each to learn:
   two runs: the first measurement of the single-readback capture produced no HUD record
   at all because the capture path was never entered, and the HUD diagnostic added for
   it printed nothing rather than failing.
+  **The saves in the tree now load straight into gameplay**, so the resume is not needed
+  for them: both slots verify as `submitted_layer: 1` with pairs advancing and no failures
+  (slot 0 sha256 `20462E2F636ABDF6320A90F020A31873600000586945C9CE1735387C510B8AE8`,
+  slot 1 sha256 `6EC4DCE71AF9DBE5C5546914B236E423D17518994D627A2C87E6EAADF623B1F6`). That
+  matters beyond convenience, because `resume_if_paused` is one of the three confounds in the
+  fingerprint A/B above: a save that starts in gameplay removes it outright. The save-screen
+  save this section was written against has been overwritten by that newer slot 1, so any
+  baseline keyed to it has to be re-taken. Tracked-weapon settings are launch-side
+  (`-WeaponPoseDiagnostic -WristHud -WristHudReplace`, which all three `RunVR-*.bat` launchers
+  pass and which only `RunFlat.bat` clears when it scrubs the `PSX_VR_*` environment), and
+  they change presentation rather than the save, so a save taken without them is still usable
+  here: the bench applies its own flags on launch.
 - **The grant differs from VDXR's.** The null driver asks for 11.111 ms (one 90 Hz
   display frame); VDXR granted 22.222 ms (two) in the headset runs below, though one
   session reported 11.111 ms, so the grant is read per session rather than assumed
