@@ -786,17 +786,37 @@ which is a window offset and not a divergence. Shard against the interp referenc
 throughout. Layer 2 on that frame names the first divergent RAM write: **`0x0000909C`, from the same
 store PC `0x000027DC` in both runs, shard `0xFFFFFCBC` against interp `0x00000EC6`**, with the
 frame's first access six cycles apart and index 4 differing in value again at the same pc. So the
-shards do fork this game's guest, in the write stream rather than in the cycle budget, and the shape
-of it is an intra-frame cycle-phase difference between per-block charging in compiled shards and
-per-instruction charging in the dirty-interp: the same addresses and the same store PCs a few cycles
-apart, with a cycle-derived value reading differently. That is a hypothesis with evidence and not a
-proven mechanism; Layer 3, read-watching `0x0000909C` and the block at `0x27DC`, is what would settle
-it. The framework's own record of the recipe and the result is in
-`psxrecomp/tools/divergence/README.md`.
+shards do fork this game's guest, in the write stream rather than in the cycle budget.
+
+**Layer 3 named the mechanism.** `0x27B0`..`0x2820` is the OpenBIOS exception prologue,
+`k0 = *(*(0x108)) + 8` then `SW $at/$v0/$v1` and `SW $ra,124($k0)`, so `0x9090` is the kernel save frame
+and the divergent word `0x909C` is the **interrupted context's `$v1`**; index 4 is `$v1` again after the
+callee returns and differs by `0x68`. The shard is a **constant 6 cycles ahead at every recorded access
+of frame 240** (594/595/596/604/645/676/677/678 against 588/589/590/598/639/670/671/672) while the
+absolute cycle at every frame boundary is **equal** (the fingerprint's `cyc` column, every frame), so
+this is a cycle *publication schedule* difference and not a cycle budget difference. The site is
+`runtime/include/psx_cyc.h`: under `PSX_OVERLAY_DLL_BUILD`, which is how the shards are built,
+`psx_cyc_bb_defer_begin()` compiles to a **no-op** and the shard's charges publish at host callback edges
+through `overlay_flush_cycles()`, while compiled game and BIOS code takes the `g_psx_cyc_bb_defer`
+per-block defer and flushes at `PSX_CYC_BATCH_SOFT` (64) or a device deadline, and the dirty-interp
+charges per instruction. Three publication schedules, one guest: `psx_get_cycle_count()` adds the pending
+batch, so totals match at barriers, but a guest instruction that observes a clock or a device register
+inside a disagreeing window sees a value a few cycles off. This kernel reads timer 1 (`0x1F801110` sits
+beside the divergence) on the interrupt path and saves the interrupted context, which is how the
+difference becomes guest-visible. The same comment block records this exact class from netplay: a
+few-cycle `clk/tim` fork with `cpu/ram` equal, matching with the batch off. Frame 2 shows it earlier and
+more plainly: the two backends are identical in value **and cycle** for 11142 recorded accesses and
+re-run the frame identically (rewinds `-7502`, `-7502`, `-637443`), and the first difference is the eye
+re-run's restore point, `24193275544` against `24193274413`, **1131 cycles** further back, after which
+the re-run executes different code (`0x80015DD4` against `0x80090B8C`). The framework's record of the
+recipe, the measurements and the next experiment is in `psxrecomp/tools/divergence/README.md`.
 
 So the route's win is measured and its fidelity verdict is now in as well: the shards fork the guest
-240 frames into gameplay, in the write stream, so the route needs framework work on cycle phase
-before it can be turned on, and the in-campaign levers stay the fallback. To turn it off, move
+240 frames into gameplay, in the write stream, because the shard build's cycle charges publish on a
+different schedule from the interpreted path. One experiment decides it: give the overlay build the
+same publication schedule as compiled game code (or as the interp), then re-run the seeded A/B and
+require frame 240 to come back clean in both the value columns and the cycle stamps. Until then the
+route cannot be turned on and the in-campaign levers stay the fallback. To turn it off, move
 `build-release/cache/SLUS-00974` aside. Everything needed to reproduce all of this is in the tree:
 `build-release/overlay_captures.json`, the cache directory, the compile command above, the seeded
 protocol, and the receipts under `analysis/vr-proof/`.
@@ -844,10 +864,16 @@ protocol, and the receipts under `analysis/vr-proof/`.
      the replay's dispatch entries gone from the interpreter. The acceptance then failed in a way
      that is now readable: with the seeded protocol (`PSX_LOAD_SLOT=1`), two runs of the shard
      backend are identical on every column across 393 frames while shard against interp forks at
-     frame 240, first at the RAM write from store PC `0x000027DC` to `0x0000909C`. The character is
-     an intra-frame cycle-phase difference, not a wrong instruction, so the next work is framework
-     side: Layer 3 on that address and that block. Until it is fixed the route cannot be turned on,
-     and the in-campaign levers below stay the fallback. To turn the route off, move
+     frame 240, first at the RAM write from store PC `0x000027DC` to `0x0000909C`, which Layer 3
+     identified as the OpenBIOS exception prologue saving the interrupted `$v1` into the kernel save
+     frame at `0x9090`. The mechanism is a cycle *publication schedule* difference: the shard is a
+     constant 6 cycles ahead at every recorded access of the frame while the absolute cycle at every
+     frame boundary is equal, and `psx_cyc.h` compiles `psx_cyc_bb_defer_begin()` to a no-op under
+     `PSX_OVERLAY_DLL_BUILD`, publishing shard charges at host callback edges instead of through the
+     per-block defer that compiled game code and the interp use. Framework side and specific: make the
+     shard's publication schedule match, then re-run the seeded A/B requiring frame 240 clean in both
+     the value columns and the cycle stamps. Until that lands the route cannot be turned on, and the
+     in-campaign levers below stay the fallback. To turn the route off, move
      `build-release/cache/SLUS-00974` aside.
   5. **Then the change, held to its acceptance.** Pruning or a cheaper per-object path must
      clear the pixel-compare harness at a fixed guest cycle against the current baseline and
