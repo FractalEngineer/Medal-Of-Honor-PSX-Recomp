@@ -1255,9 +1255,22 @@ the guest render wider across the eye surface and the undrawn margin collapses t
 400 is an under-cover value, not a neutral one. The earlier claim that this lever was dead came from the
 harness: `vr/run_vr.ps1:165` hardcodes `PSX_VR_AUTHORED_FOCAL = '1'` into the process environment at line 221,
 so a shell export of it never reached the game and the two runs could only be byte-identical. Sweep frames are
-in `analysis/vr-proof/href-sweep`. Not settled: whether the coverage at 160 comes from a wider view or from
-magnifying the guest render about the eye centre, which the band numbers alone cannot separate, and which is
-the difference between a fix and a different distortion.
+in `analysis/vr-proof/href-sweep`. Settled, and it kills the lever: the user confirmed on the headset that a
+lower ref zooms the image in, which is what the numbers already said once read properly, since coverage rose
+while the scene grew. It hides the shard by cropping it out of view and draws nothing, so the code is back to
+the pinned constant and the knob is removed. What the sweep does establish is that the shard is not a
+projection scale error: at the correct scale (ref 400) the lower bands are 30, 43 and 93 percent black and no
+scale correction fills them without magnifying.
+
+**The shard is clipped triangles, not a margin.** The presented frame from a held headless run on slot 1
+(`analysis/vr-proof/upside-check/presented.png`, 1856x1392) is upright, so the submission flip is intact, and
+it shows the defect as two large black wedges with straight diagonal edges in the lower half of each eye, over
+the floor and beside the player. Straight edges are the signature of geometry clipped at the guest's own
+screen boundary: the game clips polygons against its 512x240 rect, so the parts that fall outside it are never
+drawn, and the eye's wider frustum sees that boundary as a diagonal. That is why the user describes it as
+unrendered rather than black, why it moves with the eye offset, and why magnifying hides it: magnifying stops
+the eye from seeing past the guest frame. The fix has to make the guest draw past that boundary, by widening
+the frame the eye replay is rendered into, rather than changing any focal.
 
 **The interrupt-check budget invalidates every savestate, and that is why the load failed.**
 `psxrecomp/runtime/src/boot_state.c:976` refuses a load when the state header's `codegen_hash` differs from the
