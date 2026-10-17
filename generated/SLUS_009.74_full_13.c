@@ -13112,7 +13112,7 @@ block_800381E0:
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x0A: R3000A-compatible no-op */  /* 0x80039C4C: 0x0000000A */
+    /* TODO: SPECIAL funct=0x0A */  /* 0x80039C4C: 0x0000000A */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C4Cu);
 #endif
@@ -13144,7 +13144,7 @@ block_800381E0:
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x01: R3000A-compatible no-op */  /* 0x80039C5C: 0x00000001 */
+    /* TODO: SPECIAL funct=0x01 */  /* 0x80039C5C: 0x00000001 */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C5Cu);
 #endif
@@ -13154,21 +13154,21 @@ block_800381E0:
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x01: R3000A-compatible no-op */  /* 0x80039C60: 0x00000001 */
+    /* TODO: SPECIAL funct=0x01 */  /* 0x80039C60: 0x00000001 */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C60u);
 #endif
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x01: R3000A-compatible no-op */  /* 0x80039C64: 0x00000001 */
+    /* TODO: SPECIAL funct=0x01 */  /* 0x80039C64: 0x00000001 */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C64u);
 #endif
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x01: R3000A-compatible no-op */  /* 0x80039C68: 0x00000001 */
+    /* TODO: SPECIAL funct=0x01 */  /* 0x80039C68: 0x00000001 */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C68u);
 #endif
@@ -13254,7 +13254,7 @@ block_800381E0:
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x01: R3000A-compatible no-op */  /* 0x80039C94: 0x00000001 */
+    /* TODO: SPECIAL funct=0x01 */  /* 0x80039C94: 0x00000001 */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C94u);
 #endif
@@ -27587,7 +27587,7 @@ block_800382D4:
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x0A: R3000A-compatible no-op */  /* 0x80039C4C: 0x0000000A */
+    /* TODO: SPECIAL funct=0x0A */  /* 0x80039C4C: 0x0000000A */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C4Cu);
 #endif
@@ -27619,7 +27619,7 @@ block_800382D4:
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x01: R3000A-compatible no-op */  /* 0x80039C5C: 0x00000001 */
+    /* TODO: SPECIAL funct=0x01 */  /* 0x80039C5C: 0x00000001 */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C5Cu);
 #endif
@@ -27629,21 +27629,21 @@ block_800382D4:
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x01: R3000A-compatible no-op */  /* 0x80039C60: 0x00000001 */
+    /* TODO: SPECIAL funct=0x01 */  /* 0x80039C60: 0x00000001 */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C60u);
 #endif
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x01: R3000A-compatible no-op */  /* 0x80039C64: 0x00000001 */
+    /* TODO: SPECIAL funct=0x01 */  /* 0x80039C64: 0x00000001 */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C64u);
 #endif
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x01: R3000A-compatible no-op */  /* 0x80039C68: 0x00000001 */
+    /* TODO: SPECIAL funct=0x01 */  /* 0x80039C68: 0x00000001 */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C68u);
 #endif
@@ -27729,7 +27729,7 @@ block_800382D4:
 #ifdef PSX_ENABLE_BLOCK_CYCLES
     psx_cyc_step(cpu, 0x0u);
 #endif
-    /* undefined SPECIAL funct=0x01: R3000A-compatible no-op */  /* 0x80039C94: 0x00000001 */
+    /* TODO: SPECIAL funct=0x01 */  /* 0x80039C94: 0x00000001 */
 #ifdef PSX_COSIM
     cosim_instr(0x80039C94u);
 #endif
