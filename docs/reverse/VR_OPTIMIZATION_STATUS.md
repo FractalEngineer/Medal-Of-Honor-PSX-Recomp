@@ -1200,6 +1200,16 @@ numbers to work from, and why the fix has to be decided at the eye draw: either 
 eye replay instead of letting the guest's 2D clip flags drop the polygon, or stop the offset from pushing
 geometry behind the projection origin.
 
+**The wedges reproduce headlessly, exactly, which takes the headset out of the loop.**
+`vr\run_vr.ps1 -Headless -HeadlessMirrorCheck -Verify -Slot 1 -CaptureDirectory analysis/vr-proof/headless-eye
+-Seconds 2` forces the SteamVR null HMD, then restores the settings and stops SteamVR. It needs SteamVR down
+first, and the capture directory is relative to the repo root. It writes two verified eye pairs plus
+`presented.png`, and those pairs measure identically to the headset pair: bottom-left 64.5 against 67.8,
+bottom-centre 45.1 against 41.0, bottom-right 29.3 against 28.9, floor-mid-left 14.1 against 16.1, and the
+same 20, 22 and 28 pixel separations. So the wedge can be changed and verified with no headset and no user in
+the loop: capture, edit, re-capture, compare with `analysis/vr-proof/eye_diff.py <dir> <pair>`. The mirror
+check inside the same run fails on a blank null compositor capture, which is unrelated to the eye pairs.
+
 **Live numbers, headset run, save state 1.** `avg_pair_ms` 11.165 against an 11.111 ms budget for 90 Hz,
 `shed` 133 of 606 pairs, 133 empty frames, `openxr` running with `ipd_m` 0.063 and `units_per_meter` 238.8.
 The frame misses its deadline, the compositor reprojects, and that warp is the shift and stretch on head
