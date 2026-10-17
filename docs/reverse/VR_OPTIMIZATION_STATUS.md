@@ -1200,7 +1200,29 @@ numbers to work from, and why the fix has to be decided at the eye draw: either 
 eye replay instead of letting the guest's 2D clip flags drop the polygon, or stop the offset from pushing
 geometry behind the projection origin.
 
-**The wedge mechanism, located: it is the per-eye tree cull.** `vr/psx_vr_stereo.c:447`
+**The scene interior is fine in both eyes, and that reframes the whole defect.** Measured with
+`analysis/vr-proof/scene_diff.py` on the captured pairs: floor-near 2.85% black left against 2.84% right,
+floor-mid 3.34 against 3.23, floor-far 7.36 against 7.27, wall-right 23.49 against 23.50, longest black run
+81/32/51 against 81/31/39. The floor is drawn in both eyes at the same coverage. The 64.5 against 67.8
+bottom-left figures that drove the earlier conclusions were dominated by the area below the guest's drawn
+frame, which is constant black in every configuration and therefore cannot distinguish anything: exporting
+`PSX_VR_AUTHORED_FOCAL=0`, and re-running with `-NoHeadFrustumDiagnostic` so the host tree cull is off, both
+produced byte-identical pairs. Three hypotheses are now dead: the cull, the focal switch, and per-eye
+clipping. What the user sees as a large missing area bottom-left is the undrawn margin of the eye surface,
+where the eye is projected with a wider frustum than the guest's frame covers.
+
+**The fix, therefore, is to stop replacing the guest projection for the eye view.** The eye keeps the pose
+and the plus/minus 24 unit view translation, which is correct IPD stereo, and keeps the guest's own
+projection so the drawn scene covers the whole eye surface. Concretely, in `vr/psx_vr_stereo.c` after
+`psx_mod_openxr_view(eye, &g_eye_view[eye])` at 853, force `projection` to 0 for both eyes, which makes the
+cull and the eye render use the guest focal (400) instead of the headset's, and leave `projection_h_ref`
+irrelevant. That is a one line change and it is verifiable headlessly with the capture and `scene_diff.py`.
+The harness must then rebuild the mod, since the environment table overrides anything exported in the shell.
+
+**The wedge mechanism, located: it is the per-eye tree cull.** (Superseded: the measurement above shows this
+is wrong. Disabling the host cull with `-NoHeadFrustumDiagnostic` produces a byte-identical pair, so the cull
+selects the same nodes and is not what leaves the margin black. Kept only as the trail.)
+`vr/psx_vr_stereo.c:447`
 `vr_head_frustum_filter`, enabled by `PSX_VR_HEAD_FRUSTUM=1` which the harness sets, hooks the guest's
 visibility traversal at `0x8008B3E8` and, inside each eye's replay, replaces the guest's own selection with a
 host traversal: it reads the cull centre from the GTE projection registers (`gte_ctrl[24]`, `[25]`), calls
