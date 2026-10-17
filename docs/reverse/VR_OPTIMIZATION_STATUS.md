@@ -1200,6 +1200,26 @@ numbers to work from, and why the fix has to be decided at the eye draw: either 
 eye replay instead of letting the guest's 2D clip flags drop the polygon, or stop the offset from pushing
 geometry behind the projection origin.
 
+**The wedge mechanism, located: it is the per-eye tree cull.** `vr/psx_vr_stereo.c:447`
+`vr_head_frustum_filter`, enabled by `PSX_VR_HEAD_FRUSTUM=1` which the harness sets, hooks the guest's
+visibility traversal at `0x8008B3E8` and, inside each eye's replay, replaces the guest's own selection with a
+host traversal: it reads the cull centre from the GTE projection registers (`gte_ctrl[24]`, `[25]`), calls
+`moh_vr_collect_tree(cpu->gpr[4], queue, &count, matrix, tr, &g_eye_view[g_stereo_eye], cx, cy, masks,
+bypass_masks)` and writes the resulting node queue back. A node the cull does not select is never drawn for
+that eye, so the black wedges are culled nodes, not clipped or unfilled geometry, and not a pair composition
+artefact. That is consistent with every measurement: the covered region depends on the eye (opposite plus and
+minus 24 offsets, 64.5 against 67.8 bottom-left), the wedge edges are the cull boundary meeting the
+perspective of the floor, and the near floor is what a too-tight cull loses first. The fix belongs in that
+cull: a margin for the eye offset when selecting nodes. Not the pair composition, not the near plane, not the
+projection focal, and not the eye separation, which is correct IPD maths at 24 units per eye for 67 mm.
+
+**The harness forces its own environment, so shell exports are ignored.**
+`analysis/vr-proof/*/launch_config.json` records what actually reached the game, and for the headless pair it
+is `PSX_VR_AUTHORED_FOCAL=1`, `PSX_VR_DESKTOP_FOV=0`, `PSX_VR_HEAD_FRUSTUM=1`, `PSX_VR_IPD_MM=67`,
+`PSX_VR_UNITS_PER_METER=716.417910447761`. Exporting `PSX_VR_AUTHORED_FOCAL=0` in the shell and re-running
+produced a byte-identical pair, because the harness table overwrites it: that run proved nothing about the
+focal switch, and any experiment has to change the harness table itself.
+
 **The wedges reproduce headlessly, exactly, which takes the headset out of the loop.**
 `vr\run_vr.ps1 -Headless -HeadlessMirrorCheck -Verify -Slot 1 -CaptureDirectory analysis/vr-proof/headless-eye
 -Seconds 2` forces the SteamVR null HMD, then restores the settings and stops SteamVR. It needs SteamVR down
