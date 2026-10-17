@@ -426,6 +426,12 @@ static int g_movement = -1;
 static double g_move_deadzone = .2, g_turn_gain = .78;
 static int g_authored_focal = 1, g_desktop_fov;
 static double g_head_yaw, g_head_position[3];
+/* Test-only scale on the eye view translation the runtime hands back. The eyes are offsets of the game
+ * camera, so geometry in front of an offset eye crosses that eye's projection origin, and the guest has no
+ * real near clip, so such polygons are dropped rather than clipped. That is the shape of the missing tile
+ * beside the player. 1.0 is shipped; 0.0 collapses the pair onto one camera, which blames the offset if the
+ * tile comes back and the game's own cull if it does not. */
+static double g_eye_scale = 1.0;
 static PSXModRenderView g_eye_view[2];
 static uint32_t g_stereo_eye;
 static int g_head_frustum;
@@ -855,6 +861,10 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
                 (void)psx_mod_openxr_end(0); return;
             }
             if (g_authored_focal) g_eye_view[0].projection_h_ref = g_eye_view[1].projection_h_ref = 400;
+            if (g_eye_scale != 1.0) for (int i = 0; i < 3; ++i) {
+                g_eye_view[0].translation[i] = (int32_t)llround(g_eye_view[0].translation[i] * g_eye_scale);
+                g_eye_view[1].translation[i] = (int32_t)llround(g_eye_view[1].translation[i] * g_eye_scale);
+            }
             /* Reverted: forcing the guest focal here filled the eye surface but threw away the
              * headset's projection, which makes both eyes geometrically wrong. The margin needs the
              * guest render widened to cover the headset frustum instead, not the eye projection
@@ -1399,6 +1409,10 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
                    &g_head_position[2]) != 3) memset(g_head_position,0,sizeof g_head_position);
     }
     if ((e = getenv("PSX_VR_AUTHORED_FOCAL"))) g_authored_focal = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_EYE_SCALE"))) {
+        double v = strtod(e, NULL);
+        if (v >= 0.0 && v <= 2.0) g_eye_scale = v;
+    }
     if ((e = getenv("PSX_VR_DESKTOP_FOV"))) g_desktop_fov = atoi(e) != 0;
     if (g_openxr) g_stereo=1;
     if ((e = getenv("PSX_VR_IPD_MM"))) g_ipd_mm = strtod(e, NULL);
