@@ -1430,6 +1430,11 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
                    &g_head_position[2]) != 3) memset(g_head_position,0,sizeof g_head_position);
     }
     if ((e = getenv("PSX_VR_AUTHORED_FOCAL"))) g_authored_focal = atoi(e) != 0;
+    /* Test-only, and deliberately a name the harness does not set: run_vr.ps1 forces
+     * PSX_VR_AUTHORED_FOCAL=1, so anything exported under that name is overwritten before it reaches the
+     * game and cannot be tested. This one turns the projection override off, which isolates whether the
+     * missing near floor is caused by the wider effective frustum the override asks the guest to draw. */
+    if ((e = getenv("PSX_VR_NO_AUTHORED_FOCAL"))) g_authored_focal = 0;
     if ((e = getenv("PSX_VR_EYE_SCALE"))) {
         double v = strtod(e, NULL);
         if (v >= 0.0 && v <= 2.0) g_eye_scale = v;

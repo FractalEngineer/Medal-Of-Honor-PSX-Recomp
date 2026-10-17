@@ -1341,6 +1341,21 @@ the picture until it overran the gap, which is exactly what the user saw and rej
 gated and off by default; it is how selection was excluded and it is worth keeping for the next time this is
 suspected.
 
+**The projection override is part of the hole, not all of it.** `run_vr.ps1:165` hardcodes
+`PSX_VR_AUTHORED_FOCAL=1`, so the override is on in every launch and cannot be tested through that name,
+which is why this was never isolated. A test-only switch under a name the harness does not force,
+`PSX_VR_NO_AUTHORED_FOCAL=1`, turns it off. The bottom band falls from 92.65 / 90.43 to 74.07 / 72.90,
+below-floor from 11.94 to 9.92, and floor from 2.96 to 2.39, with near-floor and margin-b essentially
+unchanged. So about nineteen points of the bottom black come from the wider effective frustum the override
+asks the guest to draw, and the other seventy-four come from somewhere else.
+
+That elsewhere is now narrow. The per-eye replay draws the selected polygons with a single list call
+(`0x800677fc`, one `list` pointer) plus the two gated world list calls, while the guest's own frame draws its
+lists through its own path. A whole list drawn by one path and not the other would be exactly what the
+screenshot shows: polygon edged, in the lower left, invariant to the collector, and unaffected by anything
+that only changes which nodes go into the queue. Next: enumerate the draw calls the guest makes for one
+native frame and diff them against the replay's set, then add the missing list draw.
+
 **The interrupt-check budget invalidates every savestate, and that is why the load failed.**
 `psxrecomp/runtime/src/boot_state.c:976` refuses a load when the state header's `codegen_hash` differs from the
 running build's `PSX_OVERLAY_CODEGEN_HASH`, reporting `codegen_hash=%08X(want %08X)`. The emitter change moves
