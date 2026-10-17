@@ -432,6 +432,18 @@ static double g_head_yaw, g_head_position[3];
  * beside the player. 1.0 is shipped; 0.0 collapses the pair onto one camera, which blames the offset if the
  * tile comes back and the game's own cull if it does not. */
 static double g_eye_scale = 1.0;
+/* Test-only device replay, so a headless null-HMD run can behave like the headset the numbers were
+ * measured on. The null device reports a symmetric FOV and a fixed IPD, and both of those hide real
+ * defects: a symmetric FOV makes the centre deltas zero, so anything wrong in how the projection
+ * handles an asymmetric FOV cannot show, and the fixed IPD hides eye-offset geometry. These are the
+ * projection values a Quest 3 measured through SteamVR/OpenXR, taken from openxr_views
+ * (projection_q16 per eye). Selected by PSX_VR_EYE_PROFILE; default off, so shipped behaviour is the
+ * runtime's own numbers. */
+static int g_eye_profile;
+static const int32_t g_profile_projection[2][4] = {
+    {16880361, 7289275,  4068688, -1519288},   /* left:  fx, fy, cx_delta, cy_delta, Q16 */
+    {16880361, 7289275, -4068688, -1519288},   /* right: the deltas mirror, the focal does not */
+};
 static PSXModRenderView g_eye_view[2];
 static uint32_t g_stereo_eye;
 static int g_head_frustum;
@@ -864,6 +876,12 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
             if (g_eye_scale != 1.0) for (int i = 0; i < 3; ++i) {
                 g_eye_view[0].translation[i] = (int32_t)llround(g_eye_view[0].translation[i] * g_eye_scale);
                 g_eye_view[1].translation[i] = (int32_t)llround(g_eye_view[1].translation[i] * g_eye_scale);
+            }
+            if (g_eye_profile) for (int eye = 0; eye < 2; ++eye) {
+                g_eye_view[eye].fx_q16 = g_profile_projection[eye][0];
+                g_eye_view[eye].fy_q16 = g_profile_projection[eye][1];
+                g_eye_view[eye].cx_delta_q16 = g_profile_projection[eye][2];
+                g_eye_view[eye].cy_delta_q16 = g_profile_projection[eye][3];
             }
             /* Reverted: forcing the guest focal here filled the eye surface but threw away the
              * headset's projection, which makes both eyes geometrically wrong. The margin needs the
@@ -1413,6 +1431,7 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
         double v = strtod(e, NULL);
         if (v >= 0.0 && v <= 2.0) g_eye_scale = v;
     }
+    if ((e = getenv("PSX_VR_EYE_PROFILE"))) g_eye_profile = strcmp(e, "quest3") == 0;
     if ((e = getenv("PSX_VR_DESKTOP_FOV"))) g_desktop_fov = atoi(e) != 0;
     if (g_openxr) g_stereo=1;
     if ((e = getenv("PSX_VR_IPD_MM"))) g_ipd_mm = strtod(e, NULL);
