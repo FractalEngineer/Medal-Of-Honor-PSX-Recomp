@@ -1200,6 +1200,23 @@ numbers to work from, and why the fix has to be decided at the eye draw: either 
 eye replay instead of letting the guest's 2D clip flags drop the polygon, or stop the offset from pushing
 geometry behind the projection origin.
 
+**Confirmed fix: the black eye margin is gone.** With `projection` forced to 0 for both eyes in
+`vr/psx_vr_stereo.c:863`, so the eye render keeps the guest focal and covers the whole surface, the same
+headless capture on slot 1 measures the lower margin at 2.37% against 2.35 left and right (margin-a), 5.20
+against 5.17 (margin-b) and 3.28 against 2.91 (bottom edge), where the same bands read 29.81 against 30.61,
+42.67 against 42.97 and 92.65 against 90.43 before the change. The two eyes now agree within 0.4 points
+everywhere, so the per-eye asymmetry went with the margin. The captured left eye shows a fully textured floor
+with no wedge and the frame filled to its edges. Cause confirmed: the eye was projected with the headset
+frustum, wider than the guest's frame, so the margins of the eye surface were never drawn, and the near floor
+made it read as a missing area beside the player.
+
+**The harness skips its build, so a switch experiment can run against a stale binary.** `vr/run_vr.ps1` runs
+`cmake -S . -B build-release -DPSX_OPENXR=ON ...` and `cmake --build build-release --target psx-runtime`, but
+several capture runs completed in seconds with no compiler output. Forcing `cmake --build build-release
+--target psx-runtime` by hand recompiled `vr/psx_vr_stereo.c` and relinked, which is when the fix took
+effect. Force the build before trusting any mod change, and check for the `Building C object
+... psx_vr_stereo.c.obj` line.
+
 **The scene interior is fine in both eyes, and that reframes the whole defect.** Measured with
 `analysis/vr-proof/scene_diff.py` on the captured pairs: floor-near 2.85% black left against 2.84% right,
 floor-mid 3.34 against 3.23, floor-far 7.36 against 7.27, wall-right 23.49 against 23.50, longest black run
