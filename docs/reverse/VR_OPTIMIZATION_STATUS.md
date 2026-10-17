@@ -1325,6 +1325,22 @@ content there against black in the eye image blames the replay, black in both bl
 the collector in `vr_head_frustum_filter`, which is the only place the mod can widen what the game submits.
 Do that before writing any fix, because the two readings want opposite changes.
 
+**Selection is excluded too, and that is the strongest evidence yet.** `PSX_VR_HEAD_FRUSTUM` is unset by
+default, so the mod's eye-aware tree collector was never in the path, and turning it on changes the image not
+at all. A new test mode, `PSX_VR_HEAD_FRUSTUM=2`, forces the collector to ignore both the PVS masks and the
+screen planes, so every node of the tree is submitted. The bands come back bit for bit identical to the
+collector off run, 23.49 / 2.96 / 3.24 / 11.94 / 29.81 / 42.67 / 92.65 with the same inter-eye deltas, in all
+three runs. Nothing in our selection, our eye offset or our projection filter is removing these polygons,
+and no amount of relaxing a filter that is already passing everything can put them back.
+
+Three independent mechanisms leaving an identical image is the signature of a region that never had content,
+not of geometry being dropped. That points at the uncovered padding reading above: the eye surface is 1200
+rows against a guest frame whose content reaches about 88 percent of it, so the bottom band is simply not
+covered by the guest render, and the earlier authored-H-ref measurements only ever filled it by magnifying
+the picture until it overran the gap, which is exactly what the user saw and rejected. The instrument stays
+gated and off by default; it is how selection was excluded and it is worth keeping for the next time this is
+suspected.
+
 **The interrupt-check budget invalidates every savestate, and that is why the load failed.**
 `psxrecomp/runtime/src/boot_state.c:976` refuses a load when the state header's `codegen_hash` differs from the
 running build's `PSX_OVERLAY_CODEGEN_HASH`, reporting `codegen_hash=%08X(want %08X)`. The emitter change moves

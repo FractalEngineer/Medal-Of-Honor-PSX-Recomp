@@ -1367,7 +1367,10 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_PASS_DRAW"))) g_pass_draw = atoi(e);
     if ((e = getenv("PSX_VR_STEREO"))) g_stereo = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_OPENXR"))) g_openxr = atoi(e) != 0;
-    if ((e = getenv("PSX_VR_HEAD_FRUSTUM"))) g_head_frustum = !strcmp(e,"1");
+    if ((e = getenv("PSX_VR_HEAD_FRUSTUM"))) {
+        g_head_frustum = atoi(e) != 0;
+        moh_vr_keep_all = atoi(e) >= 2;
+    }
     if ((e = getenv("PSX_VR_WEAPON_POSE"))) g_weapon_pose = atoi(e) != 0;
     if ((e = getenv("PSX_VR_LASER"))) g_laser = atoi(e) != 0; else g_laser = g_weapon_pose;
     if ((e = getenv("PSX_VR_LASER_RANGE_M"))) g_laser_range_m = strtod(e,NULL);

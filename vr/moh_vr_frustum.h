@@ -1,6 +1,11 @@
 #pragma once
 #include "mod_plugins.h"
 #include <math.h>
+/* Test-only: force the collector to consider the whole tree, ignoring both the PVS masks and the
+ * screen planes. Geometry near the player is dropped by the guest before the eye replay ever sees it,
+ * and this separates "the game never submits it" from "the eye replay loses it". Not for play: it
+ * submits far more than a frame needs. */
+static int moh_vr_keep_all;
 /* Conservative AABB test in the actual eye view. A box straddling a plane
  * remains visible. Saturated GTE coordinates defer to native triangle clipping. */
 static inline int moh_vr_box_visible(const int16_t bounds[6],const double matrix[9],
@@ -46,12 +51,12 @@ static inline int moh_vr_collect_tree(uint32_t root,uint32_t queue[1000],unsigne
     while(top) {
         uint32_t node=stack[--top],off=node&0x1fffffffu;
         if(!node||(node&3)||off>0x200000u-36||++visited>8192)return 0;
-        if(!bypass_masks&&(!(psx_mod_read_word(node+16)&masks[0])||
+        if(!bypass_masks&&!moh_vr_keep_all&&(!(psx_mod_read_word(node+16)&masks[0])||
                           !(psx_mod_read_word(node+20)&masks[1])))continue;
         int16_t bounds[6];
         for(int i=0;i<6;i++)bounds[i]=(int16_t)psx_mod_read_half(node+i*2);
         for(int i=0;i<3;i++)if(bounds[i]>bounds[i+3])return 0;
-        if(!moh_vr_box_visible(bounds,matrix,tr,view,cx,cy,512,240))continue;
+        if(!moh_vr_keep_all&&!moh_vr_box_visible(bounds,matrix,tr,view,cx,cy,512,240))continue;
         if((int32_t)psx_mod_read_word(node+12)>0) {
             if(*count==1000)return 0;
             queue[(*count)++]=node;
