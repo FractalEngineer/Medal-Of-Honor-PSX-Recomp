@@ -1221,15 +1221,26 @@ hardware. The headless pair cost is also startup dominated, `avg_pair_ms` 19.27 
 because a `-Verify` run is fixed at a 96 frame receipt, so headless pair timing is not a steady state
 measurement. Use the live headset run for pacing numbers and the headless capture for image evidence.
 
-**Confirmed fix: the black eye margin is gone.** With `projection` forced to 0 for both eyes in
-`vr/psx_vr_stereo.c:863`, so the eye render keeps the guest focal and covers the whole surface, the same
-headless capture on slot 1 measures the lower margin at 2.37% against 2.35 left and right (margin-a), 5.20
-against 5.17 (margin-b) and 3.28 against 2.91 (bottom edge), where the same bands read 29.81 against 30.61,
-42.67 against 42.97 and 92.65 against 90.43 before the change. The two eyes now agree within 0.4 points
-everywhere, so the per-eye asymmetry went with the margin. The captured left eye shows a fully textured floor
-with no wedge and the frame filled to its edges. Cause confirmed: the eye was projected with the headset
-frustum, wider than the guest's frame, so the margins of the eye surface were never drawn, and the near floor
-made it read as a missing area beside the player.
+**The interrupt-check budget invalidates every savestate, and that is why the load failed.**
+`psxrecomp/runtime/src/boot_state.c:976` refuses a load when the state header's `codegen_hash` differs from the
+running build's `PSX_OVERLAY_CODEGEN_HASH`, reporting `codegen_hash=%08X(want %08X)`. The emitter change moves
+that hash (the build produced `0x25935d6f`), so every state saved on the previous build is rejected and
+`capture_stereo.py` aborts at the slot load with `last_ok 0`, which is what looked like a crash. This is a
+guard, not a defect: any emitter change invalidates savestates. That is a second cost of landing the
+interrupt-check budget, larger than staling the shard cache, because the user's own slots have to be re-saved.
+The pin bump and the regenerated tree were reverted as `c8e1a3e` and `38ee058`, and the framework candidate is
+parked as `e96a4fb1` on `vr-perf-pr1-pr2`. To land it: pin the framework, regenerate `generated/`, then
+re-save the slots on the new build, and only then recapture the overlays.
+
+**Reverted: the eye projection change was the wrong fix, but it proves the margin tracks the eye frustum.**
+Forcing `projection` to 0 for both eyes filled the eye surface but threw away the headset projection, so both
+eyes were geometrically wrong on the real headset; reverted in `5be5f13`. What it established is the
+relationship: with it the lower margin measured 2.37% against 2.35 left and right (margin-a), 5.20 against
+5.17 (margin-b) and 3.28 against 2.91 (bottom edge), against 29.81 against 30.61, 42.67 against 42.97 and
+92.65 against 90.43 without it. The user's own reading from the headset is that these are unrendered
+triangles seen through rather than black polygons, that they show when looking down, and that the look-down
+case cannot be captured headlessly because `openxr_pose_override` only translates and `ry` is unwired. The
+proper fix is to widen the guest render so it covers the headset frustum, not to replace the eye projection.
 
 **The harness skips its build, so a switch experiment can run against a stale binary.** `vr/run_vr.ps1` runs
 `cmake -S . -B build-release -DPSX_OPENXR=ON ...` and `cmake --build build-release --target psx-runtime`, but
