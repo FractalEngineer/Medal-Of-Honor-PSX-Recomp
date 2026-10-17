@@ -1160,6 +1160,35 @@ differs from the captured content in a way the recapture does not change. That i
 determine, and it is cheap now: run the loader check with and without the flags and print `checked`
 alongside `file_found` in both, rather than only the count.
 
+**The right way to look at VR: the eye pairs.** The flat guest view is not the VR path and must not be
+used for VR checks. The launcher forwards arguments to `vr/run_vr.ps1`, so a headset run with
+`-Verify -CaptureDirectory <dir> -Slot 1` records the stereo eye pairs (`p######_left.png`, `_right.png`,
+`_sbs.png`) plus `presented.png` into that directory. Two traps cost real time there: `-CaptureDirectory`
+must be relative to the repo root, because `run_vr.ps1:137` joins it with the VR root and an absolute path
+throws so the launcher exits; and `capture_stereo.py` defaults to `--slot 3`, which does not exist, so
+`-Slot 1` is required. That combination produced the pair used below, on save state 1, in the user's own
+headset run, and it is the only capture method that shows what the headset shows.
+
+**The floor wedges are produced by the stereo offset, not by dropped geometry.** Measured on that captured
+pair (`analysis/vr-proof/headset-capture/p000011_left.png` and `_right.png`, 2560x1200): black coverage in
+the bottom-left quadrant is 64.5% in the left eye against 67.8% in the right, bottom-centre 45.1% against
+41.0%, and bottom-right 29.3% against 28.9%. The eye separation measured off the floor texture is 20, 22
+and 28 pixels. A polygon clipped at the near plane would land identically in both eyes; these move with the
+eye offset, so they are made when the pair is composed. The composition site is the renderer's stereo path:
+`StereoPair s_stereo_pair[2]` at `gpu_gl_renderer.c:7901`, `gl_renderer_stereo_begin` at 8656, and the pair
+branch of the present at 8471, with the crop correction at 8456 explicitly skipped for the stereo pair. The
+fix is to fill what the offset vacates instead of leaving it black, or to render each eye from its own
+camera. The VR stereo is a declarative plugin (`mods/preloaded/packages/moh.vr.stereo/0.1.0/manifest.toml`,
+plugin id `moh.vr.stereo`) carrying no source path, so its code is compiled into the runtime and the
+composition is the renderer code above.
+
+**Live numbers, headset run, save state 1.** `avg_pair_ms` 11.165 against an 11.111 ms budget for 90 Hz,
+`shed` 133 of 606 pairs, 133 empty frames, `openxr` running with `ipd_m` 0.063 and `units_per_meter` 238.8.
+The frame misses its deadline, the compositor reprojects, and that warp is the shift and stretch on head
+motion. The same run reports `registered` 0, `loads` 0, `dispatch_native` 0, `file_found` 0 with
+`dispatch_interp_fallback` 385,910, so the compiled shards are not active in the launcher's configuration
+and the pacing win is not in play.
+
 So the route's win is measured and its fidelity verdict is in, and it is narrower than any earlier reading of
 it: the two backends' guest event timelines are **bit-identical for 12,974 events** (every interrupt, DMA and
 device event up to the divergence frame), and the whole of the difference is one device IRQ delivered late
