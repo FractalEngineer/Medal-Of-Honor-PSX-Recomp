@@ -1221,6 +1221,29 @@ hardware. The headless pair cost is also startup dominated, `avg_pair_ms` 19.27 
 because a `-Verify` run is fixed at a 96 frame receipt, so headless pair timing is not a steady state
 measurement. Use the live headset run for pacing numbers and the headless capture for image evidence.
 
+**Where this stands, after the headless hold and the pitch override landed.** What is landed and working:
+the SteamVR settings repair (the forced null driver was why the headset was never driven), the eye
+projection reverted to the headset's so both eyes are geometrically correct, `vr/headless_hold.bat` as a
+stable way to hold a null-HMD session for probing and `stereo_dump` captures, the gated `pitch_deg` on
+`openxr_pose_override` (framework `vr-head-pitch` at `a3714fad`, pinned as `3f04d6f`), and a real pacing
+measurement on the real headset of 6.888 ms per pair with zero shed against an 11.111 ms budget.
+
+Open, in order of value. One, the black wedge over the floor near the player. It is visible looking
+straight ahead, in both eyes, on slot 1, and it is not pacing, not the per-eye tree cull, and not the eye
+projection, all three of which were tested and cleared. The standing explanation is that the eye renders
+more frustum than the guest frame draws, so the candidate is widening the guest render rather than
+replacing the eye projection, and the `PSX_VR_AUTHORED_FOCAL=0` lever was only ever tested against a stale
+binary. Two, the master A/B: the worktree at `.master-ab` is a full master checkout with the slots copied
+in, and its build is the one remaining step. Three, the interrupt-check budget stays parked, because
+`boot_state.c:976` rejects any savestate whose header hash differs from the build, so landing it costs the
+existing slots.
+
+Retractions to carry forward, because earlier entries in this file say otherwise. Every pacing figure
+taken before the settings repair (11.165 ms, 7.15 ms) came from the null HMD and is void. The eye
+projection change recorded as a confirmed fix made both eyes wrong and is reverted. The per-eye cull is
+not the cause. The pitch override was built to reach a defect thought to be pitch-gated, which it is not:
+the wedge is visible straight ahead, and `p000926` only gave a cleaner view of it.
+
 **The interrupt-check budget invalidates every savestate, and that is why the load failed.**
 `psxrecomp/runtime/src/boot_state.c:976` refuses a load when the state header's `codegen_hash` differs from the
 running build's `PSX_OVERLAY_CODEGEN_HASH`, reporting `codegen_hash=%08X(want %08X)`. The emitter change moves
