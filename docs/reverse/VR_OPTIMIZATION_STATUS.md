@@ -1349,12 +1349,47 @@ below-floor from 11.94 to 9.92, and floor from 2.96 to 2.39, with near-floor and
 unchanged. So about nineteen points of the bottom black come from the wider effective frustum the override
 asks the guest to draw, and the other seventy-four come from somewhere else.
 
-That elsewhere is now narrow. The per-eye replay draws the selected polygons with a single list call
-(`0x800677fc`, one `list` pointer) plus the two gated world list calls, while the guest's own frame draws its
-lists through its own path. A whole list drawn by one path and not the other would be exactly what the
-screenshot shows: polygon edged, in the lower left, invariant to the collector, and unaffected by anything
-that only changes which nodes go into the queue. Next: enumerate the draw calls the guest makes for one
-native frame and diff them against the replay's set, then add the missing list draw.
+That elsewhere was narrowed to the replay's draw set. Superseded by the next entry: the dumped pair shows the
+replay reproduces the guest's own frame at 5x, so the missing-list theory is no longer the leading one and the
+draw-call diff below is not the next step. The per-eye replay draws the selected polygons with a single list
+call (`0x800677fc`, one `list` pointer) plus the two gated world list calls, while the guest's own frame draws
+its lists through its own path.
+
+**The wedge is in the guest's own frame: each eye is a 5x scale of the guest's 512x240 image.** The pair the
+probe dumps is 5120x1200, so each half is 2560x1200, which is exactly 5x the guest's 512x240 frame on both
+axes. The eye surface is therefore the guest's own picture at 5x, not a re-rendered 1200-row image, and the
+black rows in it are the guest's own bottom rows. Measured shape of the black, as a 12x10 grid of black
+coverage over the left eye (rows are image rows, columns are image columns):
+
+```
+       106  320  533  746  960 1173 1386 1600 1813 2026 2240 2453
+ 960     5   38   76  100   86    7    0    0    0    8   25   65
+1080    95  100  100  100   93   67   66   63   62   60   62   16
+```
+
+Two things follow. The black is a bottom band across the whole width, not a hole and not a patch: the last
+roughly 10 percent of rows is 95 to 100 percent black on the left half and about 60 percent in the middle and
+right, and its upper edge is a diagonal (row 960 starts black around column 533, row 1080 starts black at
+column 0). A diagonal edge is what a polygon boundary looks like, and a floor quad whose near vertices sit
+behind the camera projects to exactly that: a large area with a straight edge, reaching off the bottom of the
+frame. That is the floor quad immediately under the player failing to reach the rasterizer.
+
+That is consistent with everything else measured here, and it explains why none of it moved. Selection cannot
+change it (the collector, its keep-all mode and near-keep all produce identical frames). The eye offset
+cannot change it (the quad straddles the camera plane, so shifting the eye by 3 cm does not make it project).
+And the disassembly in `docs/reverse/disasm-findings.md:25` shows the guest's own vertex path reads back
+`SZ1/SZ2`, `SXY0/SXY1` and `MAC0` into a scratchpad cache and runs `NCLIP`, so its accept and clip decisions
+are made from projected values, not by our code. The projection override moves only the middle and right of
+that band, about nineteen points, and leaves the left half at 95 to 100 percent, because a wider frustum only
+changes how much of the affected area falls inside the frame. `docs/reverse/VR_ALPHA_TODO.md:36` and `:56`
+already track this as near-plane clipping, separate from portal and distance culling.
+
+The fix has to make a camera-straddling floor quad survive instead of vanishing, at the GTE seam where the
+camera-space vertex and its `SZ` are both known (`runtime/src/gte.cpp:804`, the vector seam, and the `SZ`
+FIFO), by clamping the projected result to a finite large polygon rather than letting it drop. Relaxing the
+guest's own reject at the one instruction that tests it is the alternative, and this project already does
+bounded instruction overrides for the collector, so it is precedented. Either way the test is the same band
+metric on the same dump, and the goal is the left bottom coming down from 95 to 100.
 
 **The interrupt-check budget invalidates every savestate, and that is why the load failed.**
 `psxrecomp/runtime/src/boot_state.c:976` refuses a load when the state header's `codegen_hash` differs from the
