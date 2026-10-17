@@ -1200,6 +1200,27 @@ numbers to work from, and why the fix has to be decided at the eye draw: either 
 eye replay instead of letting the guest's 2D clip flags drop the polygon, or stop the offset from pushing
 geometry behind the projection origin.
 
+**The launcher's wrist flags and the shard route are mutually exclusive, measured.** Recapturing the overlays
+in the launcher's own configuration (`vr\recapture_overlays.py 1 14 mods`, which passes the wrist flags)
+reports `regions 1`, `checked None`, `found 0` on every one of the 21 entries: with `-WristHudReplace` the
+guest never presents the overlay code that a shard is keyed to, so no capture exists to key against and no
+shard can ever register. That is why the live headset run sits at `registered 0` with 385,910 interpreter
+fallbacks, and it is not fixable by recapturing: it is the flag set, not the capture. The pacing win and the
+replaced wrist HUD cannot both be had while shards are keyed by content.
+
+**So the distortion has a known fix, and it is a choice.** The campaign's own A/B, taken while the route was
+live, measured `avg_pair_ms` 10.88 to 11.13 without the route and 9.52 to 9.59 with it, against an 11.111 ms
+budget for 90 Hz. Dropping `-WristHudReplace` (and `-WristHud`) for runs where pacing matters puts the route
+live and the pair under budget, which is what removes the reprojection warp. Keeping the wrist HUD keeps the
+interpreter pace and the warp.
+
+**The live eye offset in a null run is 8 units, not 24.** `stereo_stats.json` reports `eye_view`
+`[[8,0,0],[-8,0,0]]` in the headless capture, because the null HMD reports a small IPD; the game's own
+`g_ipd_mm` of 67 with `g_units_per_meter` 716.4 gives the 24 seen in the sandbox fixture and on real
+hardware. The headless pair cost is also startup dominated, `avg_pair_ms` 19.27 over 7 pairs with `shed 49`,
+because a `-Verify` run is fixed at a 96 frame receipt, so headless pair timing is not a steady state
+measurement. Use the live headset run for pacing numbers and the headless capture for image evidence.
+
 **Confirmed fix: the black eye margin is gone.** With `projection` forced to 0 for both eyes in
 `vr/psx_vr_stereo.c:863`, so the eye render keeps the guest focal and covers the whole surface, the same
 headless capture on slot 1 measures the lower margin at 2.37% against 2.35 left and right (margin-a), 5.20
