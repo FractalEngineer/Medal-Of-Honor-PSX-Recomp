@@ -1244,6 +1244,21 @@ projection change recorded as a confirmed fix made both eyes wrong and is revert
 not the cause. The pitch override was built to reach a defect thought to be pitch-gated, which it is not:
 the wedge is visible straight ahead, and `p000926` only gave a cleaner view of it.
 
+**The margin is set by one number, and it was measured by sweeping it.** The eye projection override scales
+the projected focal lengths by `(fov-scaled guest H) / projection_h_ref`, so `projection_h_ref` decides how
+much of the eye surface the guest render covers. It was a hardcoded 400; it is now `PSX_VR_AUTHORED_H_REF`,
+default 400, so the pinned behaviour is unchanged and the value can be swept. Measured with `rows_diff.py` on
+straight-ahead pairs from a held headless session on slot 1, bands in percent black, left eye:
+`margin-a/margin-b/bottom` are 29.81/42.67/92.65 at ref 400, 5.11/16.84/21.94 at 256, and 3.25/1.46/0.69 at
+160, with the eyes within 0.8 points of each other everywhere except the bottom band at 400. Lower ref spreads
+the guest render wider across the eye surface and the undrawn margin collapses toward nothing, so the pinned
+400 is an under-cover value, not a neutral one. The earlier claim that this lever was dead came from the
+harness: `vr/run_vr.ps1:165` hardcodes `PSX_VR_AUTHORED_FOCAL = '1'` into the process environment at line 221,
+so a shell export of it never reached the game and the two runs could only be byte-identical. Sweep frames are
+in `analysis/vr-proof/href-sweep`. Not settled: whether the coverage at 160 comes from a wider view or from
+magnifying the guest render about the eye centre, which the band numbers alone cannot separate, and which is
+the difference between a fix and a different distortion.
+
 **The interrupt-check budget invalidates every savestate, and that is why the load failed.**
 `psxrecomp/runtime/src/boot_state.c:976` refuses a load when the state header's `codegen_hash` differs from the
 running build's `PSX_OVERLAY_CODEGEN_HASH`, reporting `codegen_hash=%08X(want %08X)`. The emitter change moves

@@ -51,6 +51,8 @@
  *                        (aim the mounted gun with one hand); the right stick's
  *                        Y is otherwise inert.
  *   PSX_VR_AUTHORED_FOCAL=0 disable guest H/400 ratio for XR projection control
+ *   PSX_VR_AUTHORED_H_REF=n the guest H the eye focal is scaled against (default 400); lower
+ *                        spreads the guest render wider across the eye surface
  *   PSX_VR_TEXT=0 / PSX_VR_HUD_ICON=0 omit measured text/icon draw calls
  *   PSX_VR_HEAD_YAW=degrees / PSX_VR_HEAD_POSITION=x,y,z synthetic desktop pose
  *   PSX_VR_DESKTOP_FOV=1 deterministic Quest-FOV projection control
@@ -425,6 +427,12 @@ static int g_openxr;
 static int g_movement = -1;
 static double g_move_deadzone = .2, g_turn_gain = .78;
 static int g_authored_focal = 1, g_desktop_fov;
+/* The guest H the eye projection is scaled against, handed over as projection_h_ref. The override
+ * multiplies the focal lengths by (fov-scaled guest H) / this, so it is the one knob that sets how
+ * much of the eye surface the guest render covers: a ref above the guest's own H squeezes the scene
+ * toward the middle and leaves the margin undrawn. Sweepable so the margin can be measured rather
+ * than argued about; 400 is the pinned behaviour. */
+static uint32_t g_authored_h_ref = 400;
 static double g_head_yaw, g_head_position[3];
 static PSXModRenderView g_eye_view[2];
 static uint32_t g_stereo_eye;
@@ -854,7 +862,7 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
                 !psx_mod_openxr_view(1, &g_eye_view[1])) {
                 (void)psx_mod_openxr_end(0); return;
             }
-            if (g_authored_focal) g_eye_view[0].projection_h_ref = g_eye_view[1].projection_h_ref = 400;
+            if (g_authored_focal) g_eye_view[0].projection_h_ref = g_eye_view[1].projection_h_ref = g_authored_h_ref;
             /* Reverted: forcing the guest focal here filled the eye surface but threw away the
              * headset's projection, which makes both eyes geometrically wrong. The margin needs the
              * guest render widened to cover the headset frustum instead, not the eye projection
@@ -873,7 +881,7 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
                 if (!vr_pose_to_view(q,p,oq,op,fov[eye],g_units_per_meter,pass.w,pass.h,
                                      &g_eye_view[eye])) return;
                 g_eye_view[eye].projection = g_desktop_fov;
-                if (g_authored_focal) g_eye_view[eye].projection_h_ref = 400;
+                if (g_authored_focal) g_eye_view[eye].projection_h_ref = g_authored_h_ref;
             }
         }
         if(g_menu_flat && g_openxr &&
@@ -1399,6 +1407,10 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
                    &g_head_position[2]) != 3) memset(g_head_position,0,sizeof g_head_position);
     }
     if ((e = getenv("PSX_VR_AUTHORED_FOCAL"))) g_authored_focal = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_AUTHORED_H_REF"))) {
+        long v = strtol(e, NULL, 10);
+        if (v >= 32 && v <= 8192) g_authored_h_ref = (uint32_t)v;
+    }
     if ((e = getenv("PSX_VR_DESKTOP_FOV"))) g_desktop_fov = atoi(e) != 0;
     if (g_openxr) g_stereo=1;
     if ((e = getenv("PSX_VR_IPD_MM"))) g_ipd_mm = strtod(e, NULL);
