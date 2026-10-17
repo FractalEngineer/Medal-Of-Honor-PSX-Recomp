@@ -1272,6 +1272,34 @@ unrendered rather than black, why it moves with the eye offset, and why magnifyi
 the eye from seeing past the guest frame. The fix has to make the guest draw past that boundary, by widening
 the frame the eye replay is rendered into, rather than changing any focal.
 
+**RESOLVED: the world hung upside down because the origin pose and the live pose disagreed by a half turn.**
+The user reported the world inverted while the HUD and the weapon were correct and tracking was fine, on
+SteamVR, and that it had been right before. The eye view the world is drawn with is `conj(origin) * pose`, and
+that matrix was measured live over the debug surface at session start as
+`rotation_q12 = [-4073,110,415, -112,-4094,-13, 415,-24,4075]`, a diagonal of approximately (-1,-1,+1): a 180
+degree roll, not a head orientation. The world render obeys it, so the world hangs upside down. The 2D HUD
+never passes through that matrix and the hand and head deltas stay correct, which is exactly why the HUD and
+the weapon looked right and only the world did not. `openxr_control recenter=1`, which re-captures the origin,
+changed the same matrix to `[4056,-277,499, 275,4087,29, -500,5,4065]`, near identity, and the captured mirror
+went from ceiling-lights-at-the-bottom to an upright corridor, ceiling and light at the top, floor at the
+bottom, both HUD elements upright, in the same run seconds apart. Evidence: `analysis/vr-proof/mirror-now.bmp`
+(inverted) against `analysis/vr-proof/mirror-fixed.bmp` (upright), both taken through
+`psxrecomp/tools/window_capture.py`, with the eye views before and after from `openxr_views`.
+
+Why no headless run ever showed it: the null HMD reports an identity pose, so the origin and every later pose
+agree by construction and the half turn cannot arise. Every headless pair in this repo is therefore blind to
+it, which is why this survived a long stretch of capture work, and it is the same trap as the symmetric null
+FOV: a null device cannot exercise a defect that needs a real pose.
+
+The fix is in the runtime where the origin is captured (`psxrecomp/runtime/src/psx_openxr.c`, the locate path
+before the `if(!s_origin_valid)` capture): if the head's up axis in origin space comes back pointing down, the
+stored origin is not a head orientation, so it is dropped and the current pose becomes the reference. A real
+turn keeps the up axis up and is untouched, and a ten frame counter means a one frame glitch cannot reset the
+origin. The keyword `recenter` remains the manual escape hatch when a session is already inverted.
+
+Still open after this: the black wedge over the floor beside the player, which is unchanged by the fix and is
+visible in `mirror-fixed.bmp`; the master A/B build; and the parked interrupt-check budget.
+
 **The interrupt-check budget invalidates every savestate, and that is why the load failed.**
 `psxrecomp/runtime/src/boot_state.c:976` refuses a load when the state header's `codegen_hash` differs from the
 running build's `PSX_OVERLAY_CODEGEN_HASH`, reporting `codegen_hash=%08X(want %08X)`. The emitter change moves

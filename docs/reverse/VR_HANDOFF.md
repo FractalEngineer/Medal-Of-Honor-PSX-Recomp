@@ -13,6 +13,12 @@ original scope and are not current instructions.
 - Accepted on Quest 3 / Virtual Desktop VDXR: normal boot/menu/briefing,
   genuine per-eye gameplay, locomotion, tracked weapon visuals for all ten supplied
   weapon controls, headset color, head-turn visibility and the rebuilt normal launcher.
+- World orientation on SteamVR: the origin pose a session captures can sit a half turn from every pose
+  after it. The world is drawn with `conj(origin) * pose`, so it hangs upside down while the 2D HUD, the
+  tracked weapon and the pose deltas all stay correct. Re-capturing the origin
+  (`openxr_control recenter=1` on the debug surface) restores it live, and the runtime now drops an origin
+  whose up axis points down so it cannot persist past the frame it appears on. Measured matrices before and
+  after, and the mirror captures, are in [VR_OPTIMIZATION_STATUS.md](VR_OPTIMIZATION_STATUS.md).
 - Jump is right-stick click. [ALPHA_README.md](../../ALPHA_README.md) owns the
   current installation and control chart; do not copy old Y-button mappings.
 - Jitter is shelved at `04624df`, preserved in the local retired-branch bundle

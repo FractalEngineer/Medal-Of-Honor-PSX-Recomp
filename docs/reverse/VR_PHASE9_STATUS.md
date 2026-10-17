@@ -637,6 +637,17 @@ The first direct XR blit was upside down in the headset. Flipping Y only during
 copy into acquired XR images corrected it; the user confirmed upright output
 and expected head-tracking direction. Desktop dumps retain their row convention.
 
+**Do not confuse that with the other upside down, which is not the submission at all.** A later session
+reported the world inverted with the HUD and the weapon correct. That one is the eye view, not the blit: the
+world is drawn with `conj(origin) * pose`, and at session start that matrix was a half turn,
+`rotation_q12[4]` (the up axis) negative at -4094, because the origin was captured from a pose the runtime's
+standing space disagrees with by 180 degrees. Re-capturing the origin restored it live. The distinction that
+matters for diagnosis: a submission flip inverts *everything* including the HUD, while an origin half turn
+leaves the 2D HUD and the pose deltas correct and inverts only the world. The runtime now drops an origin
+whose up axis points down, so the case cannot persist, and `recenter` remains the manual escape hatch. Full
+measurements and the before and after mirror captures are in
+[VR_OPTIMIZATION_STATUS.md](VR_OPTIMIZATION_STATUS.md).
+
 Scale trials: 1, 0.5, 0.25, then user-reversed direction to 2 and accepted 3.
 The user reported smaller settings looked bigger; this subjective observation is
 retained without inferring physical scale from it. Correction: the directory
