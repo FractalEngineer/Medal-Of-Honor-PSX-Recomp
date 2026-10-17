@@ -1182,6 +1182,24 @@ camera. The VR stereo is a declarative plugin (`mods/preloaded/packages/moh.vr.s
 plugin id `moh.vr.stereo`) carrying no source path, so its code is compiled into the runtime and the
 composition is the renderer code above.
 
+**Correction to the above, from reading the code: the eyes are replayed guest renders, not copies with a
+2D offset, and the ±24 is a view offset.** Each eye gets its own FBO (`StereoPair::fbo[eye]`, `tw[eye]`,
+`th[eye]`), and `render_pass.c` drives them: `stereo_eye_draw` at 1104, the loop that renders both eyes at
+1200 to 1230, and `gl_renderer_stereo_publish(s_stereo.attempts, cycle, s_stereo.eye_view)` at 1226. The
+per-eye view offset is sampled from the projection ambient at `render_pass.c:969`
+(`gte_render_view_get(s_stereo.eye_view[eye])`), and the unit test pins its value:
+`test_render_pass_sandbox.c:771` asserts `eye_view[0][0] == -24` and `eye_view[1][0] == 24`. So each eye is
+the guest's own render replayed with the view translated ±24 guest units laterally.
+
+That means a per-eye difference in a clipped region is expected after all: the two eyes are offset in
+opposite directions, so the near geometry at the player's feet falls behind the projection origin in one eye
+before the other. The evidence I measured still stands (the wedges move with the eye offset, 64.5% against
+67.8% bottom-left, 20 to 28 px separation), but it is consistent with near geometry being clipped by the
+guest's own projection under the offset, not only with a composition fill. This is why `-24` and `+24` are the
+numbers to work from, and why the fix has to be decided at the eye draw: either clip the near geometry in the
+eye replay instead of letting the guest's 2D clip flags drop the polygon, or stop the offset from pushing
+geometry behind the projection origin.
+
 **Live numbers, headset run, save state 1.** `avg_pair_ms` 11.165 against an 11.111 ms budget for 90 Hz,
 `shed` 133 of 606 pairs, 133 empty frames, `openxr` running with `ipd_m` 0.063 and `units_per_meter` 238.8.
 The frame misses its deadline, the compositor reprojects, and that warp is the shift and stretch on head
