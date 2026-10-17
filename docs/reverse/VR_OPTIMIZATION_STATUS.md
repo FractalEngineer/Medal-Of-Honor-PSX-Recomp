@@ -1300,6 +1300,31 @@ origin. The keyword `recenter` remains the manual escape hatch when a session is
 Still open after this: the black wedge over the floor beside the player, which is unchanged by the fix and is
 visible in `mirror-fixed.bmp`; the master A/B build; and the parked interrupt-check budget.
 
+**The black wedge is not the eye offset, and the numbers now say so.** `PSX_VR_EYE_SCALE=0.0` collapses the
+pair onto one camera so the eye offset cannot contribute at all. The wedge is unchanged: margin-a / margin-b
+/ bottom read 30.23 / 42.74 / 91.54 percent black against 29.81 / 42.67 / 92.65 at 1.0, and mid, floor and
+near-floor agree to within 0.03 points (23.48 / 2.99 / 3.22). Same pose, slot 1, straight ahead, dumps in
+`analysis/vr-proof/eye-scale/scale1.0` and `scale0.0`, measured with `rows_diff.py`. The only difference
+between the runs is the bottom band's inter-eye spread, 2.22 points at 1.0 against 0.00 at 0.0, so the offset
+does move near-floor content slightly and removes none of the black. The missing floor is inside the guest's
+own render. Run order matters as usual: the first attempt reported "never reached the scene" because the
+readiness check required a non-zero eye translation, which is precisely what collapsing the offset sets to
+zero, so the probe was blind to the run it was measuring.
+
+The shape of the black explains every earlier attempt: 23.5 percent mid, 3 percent floor, 30 percent
+margin-a, 43 percent margin-b, 92 percent bottom, so the black grows toward the bottom edge. It is also why
+every `PSX_VR_AUTHORED_H_REF` value only magnified the image: scaling the focal fills the surface out of the
+same 240 rows of content instead of adding rows.
+
+Two readings remain and one probe separates them. If the guest's 240 rows are mapped to the eye surface
+without padding, the black is vertical field of view the guest frame does not contain. If they are stretched
+to fill the surface instead, the same black is the guest's own bottom rows holding no geometry, and the
+frame is also anamorphic, which would be a second defect wearing the same symptom. Render the same slot and
+pose with the native presentation, that is with no eye replay, and read the guest's own bottom scanlines:
+content there against black in the eye image blames the replay, black in both blames the game's own cull or
+the collector in `vr_head_frustum_filter`, which is the only place the mod can widen what the game submits.
+Do that before writing any fix, because the two readings want opposite changes.
+
 **The interrupt-check budget invalidates every savestate, and that is why the load failed.**
 `psxrecomp/runtime/src/boot_state.c:976` refuses a load when the state header's `codegen_hash` differs from the
 running build's `PSX_OVERLAY_CODEGEN_HASH`, reporting `codegen_hash=%08X(want %08X)`. The emitter change moves
