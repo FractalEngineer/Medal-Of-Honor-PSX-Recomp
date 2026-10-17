@@ -855,6 +855,12 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
                 (void)psx_mod_openxr_end(0); return;
             }
             if (g_authored_focal) g_eye_view[0].projection_h_ref = g_eye_view[1].projection_h_ref = 400;
+            /* The headset frustum is wider than the guest's frame, so replacing the guest projection
+             * for the eye leaves the margins of the eye surface never drawn, and they read as a large
+             * black area beside the near floor. Keep the tracked pose and the per-eye view translation,
+             * which is the stereo, but project with the guest's own focal so the drawn scene covers the
+             * whole surface. */
+            g_eye_view[0].projection = g_eye_view[1].projection = 0;
         } else {
             double angle = g_head_yaw * 3.141592653589793 / 180;
             double q[4] = {0, sin(angle*.5), 0, cos(angle*.5)};
