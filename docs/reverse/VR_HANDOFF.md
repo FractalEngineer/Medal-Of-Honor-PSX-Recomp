@@ -4,7 +4,7 @@
 
 The owner considers the current build playable and authorized the game-master
 PR and next release. v0.1.6 retains the accepted nearby-floor/world-stability
-fixes and the slot-2 production improvements. Framework pin: `5932092c`; UI pin:
+fixes and the slot-2 production improvements. Framework pin: `9b2100fe`; UI pin:
 `41c88ffe`. Production is Release / OpenGL / OpenXR, PGXP ON, debug tools OFF,
 LLE batching, projective replay ON and stereo shedding OFF by default.
 
@@ -38,7 +38,8 @@ tested fork; it does not depend on upstream merging the framework changes.
 Current slot-2 follow-up: [VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md) records
 production defaults, the empty-projective-setting correction, overload-flicker
 fix, headless receipts and the measured throughput improvement. Current framework
-pin: `5932092c`; normal `build-release` uses debug tools OFF and PGXP ON.
+pin: `9b2100fe`, which merges upstream `9caf4c22` into the combined VR branch.
+Normal `build-release` uses debug tools OFF and PGXP ON.
 
 
 Updated: 2026-10-23. Start here, then read [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md).

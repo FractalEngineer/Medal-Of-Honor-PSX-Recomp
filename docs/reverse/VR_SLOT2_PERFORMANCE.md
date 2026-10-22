@@ -1,7 +1,8 @@
 # Slot 2: overload flicker and production performance
 
 2026-10-23. Follow-up to the owner-accepted projective floor/stability fix.
-Framework pin: `5932092cdf20aaa707e286dbd840c63b1f0d0598` on `vr-head-pitch`.
+Framework pin: `9b2100fe8d0c37931fba4d8a82fd6a724ece8f0b` on `vr-head-pitch`.
+It merges current upstream `9caf4c22` while retaining the validated fork baseline.
 All checks in this follow-up were headless; the owner requested continued headless
 verification without another headset check. No new physical-headset acceptance
 is claimed.

@@ -1,116 +1,248 @@
-# Upstream VR PR draft
+# VR upstream PR drafts
 
-Prepared 2026-10-23 for `RetroPortingToolKit/psxrecomp`. This is review text, not
-an opened upstream PR. It follows the focused scope, changes, validation and
-limitations pattern of [PR #666](https://github.com/RetroPortingToolKit/psxrecomp/pull/666)
-and the source/author requirements in the framework's CONTRIBUTING.md.
+Eight stacked pull requests for `RetroPortingToolKit/psxrecomp`, based on
+upstream master `9caf4c22`. Each feature branch contains one commit relative
+to its parent branch. All eight PRs are open and ready for review together.
+After a prerequisite merges, rebase the next branch onto upstream master and
+rerun its listed checks.
 
-Refreshed upstream master is `9caf4c22`; the tested fork is `5932092c`.
-They have diverged by 182 upstream commits and 24 fork commits. The fork branch
-must not be submitted wholesale as though it were a tested current-master port.
-The game release remains pinned to the tested fork.
+| PR | Feature branch | Parent | Commit |
+| --- | --- | --- | --- |
+| 1 | [#739](https://github.com/RetroPortingToolKit/psxrecomp/pull/739) | [`vr-pr/01-frame-tracing`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/01-frame-tracing) | `upstream/master` | `8400b55d` |
+| 2 | [#740](https://github.com/RetroPortingToolKit/psxrecomp/pull/740) | [`vr-pr/02-bounded-shedding`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/02-bounded-shedding) | PR 1 | `0cdf9595` |
+| 3 | [#741](https://github.com/RetroPortingToolKit/psxrecomp/pull/741) | [`vr-pr/03-pair-checkpoint`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/03-pair-checkpoint) | PR 2 | `4419d234` |
+| 4 | [#742](https://github.com/RetroPortingToolKit/psxrecomp/pull/742) | [`vr-pr/04-paired-hud-capture`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/04-paired-hud-capture) | PR 3 | `e4f1f985` |
+| 5 | [#743](https://github.com/RetroPortingToolKit/psxrecomp/pull/743) | [`vr-pr/05-synthetic-head-pose`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/05-synthetic-head-pose) | PR 4 | `18d52c8b` |
+| 6 | [#744](https://github.com/RetroPortingToolKit/psxrecomp/pull/744) | [`vr-pr/06-origin-recovery`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/06-origin-recovery) | PR 5 | `36f1ff3e` |
+| 7 | [#745](https://github.com/RetroPortingToolKit/psxrecomp/pull/745) | [`vr-pr/07-projective-replay`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/07-projective-replay) | PR 6 | `fef7a1b6` |
+| 8 | [#746](https://github.com/RetroPortingToolKit/psxrecomp/pull/746) | [`vr-pr/08-production-readiness`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/08-production-readiness) | PR 7 | `534f9ce2` |
 
-## First PR: preserve precise eye poses and clip near-camera VR geometry
+## 1. VR: add opt-in stereo and XR frame attribution
 
-Suggested title: **VR: preserve precise eye poses and clip near-camera geometry**
+**Current behavior:** Stereo and OpenXR performance is visible mainly as a
+whole-frame total. A slow frame cannot be attributed reliably to guest scene
+traversal, checkpointing, either eye, HUD capture, OpenXR waits, or submission.
 
-### Draft body
+**Desired behavior:** An opt-in trace records one compact row per stereo frame
+and exposes stage costs and state through TCP as JSON or a Chrome/Perfetto
+trace. Normal production play remains untraced and pays only the cost of a
+disabled branch.
 
-Stereo render replay quantizes the eye transform and projects near-camera
-triangles through integer GTE screen/depth limits. Small head movements can
-produce stepped world motion; triangles crossing an eye's near plane can receive
-the wrong facing and leave missing geometry close to the viewer.
+**What it changes:**
 
-Preserve the precise host eye transform during scoped render replay and use
-homogeneous projection/facing with signed near-plane clipping for tagged
-geometry. The motivating Medal of Honor views keep their nearby floor and move
-smoothly through millimeter translations and small pitch changes.
+- Adds a fixed-capacity trace ring with pair identity, per-eye checkpoint,
+  guest-draw and restore timing, failure/stale/shed state, guest cycles,
+  primitive counts, texture-upload deltas, and atomic publication results.
+- Separates HUD capture, draw, and readback timing; records OpenXR cadence and
+  wait/acquire/copy/submit stages without presenting CPU timings as GPU time.
+- Adds guarded nested span markers so a game can attribute world traversal or
+  visibility selection inside an eye.
+- Keeps allocation and file I/O out of the record path and documents trace
+  configuration and export.
 
-#### Changes
+**Validation:** The trace, allocation/I/O guard, render sandbox, abort, and
+XR-off input tests pass on Windows/GCC 13.2 Release. The TCP command index is
+current.
 
-- Carry exact rotation and translation alongside the ordinary integer eye view,
-  without adding eye translation twice.
-- Preserve camera-space projective provenance, evaluate facing before integer
-  screen saturation, and clip tagged geometry at the eye's signed near plane.
-- Use projective geometry at the normal VR aspect ratio too.
-- Scope PGXP CPU/provenance mode to the rollback-protected eye transaction and
-  restore it on success, checkpoint failure and abort.
-- Cover precise-eye translation, projective facing, provenance/fallback and
-  transaction restoration with the corresponding runtime tests.
+[Source and validation receipt](https://github.com/FractalEngineer/psxrecomp/blob/vr-pr/01-frame-tracing/docs/internal/upstream/vr-frame-tracing.md)
 
-The framework change is game-agnostic. Game camera hooks, visibility policy,
-tracked weapons, launch defaults and artwork remain in the game repository.
+## 2. VR: bound stereo shedding and recover at the display deadline
 
-#### Validation
+**Current behavior:** A stale pair-time estimate can suppress many consecutive
+updates after one overloaded frame. The shed state can also remain latched
+after rendering has recovered, producing a held or empty headset image.
 
-The following results apply to the tested fork implementation, not yet to a
-reconstructed branch on current upstream master:
+**Desired behavior:** Shedding has a bounded duration and streak, periodically
+probes with a fresh render, and exits as soon as a complete pair meets the
+display deadline. A state or cadence change clears obsolete budget history.
+Stereo publication remains all-or-nothing.
 
-- Windows / GCC 13.2 / Ninja Release / OpenGL / OpenXR build with PGXP enabled.
-- GTE projective/facing, GPU provenance/fallback/scope, render sandbox/abort,
-  precise-pose and game-frustum tests passed in the implementation session.
-- Headless 21-pose translation and pitch sweeps produced meaningful world motion
-  on all 20 intervals; the quantized translation control moved on only 4–5.
-- Nearby-floor image comparisons removed the large black floor wedge in both
-  eyes; the final scoped sweep completed 757 restoration checks, zero mismatches.
-- The owner accepted floor coverage and world stability during a 30-second
-  Quest 3 / Virtual Desktop VDXR headset check.
+**What it changes:**
 
-The image correction has a cost: a matched fork-side slot-1 headless comparison
-measured median stereo-pair time increasing from 11.552 to 16.822 ms. This PR
-fixes rendering correctness; it does not promise a performance improvement.
-Broader mission/sector coverage, reconnect and other runtimes remain unverified.
+- Extracts the shedding decision into a testable whole-pair policy with
+  elapsed-time and consecutive-skip limits.
+- Prefers the OpenXR display period for the budget, with an explicit override
+  and a guest VBlank fallback.
+- Resets the estimate on scene, mode, geometry, and XR lifecycle changes;
+  exposes streak, stale age, reset, and budget-source counters.
+- Keeps shedding opt-in at the application layer. Medal of Honor continues to
+  publish every complete pair by default.
 
-Integration: [Medal of Honor, SLUS-00974](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/tree/bfaf3bbc75f1618459f945f268d2bc0de914ea10).
-Consumers require a framework pin bump and a PGXP-enabled rebuild. There are no
-game-codegen or BIOS-emitter changes in this feature, so regeneration is not
-required for the feature itself. The GTE execution identity changes; existing
-emulator savestates may be incompatible and must not have their checks bypassed.
+**Validation:** Policy, render sandbox, and abort tests pass on Windows/GCC
+13.2 Release. Historical reproduction reduced a pathological 895-frame shed
+streak to 62 frames; this fixes runaway suppression and does not promise full
+frame-rate parity under sustained overload.
 
-Source: [efa10eee](https://github.com/FractalEngineer/psxrecomp/commit/efa10eee).
-Original human author: **Yves <calibratedbeats@gmail.com>**. Preserve that author
-on a clean cherry-pick; a reconstructed/partial port must cite the exact source
-and include `Co-authored-by: Yves <calibratedbeats@gmail.com>`. Add the attribution
-record under `docs/internal/upstream/vr-precise-projective-replay.md` on the
-actual submission branch, including exact base and fresh validation.
+[Source and validation receipt](https://github.com/FractalEngineer/psxrecomp/blob/vr-pr/02-bounded-shedding/docs/internal/upstream/vr-bounded-shedding.md)
 
-### Before opening this draft upstream
+## 3. VR: reuse one guest checkpoint per stereo pair
 
-1. Reconstruct only this feature on refreshed upstream master. Resolve its
-   render-pass/PGXP dependencies without importing the optimization campaign.
-2. Keep separate review commits for exact pose transport and projective
-   facing/clipping if their dependencies permit; preserve source attribution.
-3. Run the affected registered runtime tests and build with XR/debug ON and OFF.
-4. Build Medal of Honor against the reconstructed framework and compatible UI,
-   then check flat boot/gameplay and VR images/rollback. Record the exact commits.
-5. Replace the fork-only validation qualifier with the fresh results actually
-   obtained. Link the committed upstream source/attribution record.
+**Current behavior:** Each eye copies the same large guest baseline, so the
+right-eye transaction repeats CPU, RAM, DMA, timer, and related checkpoint
+work already performed for the left eye.
 
-## Remaining focused follow-ups
+**Desired behavior:** Capture the pair baseline once, restore it after each eye,
+and retain the per-eye GPU and precision state required for deterministic
+replay. Any failed, mismatched, or unrelated transaction falls back cleanly to
+an independent capture.
 
-These retain the campaign report's review boundaries. Do not include them all
-in the geometry PR; some need no release-facing behavior change.
+**What it changes:**
 
-| Proposed PR | Source / scope | Validation to carry forward and rerun after porting |
-| --- | --- | --- |
-| Reuse one checkpoint per stereo pair | `063b082a`; capture once, restore each eye; opt-out and mismatch retirement | Sandbox, abort, reuse invalidation, precision state; historical right-eye checkpoint p50 143 to 36 us |
-| Pair native-HUD readbacks and checkpoint capture | `a876bae3`, `d2554481`; paired capture API consumed by the game | Byte/image parity, shared capture restoration, capture performance |
-| Add opt-in frame/XR tracing and nested attribution | `022eb1ed`, `0e0d2de8`, `5c67dced`, `63271ce7`, `571a8f10`, `87a3e822` | Ring/export/allocation guards, nested-span containment; detailed diagnostics off in production |
-| Bound shedding and deadline recovery | `cae62891`, `b6a671c1` | Policy bounds/latch/failure-reset tests; clearly state game launch disables shedding under sustained overload |
-| Add debug synthetic head translation/pitch | `2ed12640`, `a3714fad`, associated millidegree extension | XR/debug guards, pose math and deterministic sweeps |
-| Recover an inverted XR origin | `96981469` | Add a dedicated origin-recovery fixture; historical accepted-game evidence is not a fixture |
-| Report startup readiness without debug TCP | `5932092c`; one-shot readiness and optional lightweight counters | Debug-OFF launch, valid/missing staged save, no diagnostic TCP dependency; check overlap with current upstream diagnostic-release work |
+- Shares the checkpoint only between the two eyes of one protected stereo pair
+  and restores the complete guest state after each eye.
+- Verifies restored state before reuse; a mismatch retires reuse for the
+  session, while `PSX_STEREO_BASELINE=0` provides the old behavior as a control.
+- Adds checkpoint-save, reuse, and copied-byte counters and marks reused
+  baselines in the frame trace.
 
-The final fork-side production control recorded 2,183 pairs, zero sheds/empty
-submissions/XR failures; separate verification recorded 968 checks and zero
-mismatches. Removing detailed debug instrumentation raised headless slot-2 guest
-throughput by 23–27%. These are assembled-build observations, not independent
-speedup claims for each proposed PR or tests of current upstream master.
+**Validation:** Trace, render sandbox, and abort tests pass, including shared
+baseline restoration, per-eye precision, explicit opt-out, and failure cleanup.
 
-Overlay acceleration research, rejected batching/inlining, reverted image flips,
-game-specific scripts, personal saves, screenshots containing game assets and
-chronological investigation notes are excluded from the framework feature PRs.
+[Source and validation receipt](https://github.com/FractalEngineer/psxrecomp/blob/vr-pr/03-pair-checkpoint/docs/internal/upstream/vr-pair-checkpoint.md)
 
-The complete original inventory and evidence limits remain in
-[VR_CAMPAIGN_PR_REPORT.md](VR_CAMPAIGN_PR_REPORT.md). The game release's current
-result is in [VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md).
+## 4. VR: capture both HUD mattes with one checkpoint and readback
+
+**Current behavior:** Producing the two native-HUD mattes uses two separate
+capture calls, two checkpoint baselines, and two GPU readbacks. That leaves
+additional synchronization and rollback work on the critical path.
+
+**Desired behavior:** One paired capture API renders both mattes from the same
+guest checkpoint and returns two contiguous image planes from one readback.
+The operation restores renderer state, returns no partial result, and does not
+publish or impersonate a stereo world pair.
+
+**What it changes:**
+
+- Adds `psx_mod_render_capture_rgba_pair` and a double-height staging/readback
+  path for the two RGBA mattes.
+- Shares the first matte's checkpoint with the second while keeping that scope
+  separate from the later eye transaction.
+- Rejects invalid or incomplete captures and updates sandbox/abort stubs.
+- Consumers must migrate from the single-matte API and rebuild.
+
+**Validation:** Sandbox and abort tests pass with both output buffers and
+byte-identical matte checks. Historical measurements moved paired capture p50
+from 3.41 ms to 3.19 ms and p95 from 6.91 ms to 5.10 ms in the test scene.
+
+[Source and validation receipt](https://github.com/FractalEngineer/psxrecomp/blob/vr-pr/04-paired-hud-capture/docs/internal/upstream/vr-paired-hud-capture.md)
+
+## 5. VR: add debug synthetic head translation and pitch
+
+**Current behavior:** Headless runs with a null HMD cannot apply a controlled
+headset translation or pitch, so small eye-motion regressions require a person
+to move their head to test them.
+
+**Desired behavior:** Debug builds can apply an absolute room-space translation
+and optional pitch to both eye poses while leaving normal tracking untouched.
+Overrides are bounded, reject invalid input, and can be cleared explicitly.
+
+**What it changes:**
+
+- Adds the TCP `openxr_pose_override` control for millimetre X/Y/Z translation,
+  coarse `pitch_deg`, and fine `pitch_mdeg`.
+- Applies the synthetic pose to both eyes after origin capture and reports the
+  exact applied values in JSON.
+- Limits translation to 10 metres and pitch to 90 degrees, rejects non-finite
+  values, and keeps the feature unavailable outside the debug surface.
+
+**Validation:** XR-off input tests cover bounds, binocular translation, pitch,
+disabled behavior, and clearing; the command index is current.
+
+[Source and validation receipt](https://github.com/FractalEngineer/psxrecomp/blob/vr-pr/05-synthetic-head-pose/docs/internal/upstream/vr-synthetic-head-pose.md)
+
+## 6. VR: recover an inverted XR reference origin
+
+**Current behavior:** A bad initial XR origin can leave world geometry upside
+down for the whole session while the HUD and hands remain correctly oriented.
+A user-requested recenter repairs the measured relative pose.
+
+**Desired behavior:** The runtime drops an invalid reference origin after a
+persistent inversion and adopts the next valid pose. Short tracking glitches
+and ordinary yaw turns do not trigger recovery.
+
+**What it changes:**
+
+- Tests the relative head-up axis against the captured origin and recenters
+  only after ten consecutive inverted samples.
+- Clears the streak when tracking becomes invalid or upright and resets it when
+  the reference itself changes.
+- Distinguishes an inverted origin from a general image flip; no eye-image flip
+  is included in this change.
+
+**Validation:** The XR input fixture covers the ten-sample threshold, transient
+and upright resets, ordinary yaw, and reference invalidation. Physical
+reconnect coverage remains a hardware follow-up.
+
+[Source and validation receipt](https://github.com/FractalEngineer/psxrecomp/blob/vr-pr/06-origin-recovery/docs/internal/upstream/vr-origin-recovery.md)
+
+## 7. VR: preserve precise eye poses and clip near-camera geometry
+
+**Current behavior:** Eye replay loses fractional head translation and
+rotation when it reuses the guest's integer GTE view, causing stepped world
+motion. Triangles crossing an eye's near plane can also receive the wrong
+facing or become an oversized black floor/geometry wedge.
+
+**Desired behavior:** VR replay uses the runtime's exact eye pose, projects
+tagged geometry with signed homogeneous depth and facing, and clips it at the
+eye near plane. Small physical head motions remain smooth, the nearby world
+stays filled, and normal guest rendering keeps its existing behavior.
+
+**What it changes:**
+
+- Extends the stereo view with precise rotation and translation and transforms
+  full camera-space accumulators without applying eye translation twice.
+- Carries signed camera-space provenance, corrects replay facing before screen
+  saturation, and enables the existing projective clipping path in eye passes.
+- Scopes PGXP provenance and CPU tracking to the rollback-protected eye
+  transaction and restores the previous modes after success, failure, or abort.
+- Keeps unsupported provenance, HUD capture, and ordinary guest GTE execution
+  on their existing fallback paths. Consumers must rebuild because the render
+  view structure changes.
+
+**Validation:** Six focused GTE, GPU, pose, sandbox, and abort fixtures pass,
+along with the production GPU-history guard. Historical Quest 3/VDXR testing
+accepted the floor coverage and head-motion stability. The correctness path
+adds rendering cost, and this PR does not claim a performance improvement.
+
+[Source and validation receipt](https://github.com/FractalEngineer/psxrecomp/blob/vr-pr/07-projective-replay/docs/internal/upstream/vr-projective-replay.md)
+
+## 8. VR: report XR readiness without the debug server
+
+**Current behavior:** Production startup inspection depends on the heavyweight
+debug server and TCP. Debug-free builds therefore have no compact machine
+readable confirmation that state loading settled and XR submitted a real frame.
+
+**Desired behavior:** A production build can write one opt-in startup receipt
+after state loading and actual XR submission, and can optionally log lightweight
+VR counters. Normal runs perform no recurring file I/O or diagnostic work.
+
+**What it changes:**
+
+- Adds `PSX_OPENXR_READY_FILE`, which atomically records runtime, tracking,
+  submission, empty/failure counters, frame identity, and savestate load result.
+- Adds opt-in `PSX_RUNTIME_PERF_DIAG` counters for pair, shed, empty, failure,
+  pair-time EMA, and rollback verification.
+- Leaves readiness writing disabled unless a fresh output path is requested and
+  continues to report the existing guest-frame cadence separately from XR FPS.
+
+**Validation:** A Release/OpenGL/OpenXR/PGXP Medal of Honor build succeeds with
+debug tools off. Fresh-boot headless readiness and missing-slot refusal pass.
+The older slot-2 fixture does not load on current upstream; that integration
+does not change save headers or compatibility checks.
+
+[Source and validation receipt](https://github.com/FractalEngineer/psxrecomp/blob/vr-pr/08-production-readiness/docs/internal/upstream/vr-production-readiness.md)
+
+## Submission notes
+
+All eight branches are framework-only and game-agnostic. Medal of Honor consumes
+the series through a framework pin bump and rebuild; no game code generation or
+BIOS regeneration is required. PR 7 changes GTE replay execution identity, so
+old emulator savestates may be rejected after that change and compatibility
+checks must remain enabled.
+
+The commits retain Yves `<calibratedbeats@gmail.com>` as author and include the
+source/validation receipts linked above. While this stack is under review,
+Medal of Honor remains pinned to the combined `vr-head-pitch` development
+branch at `9b2100fe`, which includes the accepted fork baseline and current
+upstream `9caf4c22`. After all eight PRs merge, repin the submodule to upstream
+master and rebuild against the merged API.

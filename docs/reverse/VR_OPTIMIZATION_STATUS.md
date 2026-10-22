@@ -3,7 +3,7 @@
 Current slot-2 follow-up: [VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md) records
 production defaults, the empty-projective-setting correction, overload-flicker
 fix, headless receipts and the measured throughput improvement. Current framework
-pin: `5932092c`; normal `build-release` uses debug tools OFF and PGXP ON.
+pin: `9b2100fe`; normal `build-release` uses debug tools OFF and PGXP ON.
 
 
 Companion to [VR_OPTIMIZATION_PLAN.md](VR_OPTIMIZATION_PLAN.md). Everything below is
