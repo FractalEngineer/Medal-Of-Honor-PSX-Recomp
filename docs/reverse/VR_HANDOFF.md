@@ -1,5 +1,35 @@
 # VR handoff
 
+## v0.1.6 release baseline (2026-10-23)
+
+The owner considers the current build playable and authorized the game-master
+PR and next release. v0.1.6 retains the accepted nearby-floor/world-stability
+fixes and the slot-2 production improvements. Framework pin: `5932092c`; UI pin:
+`41c88ffe`. Production is Release / OpenGL / OpenXR, PGXP ON, debug tools OFF,
+LLE batching, projective replay ON and stereo shedding OFF by default.
+
+Use `build-release/` for local play. `VERSION`, the packaged executable stamp
+and `BUILD_INFO.json` identify the release. The release workflow and finalizer
+now enforce the production flags; the launcher uses readiness JSON without TCP.
+Current controls and limitations are in [ALPHA_README.md](../../ALPHA_README.md).
+Jump is left-stick click; crouch is right-stick click; the wrist HUD is shipped.
+
+Performance measurements remain valid, with demanding scenes below target;
+this does not override the owner's playable assessment. See
+[VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md) and
+[v0.1.6 notes](VR_RELEASE_V0.1.6.md). Geometry acceptance was on Quest 3 / VDXR;
+the later production performance/flicker checks were headless.
+
+Cleanup retention and archive access are recorded in
+[VR_PROOF_CLEANUP_PLAN.md](VR_PROOF_CLEANUP_PLAN.md). The obsolete alternate
+performance builds are removed; original saves, discs, current build and
+registered worktrees are preserved. The sections below retain historical
+context and must not be used as current release/layout instructions.
+
+Upstream submission text and remaining current-master validation are in
+[VR_UPSTREAM_PR_DRAFT.md](VR_UPSTREAM_PR_DRAFT.md). The game release pins the
+tested fork; it does not depend on upstream merging the framework changes.
+
 Current slot-2 follow-up: [VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md) records
 production defaults, the empty-projective-setting correction, overload-flicker
 fix, headless receipts and the measured throughput improvement. Current framework

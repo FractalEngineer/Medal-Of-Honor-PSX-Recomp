@@ -2,7 +2,7 @@
 
 <!-- retcomm-readme-metrics -->
 [![GitHub downloads (all assets, all releases)](https://img.shields.io/github/downloads/FractalEngineer/Medal-Of-Honor-PSX-Recomp/total)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases)
-[![Alpha v0.1.4](https://img.shields.io/badge/alpha-v0.1.4-orange)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.4)
+[![Alpha v0.1.6](https://img.shields.io/badge/alpha-v0.1.6-orange)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.6)
 <!-- /retcomm-readme-metrics -->
 
 <!-- retcomm-readme-boxart -->
@@ -19,8 +19,8 @@ Play the original game on a flat display, or opt into the experimental native
 VR alpha with head tracking, per-eye rendering and tracked-weapon controls.
 Flat play is the default; VR is enabled through a separate launcher.
 
-The **v0.1.4 Windows native alpha** is available from this fork's
-[releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.4).
+The **v0.1.6 Windows native alpha** is available from this fork's
+[releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.6).
 See [alpha installation and controls](ALPHA_README.md) before testing.
 
 | | |
@@ -95,11 +95,13 @@ environment when it exits.
 
 ## Experimental VR alpha (Windows)
 
-The current [v0.1.4 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.4)
-includes controller tracking for all ten weapon types, left-stick-click jump,
-headset color and head-turn visibility fixes, a tracked-weapon barrel laser that
-ends on the surface it hits, and a 1080p default. Quest 3 through
-Virtual Desktop with **VDXR** is the tested setup.
+The current [v0.1.6 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.6)
+fixes the missing nearby floor and world shakiness during head movement, and
+prevents overload shedding from flashing black frames. It retains tracked
+weapons, the hand-anchored native HUD, desktop spectator mirror, barrel laser,
+and 1080p default. Production builds disable heavyweight debug instrumentation.
+The owner considers this build playable on Quest 3 through Virtual Desktop
+with **VDXR**; demanding scenes can still slow down.
 
 ### Setup and launch
 

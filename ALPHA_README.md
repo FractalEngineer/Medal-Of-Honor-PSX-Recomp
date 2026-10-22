@@ -4,7 +4,13 @@ This is a Windows x64 testing release. Flat play is the default; VR is optional.
 Quest 3 through Virtual Desktop with VDXR is the tested headset/runtime setup;
 SteamVR/OpenXR also renders correctly. Oculus / Meta Quest Link is untested.
 
-v0.1.5 adds the original HUD anchored to your hands and always facing your head,
+v0.1.6 fixes the missing nearby floor and head-motion world shakiness, keeps
+overload shedding from submitting black frames, and removes heavyweight debug
+instrumentation from production builds. The owner considers the current build
+playable; demanding scenes can still slow down. The geometry fixes were accepted
+on Quest 3 / VDXR; the final production performance checks were headless.
+
+v0.1.5 added the original HUD anchored to your hands and always facing your head,
 a desktop spectator mirror, Luger tracking, and faster smooth turning. Left stick
 click jumps; right stick click toggles crouch. The VR launchers enable the hand HUD
 by default and keep PS1 dithering off for a clean headset image.
@@ -89,12 +95,13 @@ hand covers both traverse and elevation. Let go and normal movement returns.
 - Tracked mesh and shot profiles cover ten supplied weapon types. Their visual
   tracking was accepted in the headset batch; physical damage alignment,
   scoped/special behavior and broader single-player assets need further validation.
-- World shaking remains under investigation. Experimental precision/tolerance
-  candidates are not included in this release.
-- Missing nearby floor, pop-in and missing/transparent Mission 1 ruins tiles
-  need separate validation. Visibility acceptance covers the tested scene;
-  broader sector coverage and near-plane clipping remain open.
-- Wrist HUD and an in-game VR options menu are pending. World scale is provisional.
+- Nearby floor and head-motion shakiness are fixed in the tested views. Broader
+  sector coverage, pop-in and missing/transparent Mission 1 ruins tiles still
+  need validation.
+- Demanding scenes can fall below the target game rate. Headless slot-2 testing
+  measured about 47–48 guest updates and 23–24 fresh stereo pairs per second;
+  these are not headset display rates. Further performance work remains open.
+- An in-game VR options menu is pending. World scale is provisional.
 - Headset cadence, focus/tracking loss, reconnect, broad mission coverage and
   Oculus / Meta Quest Link (untested) need more testing.
 - Windows OpenGL is the alpha rendering target. This release does not advertise
