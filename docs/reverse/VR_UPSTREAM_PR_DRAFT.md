@@ -243,6 +243,6 @@ checks must remain enabled.
 The commits retain Yves `<calibratedbeats@gmail.com>` as author and include the
 source/validation receipts linked above. While this stack is under review,
 Medal of Honor remains pinned to the combined `vr-head-pitch` development
-branch at `5932092c`, which includes the accepted fork baseline. After all
-eight PRs merge, repin the submodule to upstream master and rebuild against the
-merged API.
+branch at `9b2100fe`, which includes the accepted fork baseline and current
+upstream `9caf4c22`. After all eight PRs merge, repin the submodule to upstream
+master and rebuild against the merged API.

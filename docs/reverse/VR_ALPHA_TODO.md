@@ -1,7 +1,7 @@
 # VR alpha follow-up checklist
 
 Updated: 2026-10-23. Release baseline: v0.1.6, framework
-`5932092c`, Quest 3 / Virtual Desktop VDXR; owner considers the build playable.
+`9b2100fe`, Quest 3 / Virtual Desktop VDXR; owner considers the build playable.
 Further performance optimization remains open. Current build/layout and evidence
 are in [VR_HANDOFF.md](VR_HANDOFF.md); controls are in
 [ALPHA_README.md](../../ALPHA_README.md). This is the single active backlog.
