@@ -2,7 +2,7 @@
 
 Eight stacked pull requests for `RetroPortingToolKit/psxrecomp`, based on
 upstream master `9caf4c22`. Each feature branch contains one commit relative
-to its parent branch. PR 1 is open for review; PRs 2-8 are dependency drafts.
+to its parent branch. All eight PRs are open and ready for review together.
 After a prerequisite merges, rebase the next branch onto upstream master and
 rerun its listed checks.
 
@@ -241,6 +241,8 @@ old emulator savestates may be rejected after that change and compatibility
 checks must remain enabled.
 
 The commits retain Yves `<calibratedbeats@gmail.com>` as author and include the
-source/validation receipts linked above. The existing Medal of Honor v0.1.6
-release remains pinned to the accepted fork and is not changed by this sequence.
-All eight PRs are open upstream; only PR 1 is ready for review.
+source/validation receipts linked above. While this stack is under review,
+Medal of Honor remains pinned to the combined `vr-head-pitch` development
+branch at `5932092c`, which includes the accepted fork baseline. After all
+eight PRs merge, repin the submodule to upstream master and rebuild against the
+merged API.
