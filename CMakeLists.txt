@@ -35,7 +35,13 @@ if(NOT IS_DIRECTORY "${PSX_PRELOADED_MODS}")
     set(PSX_PRELOADED_MODS "NONE")
 endif()
 
+option(MOH_PGXP "Compile precision provenance hooks for VR projective rendering" ON)
+set(MOH_PRECISION_OPTIONS)
+if(MOH_PGXP)
+    list(APPEND MOH_PRECISION_OPTIONS PGXP)
+endif()
 psxrecomp_add_game_runtime(psx-runtime
+    ${MOH_PRECISION_OPTIONS}
     PRELOADED_MODS_DIR "${PSX_PRELOADED_MODS}"
     # ENABLE_NETPLAY_IF_PRESENT
     # NETPLAY_LOBBY_URL "ws://netplay.retcomm.net:8765"

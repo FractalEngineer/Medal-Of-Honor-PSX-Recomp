@@ -1,11 +1,13 @@
 # VR alpha follow-up checklist
 
-Updated: 2026-10-07. Baseline: published v0.1.3 (`c72ddc95`), framework
+Updated: 2026-10-23. Published baseline: published v0.1.3 (`c72ddc95`), framework
 `3618bc00`, Quest 3 / Virtual Desktop VDXR. Current build/layout and evidence
 are in [VR_HANDOFF.md](VR_HANDOFF.md); controls are in
 [ALPHA_README.md](../../ALPHA_README.md). This is the single active backlog.
 
-Follow the numbered order below, with jitter explicitly shelved by the user.
+Follow the numbered order below. The owner resumed floor/stability work and
+accepted the projective replay fix on 2026-10-23; see
+[VR_PROJECTIVE_RENDERING.md](VR_PROJECTIVE_RENDERING.md).
 All ten supplied weapon tracking controls are visually accepted and released;
 remaining combat/special-mode/asset checks are separate. Batch future headset
 checks, defaulting to 30 seconds with movement enabled. Cleanup does not start
@@ -19,26 +21,13 @@ bicubic and jitter experiments are excluded.
 
 ## 1. World rendering and level correctness - highest priority
 
-- [ ] **Shelved: garbled and shaky world, even while stationary.** Reproduce
-  in a fixed scene. Compare flat/native, neutral stereo, fixed synthetic head
-  pose, and actual tracked poses. Establish whether vertices/packets change at
-  a frozen guest checkpoint, whether small pose noise is amplified, or whether
-  the visible effect comes from frame delivery. Investigate precision,
-  transforms, packet interpretation and draw order as hypotheses; do not call
-  it tracking jitter or a PSX limitation without a control. Success: stable
-  geometry with a fixed pose and no new folding/corruption relative to flat.
-  Frozen render views stop the shaking, but are diagnostic. Continuous-pose
-  experiments were unchanged/possibly worse; tolerance 1 reduced world/weapon
-  shaking while worsening sky/compass. Candidates remain outside the release.
-  Commit `04624df` in the local retired-branch bundle preserves the experiment;
-  its walking test worsened distant-enemy stability. See the handoff for its path.
-  Resume only when requested, then investigate draw provenance before accepting a fix.
-- [ ] **Reported: floor immediately below the player appears unrendered.**
-  Also reproduce the previously captured large black lower-world polygon.
-  Determine whether these share a producer: absent geometry, an occluding
-  polygon, clipping, winding/culling, or insufficient game visibility coverage.
-  Compare both eyes and flat output at the same player position while looking
-  down and leaning. Success: expected floor coverage without a covering artifact.
+- [x] **World shakiness during head movement / near-player missing floor.**
+  Owner accepted both fixes in a 30-second Quest 3 / VDXR check on 2026-10-23.
+  Exact eye poses and provenance-backed homogeneous clipping are normal VR
+  defaults. Translation/rotation sweeps and floor screenshots passed; prior
+  tolerance experiments remain retired. See VR_PROJECTIVE_RENDERING.md for
+  scope, rollback checks, save compatibility and measured performance cost.
+  Later-area corruption and broader sector coverage remain separate open items.
 - [ ] **Reported: significant pop-in.** Separate native game draw distance,
   portal/sector visibility, asset streaming, and VR-induced rejection. Inspect
   what geometry is submitted before changing renderer settings. Expand the

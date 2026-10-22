@@ -414,6 +414,11 @@ static int g_pass_watchdog_done;
 static int g_pass_draw;
 
 static int g_stereo;
+#if defined(PSX_PGXP) && PSX_PGXP
+static int g_projective = 1; /* Headset accepted; PSX_VR_PROJECTIVE=0 is the control. */
+#else
+static int g_projective;
+#endif
 static int32_t g_eye_offset = 24;
 /* Provisional scale preserves legacy 48-unit separation at user IPD 67mm.
  * It is a tuning starting point, not a measured physical scale. */
@@ -866,6 +871,8 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
         frame.struct_size = sizeof frame;
         frame.period_vblanks = MOH_FLIP_PERIOD_VBLANKS;
         frame.x = pass.x; frame.y = pass.y; frame.w = pass.w; frame.h = pass.h;
+        if (g_projective)
+            psx_mod_set_render_projective(1);
         if (g_openxr) {
             if (!psx_mod_openxr_begin(pass.w, pass.h, g_units_per_meter)) return;
             if (!psx_mod_openxr_view(0, &g_eye_view[0]) ||
@@ -874,6 +881,8 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
             }
             if (g_authored_focal) g_eye_view[0].projection_h_ref = g_eye_view[1].projection_h_ref = 400;
             if (g_eye_scale != 1.0) for (int i = 0; i < 3; ++i) {
+                g_eye_view[0].translation_precise[i] *= g_eye_scale;
+                g_eye_view[1].translation_precise[i] *= g_eye_scale;
                 g_eye_view[0].translation[i] = (int32_t)llround(g_eye_view[0].translation[i] * g_eye_scale);
                 g_eye_view[1].translation[i] = (int32_t)llround(g_eye_view[1].translation[i] * g_eye_scale);
             }
@@ -904,6 +913,7 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
                 if (g_authored_focal) g_eye_view[eye].projection_h_ref = 400;
             }
         }
+        if (!g_projective) g_eye_view[0].precise=g_eye_view[1].precise=0;
         if(g_menu_flat && g_openxr &&
            !psx_mod_openxr_quad(g_menu_distance,g_menu_width,g_menu_width*.75))g_menu_flat=0;
         if(g_menu_flat)for(int eye=0;eye<2;eye++) {
@@ -1038,9 +1048,9 @@ static void vr_shot_basis_entry(CPUState *cpu,uint32_t address) {
 static void vr_laser_capture(CPUState* cpu,const PSXModRenderView* view,
                              const double r[9],const double t[3],double scale) {
     double R[9],M[9],C[3];
-    for(int i=0;i<9;i++)R[i]=view->rotation_q12[i]/4096.0;
+    for(int i=0;i<9;i++)R[i]=view->precise?view->rotation[i]:view->rotation_q12[i]/4096.0;
     for(int i=0;i<3;i++) {
-        C[i]=view->translation[i];
+        C[i]=view->precise?view->translation_precise[i]:view->translation[i];
         for(int j=0;j<3;j++) {
             M[i*3+j]=R[i*3]*r[j]+R[i*3+1]*r[3+j]+R[i*3+2]*r[6+j];
             C[i]+=R[i*3+j]*t[j];
@@ -1128,11 +1138,11 @@ static void vr_laser_draw(void) {
     if (g_laser_ray && g_level_root && g_camera_valid) {
         const PSXModRenderView* vv=&g_eye_view[g_stereo_eye];
         double R[9],dt[3],gc[3],gd[3],wo[3],wd[3],thit=0;
-        for(int i=0;i<9;i++)R[i]=vv->rotation_q12[i]/4096.0;
+        for(int i=0;i<9;i++)R[i]=vv->precise?vv->rotation[i]:vv->rotation_q12[i]/4096.0;
         /* The muzzle o and its projection live in the weapon's scoped view, whose
          * translation is scaled by g_weapon_projection_scale; undo that before
          * mapping into the level's world space. */
-        for(int i=0;i<3;i++)dt[i]=o[i]/g_weapon_projection_scale-vv->translation[i];
+        for(int i=0;i<3;i++)dt[i]=o[i]/g_weapon_projection_scale-(vv->precise?vv->translation_precise[i]:vv->translation[i]);
         for(int i=0;i<3;i++) {                 /* R^T, R is orthonormal */
             double c=0,g=0;
             for(int j=0;j<3;j++){c+=R[j*3+i]*dt[j];g+=R[j*3+i]*dir[j];}
@@ -1169,7 +1179,7 @@ static void vr_laser_draw(void) {
                 for(int i=0;i<3;i++) {
                     double r2=0;
                     for(int j=0;j<3;j++)r2+=R[i*3+j]*(gh[j]+g_camera_tr[j]);
-                    p1[i]=(r2+vv->translation[i])*g_weapon_projection_scale;
+                    p1[i]=(r2+(vv->precise?vv->translation_precise[i]:vv->translation[i]))*g_weapon_projection_scale;
                 }
                 have_dot=1;
             }
@@ -1265,7 +1275,10 @@ static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
     /* Uniformly enlarge camera coordinates AND the eye displacement. Ratios
      * X/Z and physical stereo stay fixed, while packed XYZ and native depth
      * retain precision and avoid the original H/2 divide threshold. */
-    for(int i=0;i<3;i++)view.translation[i]=(int32_t)llround(view.translation[i]*g_weapon_projection_scale);
+    for(int i=0;i<3;i++) {
+        view.translation[i]=(int32_t)llround(view.translation[i]*g_weapon_projection_scale);
+        view.translation_precise[i]*=g_weapon_projection_scale;
+    }
     if(g_authored_focal)view.projection_h_ref=133;
     if(!psx_mod_render_view(&view)){g_weapon_outer=0;return 0;}
     vr_laser_capture(cpu,&view,r,t,weapon_scale);
@@ -1328,6 +1341,8 @@ static uint32_t vr_controller_mode(const PSXModControllerInput *input) {
 
 static void vr_entity_activate(void) {
     if (g_stereo) (void)psx_mod_set_stereo_presentation(1);
+    if (g_stereo && g_projective)
+        psx_mod_set_render_projective(1);
     if (g_openxr) (void)psx_mod_openxr_enable(1);
     g_scene_age=4;g_native_surface=-1;vr_native_surface_mode(1);
     if (g_movement) {
@@ -1356,6 +1371,12 @@ static void vr_entity_activate(void) {
 
 PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     const char* e;
+#if defined(PSX_PGXP) && PSX_PGXP
+    if ((e = getenv("PSX_VR_PROJECTIVE"))) g_projective = atoi(e) != 0;
+#else
+    if ((e = getenv("PSX_VR_PROJECTIVE")) && atoi(e))
+        psx_mod_counter_add("vr.projective.requires_pgxp_build",1);
+#endif
     if ((e = getenv("PSX_VR_PROBE"))) g_probe = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_FRAME_TRACE"))) g_trace_spans = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_TARGET"))) g_target = (uint32_t)strtoul(e, NULL, 0);

@@ -26,8 +26,9 @@ static inline int moh_vr_box_visible(const int16_t bounds[6],const double matrix
                 p[row]+=matrix[row*3+col]*bounds[col+((corner>>col)&1)*3];
         }
         for(int row=0;row<3;row++) {
-            eye[row]=view->translation[row];
-            for(int col=0;col<3;col++)eye[row]+=view->rotation_q12[row*3+col]/4096.0*p[col];
+            eye[row]=view->precise?view->translation_precise[row]:view->translation[row];
+            for(int col=0;col<3;col++)
+                eye[row]+=(view->precise?view->rotation[row*3+col]:view->rotation_q12[row*3+col]/4096.0)*p[col];
             if(!isfinite(eye[row]))return 1;
         }
         if(fabs(eye[0])>=32760||fabs(eye[1])>=32760||fabs(eye[2])>=65530)return 1;

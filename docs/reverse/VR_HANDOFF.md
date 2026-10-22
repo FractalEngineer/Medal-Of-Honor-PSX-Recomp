@@ -1,10 +1,21 @@
 # VR handoff
 
-Updated: 2026-10-07. Start here, then read [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md).
+Updated: 2026-10-23. Start here, then read [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md).
 The todo list is the single backlog; historical plans and receipts retain their
 original scope and are not current instructions.
 
-## Current baseline
+## Current source result (2026-10-23)
+
+Nearby missing floor and world shakiness are fixed and owner-accepted on Quest 3 /
+VDXR. Normal VR now defaults to projective replay with `MOH_PGXP=ON`; framework
+`efa10eee` on `vr-head-pitch`, parent `vr-perf-pr1-pr2`, UI `41c88ffe`.
+[VR_PROJECTIVE_RENDERING.md](VR_PROJECTIVE_RENDERING.md) owns the implementation,
+headless/headset evidence, measured rendering cost and old-savestate compatibility
+limit. The rebuilt normal target is `build-release`. This supersedes earlier
+jitter shelving for this source branch; it is not a new published release.
+Implementation was committed in the active `psxrecomp/` submodule checkout.
+
+## Historical published baseline
 
 - Published release: [v0.1.3 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.3),
   source `c72ddc95`, Windows x64 / OpenGL / optional OpenXR / bundled OpenBIOS.
@@ -21,7 +32,7 @@ original scope and are not current instructions.
   after, and the mirror captures, are in [VR_OPTIMIZATION_STATUS.md](VR_OPTIMIZATION_STATUS.md).
 - Jump is right-stick click. [ALPHA_README.md](../../ALPHA_README.md) owns the
   current installation and control chart; do not copy old Y-button mappings.
-- Jitter is shelved at `04624df`, preserved in the local retired-branch bundle
+- The older jitter experiment was shelved at `04624df`, preserved in the local retired-branch bundle
   described below. The tolerance experiment worsened distant-enemy stability;
   it is not in the release.
 - Visual acceptance does not close physical damage alignment, scoped/special

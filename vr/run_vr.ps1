@@ -13,6 +13,8 @@ param(
     [ValidateRange(1,32)][double]$WeaponProjectionScale = 16,
     [ValidateCount(3,3)][ValidateRange(-32766,32766)][double[]]$WeaponPivot = @(80,150,100),
     [switch]$DesktopFov,
+    [switch]$ProjectiveDiagnostic,
+    [switch]$NoProjectiveDiagnostic,
     [ValidateRange(.25,20)][double]$MenuDistance = 2,
     [ValidateRange(.25,10)][double]$MenuWidth = 2,
     [switch]$NoMenuSurfaceDiagnostic,
@@ -46,6 +48,7 @@ param(
     [switch]$Build,
     [string]$BuildDirectory = 'build-release',
     [string]$DiscPath = '',
+    [string]$MemcardDirectory = '',
     [int]$Slot = -1,
     # Both axes of the native left stick from one hand (PSX_VR_ONE_STICK):
     # -1 leaves the default (off), 2 = always, for the mounted machine gun.
@@ -54,6 +57,7 @@ param(
     [int]$Seconds = 0
 )
 $ErrorActionPreference = 'Stop'
+if ($ProjectiveDiagnostic -and $NoProjectiveDiagnostic) { throw 'Choose one projective diagnostic mode.' }
 if ($WristHudReplace -and -not $WristHud) { throw '-WristHudReplace requires -WristHud.' }
 if ($HeadlessMirrorCheck -and (-not $Headless -or -not $Verify -or -not $CaptureDirectory)) {
     throw '-HeadlessMirrorCheck requires -Headless -Verify -CaptureDirectory <fresh-path>.'
@@ -127,6 +131,7 @@ $vrVariables = @{
     PSX_VSYNC = $(if ($Desktop) { [Environment]::GetEnvironmentVariable('PSX_VSYNC','Process') } else { [string][int]$DesktopVSyncDiagnostic.IsPresent });
     PSX_VR_OPENXR = [string][int](-not $Desktop);
     PSX_VR_STEREO = '1'; PSX_VR_PROBE = '0'; PSX_VR_INTERP = '0';
+    PSX_VR_PROJECTIVE = $(if ($NoProjectiveDiagnostic) { '0' } elseif ($ProjectiveDiagnostic) { '1' } else { [Environment]::GetEnvironmentVariable('PSX_VR_PROJECTIVE','Process') });
     PSX_INTERNAL_RESOLUTION = $InternalResolution;
     # Preserve the accepted clean VR image after the framework enabled native-grid
     # PS1 dithering by default. The enlarged pattern is distracting in the headset.
@@ -258,7 +263,11 @@ try {
         $vrLogOptions.RedirectStandardOutput = Join-Path $vrCapturePath 'runtime.stdout.log'
         $vrLogOptions.RedirectStandardError = Join-Path $vrCapturePath 'runtime.stderr.log'
     }
-    $vrProcess = Start-Process -FilePath $vrExe -ArgumentList '--no-launcher','--game','game.toml','--disc',('"' + $DiscPath + '"') -WorkingDirectory $vrRoot -WindowStyle Hidden -PassThru @vrLogOptions
+    $vrArguments = @('--no-launcher','--game','game.toml','--disc',('"' + $DiscPath + '"'))
+    if ($MemcardDirectory) {
+        $vrArguments += @('--memcard-dir', ('"' + [IO.Path]::GetFullPath((Join-Path $vrRoot $MemcardDirectory)) + '"'))
+    }
+    $vrProcess = Start-Process -FilePath $vrExe -ArgumentList $vrArguments -WorkingDirectory $vrRoot -WindowStyle Hidden -PassThru @vrLogOptions
     if ($CaptureDirectory) {
         $vrSaveSlot = if ($Slot -ge 0) {$Slot} else {3}
         $vrCaptureOptions = @()

@@ -1,9 +1,15 @@
 # VR Optimization Plan — Medal of Honor PSX Recomp
 
-**Status:** Proposed / profiling required  
+**Status:** Campaign in progress; floor and world stability accepted 2026-10-23
 **Scope:** `FractalEngineer/Medal-Of-Honor-PSX-Recomp` and its pinned `psxrecomp` submodule  
 **Primary objective:** Eliminate noticeable VR stuttering and improve frame-time consistency without changing PSX simulation speed, breaking coherent stereo, or regressing flat play.  
 **Secondary objectives:** Reduce expensive per-eye replay, state checkpoint, GPU capture, and OpenXR presentation overhead once measurements establish which components dominate.
+
+Current result: [VR_PROJECTIVE_RENDERING.md](VR_PROJECTIVE_RENDERING.md) records
+the owner-accepted floor/stability fix, headless receipts and measured cost.
+[VR_OPTIMIZATION_STATUS.md](VR_OPTIMIZATION_STATUS.md) records the campaign.
+The original review and hypotheses below are historical; acceptance of the visual
+fix does not mark the performance packages complete.
 
 ## 0. Evidence and scope
 

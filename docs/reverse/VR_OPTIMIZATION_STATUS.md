@@ -1,10 +1,28 @@
 # VR optimization campaign: status and evidence
 
 Companion to [VR_OPTIMIZATION_PLAN.md](VR_OPTIMIZATION_PLAN.md). Everything below is
-measured, with the capture it came from named so it can be re-read. Framework changes live
-in the `psxrecomp` branch `vr-perf-pr1-pr2`.
+measured, with the capture it came from named so it can be re-read. Current framework
+changes live in `vr-head-pitch`; older entries below retain their historical pins.
 
-## Branches and pins
+## 2026-10-23: floor and world stability accepted
+
+The owner accepted both fixes during the 30-second Quest 3 / VDXR check.
+Projective eye replay is now the normal VR default with `MOH_PGXP=ON`.
+Framework pin: `efa10eee` on `vr-head-pitch`; parent branch: `vr-perf-pr1-pr2`.
+UI remains `41c88ffe`. See [VR_PROJECTIVE_RENDERING.md](VR_PROJECTIVE_RENDERING.md)
+for mechanism, controls, screenshot paths, tests and save compatibility.
+
+Headless 1 mm translation sweeps now move on all 20 intervals in both eyes
+(previously 5/4); delta variation is 3.4%/2.6%. The near-floor black wedge is
+removed. Final scoped replay passed 757 rollback checks with zero mismatches.
+Release and targeted runtime tests passed. Personal saves were not changed.
+
+This is a visual correctness fix: matched headless pair p50 increased from
+11.552 to 16.822 ms. Performance optimization and broader mission coverage remain
+open. Historical jitter shelving and earlier pins below do not describe this
+accepted candidate.
+
+## Historical branches and pins
 
 - Parent branch `vr-perf-pr1-pr2`. Framework pinned at **`0fe8a425`**, and the parent's
   `psxrecomp` gitlink matches it. The parent tip is whatever commit last touched this file:
