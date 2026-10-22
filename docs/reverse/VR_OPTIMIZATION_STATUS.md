@@ -1,5 +1,11 @@
 # VR optimization campaign: status and evidence
 
+Current slot-2 follow-up: [VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md) records
+production defaults, the empty-projective-setting correction, overload-flicker
+fix, headless receipts and the measured throughput improvement. Current framework
+pin: `5932092c`; normal `build-release` uses debug tools OFF and PGXP ON.
+
+
 Companion to [VR_OPTIMIZATION_PLAN.md](VR_OPTIMIZATION_PLAN.md). Everything below is
 measured, with the capture it came from named so it can be re-read. Current framework
 changes live in `vr-head-pitch`; older entries below retain their historical pins.

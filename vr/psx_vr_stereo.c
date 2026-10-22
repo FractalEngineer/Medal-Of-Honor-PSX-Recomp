@@ -1372,7 +1372,7 @@ static void vr_entity_activate(void) {
 PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     const char* e;
 #if defined(PSX_PGXP) && PSX_PGXP
-    if ((e = getenv("PSX_VR_PROJECTIVE"))) g_projective = atoi(e) != 0;
+    if ((e = getenv("PSX_VR_PROJECTIVE")) && *e) g_projective = atoi(e) != 0;
 #else
     if ((e = getenv("PSX_VR_PROJECTIVE")) && atoi(e))
         psx_mod_counter_add("vr.projective.requires_pgxp_build",1);

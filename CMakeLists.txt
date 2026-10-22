@@ -23,6 +23,9 @@ project(Medal_of_Honor_Recomp LANGUAGES C CXX)
 # endif()
 set(PSX_SETUP_WIZARD ON CACHE BOOL
     "Advertise first-run setup wizard + Generate & rebuild in recomp-ui" FORCE)
+# Detailed per-instruction diagnostics are for dedicated profiling builds.
+# Keep them opt-in for normal play; -DPSX_DEBUG_TOOLS=ON selects that build.
+set(PSX_DEBUG_TOOLS OFF CACHE BOOL "Build detailed developer diagnostics")
 include("${PSXRECOMP_ROOT}/runtime/runtime.cmake")
 
 # This project's own mod catalog. The FRAMEWORK stages it -- together with its

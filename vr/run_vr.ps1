@@ -54,6 +54,7 @@ param(
     # -1 leaves the default (off), 2 = always, for the mounted machine gun.
     [int]$OneStick = -1,
     [string]$CaptureDirectory = '',
+    [string]$LogDirectory = '',
     [int]$Seconds = 0
 )
 $ErrorActionPreference = 'Stop'
@@ -106,24 +107,10 @@ function Resolve-VRRuntimeJson {
     }
     throw ("No $Name OpenXR runtime manifest found. Install it or pass -RuntimeJson <path>. Tried: " + ($vrCandidates -join '; '))
 }
+$vrReadyPath = Join-Path ([IO.Path]::GetTempPath()) ('moh-vr-ready-' + [guid]::NewGuid().ToString('N') + '.json')
 $vrRuntimeJson = Resolve-VRRuntimeJson -Name $Runtime -ExplicitPath $RuntimeJson
 if ($vrRuntimeJson) { Write-Host "OpenXR runtime: $Runtime -> $vrRuntimeJson" }
 
-function Get-VRStartupStatus {
-    $client = New-Object System.Net.Sockets.TcpClient
-    try {
-        if (-not $client.ConnectAsync('127.0.0.1', 4370).Wait(500)) {
-            throw 'VR status connection timed out.'
-        }
-        $client.ReceiveTimeout = 1000
-        $client.SendTimeout = 1000
-        $stream = $client.GetStream()
-        $request = [Text.Encoding]::UTF8.GetBytes('{"cmd":"openxr_stats"}' + "`n")
-        $stream.Write($request, 0, $request.Length)
-        $reader = New-Object System.IO.StreamReader($stream)
-        return ($reader.ReadLine() | ConvertFrom-Json)
-    } finally { $client.Dispose() }
-}
 $vrVariables = @{
     PSX_OPENXR = [string][int](-not $Desktop);
     # XR waits for its compositor; avoid an additional desktop VSync wait.
@@ -131,7 +118,11 @@ $vrVariables = @{
     PSX_VSYNC = $(if ($Desktop) { [Environment]::GetEnvironmentVariable('PSX_VSYNC','Process') } else { [string][int]$DesktopVSyncDiagnostic.IsPresent });
     PSX_VR_OPENXR = [string][int](-not $Desktop);
     PSX_VR_STEREO = '1'; PSX_VR_PROBE = '0'; PSX_VR_INTERP = '0';
-    PSX_VR_PROJECTIVE = $(if ($NoProjectiveDiagnostic) { '0' } elseif ($ProjectiveDiagnostic) { '1' } else { [Environment]::GetEnvironmentVariable('PSX_VR_PROJECTIVE','Process') });
+    # A skipped eye pair submits zero XR layers. Sustained overload otherwise
+    # flashes black for eight requests out of nine (slot 2 on the null HMD).
+    # Prefer complete frames by default; keep the framework policy opt-in for A/B.
+    PSX_STEREO_SHED = $(if ([string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable('PSX_STEREO_SHED','Process'))) { '0' } else { [Environment]::GetEnvironmentVariable('PSX_STEREO_SHED','Process') });
+    PSX_VR_PROJECTIVE = $(if ($NoProjectiveDiagnostic) { '0' } elseif ($ProjectiveDiagnostic -or [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable('PSX_VR_PROJECTIVE','Process'))) { '1' } else { [Environment]::GetEnvironmentVariable('PSX_VR_PROJECTIVE','Process') });
     PSX_INTERNAL_RESOLUTION = $InternalResolution;
     # Preserve the accepted clean VR image after the framework enabled native-grid
     # PS1 dithering by default. The enlarged pattern is distracting in the headset.
@@ -171,6 +162,8 @@ $vrVariables = @{
     PSX_VR_TEXT = [string][int](-not $HideHud); PSX_VR_HUD_ICON = [string][int](-not $HideHud);
     PSX_RENDER_PASS_VERIFY = [string][int]$Verify.IsPresent
 }
+if (-not $Desktop) { $vrVariables['PSX_OPENXR_READY_FILE'] = $vrReadyPath }
+if ($Slot -ge 0 -and -not $CaptureDirectory) { $vrVariables['PSX_LOAD_SLOT'] = [string]$Slot }
 $vrOldEnvironment = @{}
 $vrProcess = $null
 $vrSteamVrSettings = $null
@@ -191,7 +184,7 @@ try {
         if (-not (Test-Path -LiteralPath (Join-Path $vrFrameworkRoot 'runtime/include/mod_plugins.h'))) { throw "Framework source missing: $vrFrameworkRoot" }
         cmake -S . -B $vrBuild -DPSX_OPENXR=ON "-DPSXRECOMP_ROOT=$vrFrameworkRoot" "-DRECOMP_UI_ROOT=$vrRoot/recomp-ui"
         if ($LASTEXITCODE -ne 0) { throw 'VR configure failed' }
-        cmake --build $vrBuild --target psx-runtime
+        cmake --build $vrBuild --target psx-runtime -j 2
         if ($LASTEXITCODE -ne 0) { throw 'VR build failed; launch refused' }
     }
     if (-not (Test-Path -LiteralPath $vrExe)) { throw "Game executable missing: $vrExe" }
@@ -257,11 +250,13 @@ try {
         Write-Host 'SteamVR is up on the null HMD (no headset).'
     }
     $vrLogOptions = @{}
-    if ($CaptureDirectory) {
-        $vrCapturePath = [IO.Path]::GetFullPath((Join-Path $vrRoot $CaptureDirectory))
-        [IO.Directory]::CreateDirectory($vrCapturePath) | Out-Null
-        $vrLogOptions.RedirectStandardOutput = Join-Path $vrCapturePath 'runtime.stdout.log'
-        $vrLogOptions.RedirectStandardError = Join-Path $vrCapturePath 'runtime.stderr.log'
+    $vrLogPath = $null
+    if ($LogDirectory -or $CaptureDirectory) {
+        $vrLogDestination = if ($LogDirectory) { $LogDirectory } else { $CaptureDirectory }
+        $vrLogPath = [IO.Path]::GetFullPath((Join-Path $vrRoot $vrLogDestination))
+        [IO.Directory]::CreateDirectory($vrLogPath) | Out-Null
+        $vrLogOptions.RedirectStandardOutput = Join-Path $vrLogPath 'runtime.stdout.log'
+        $vrLogOptions.RedirectStandardError = Join-Path $vrLogPath 'runtime.stderr.log'
     }
     $vrArguments = @('--no-launcher','--game','game.toml','--disc',('"' + $DiscPath + '"'))
     if ($MemcardDirectory) {
@@ -293,24 +288,26 @@ try {
             }
             if ($LASTEXITCODE -ne 0) { throw 'Headless compositor verification failed' }
         }
-    } elseif ($Slot -ge 0) {
-        # Use the capture utility readiness/load protocol without committing assets.
-        $vrRunDir = 'analysis/vr-proof/run-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
-        python vr/capture_stereo.py $vrRunDir --slot $Slot --pairs 0 --executable $vrExe
-        if ($LASTEXITCODE -ne 0) { throw 'VR slot load failed' }
     } elseif (-not $Desktop) {
         $vrDeadline = [DateTime]::UtcNow.AddSeconds(30)
         $vrReady = $false
         $vrLastStatus = $null
         while ([DateTime]::UtcNow -lt $vrDeadline) {
             if ($vrProcess.HasExited) { throw "Game exited during VR startup (code $($vrProcess.ExitCode)). Check your active OpenXR runtime and disc." }
-            try { $vrLastStatus = Get-VRStartupStatus } catch { $vrLastStatus = $null }
-            if ($vrLastStatus.running -and $vrLastStatus.submitted -gt 0) {
-                Write-Host "VR active: $($vrLastStatus.runtime); submissions: $($vrLastStatus.submitted)"
+            try {
+                $vrLastStatus = Get-Content -LiteralPath $vrReadyPath -Raw -ErrorAction Stop | ConvertFrom-Json
+            } catch { $vrLastStatus = $null } # Wait for the one-shot writer to close.
+            if ($vrLastStatus.openxr.running -and $vrLastStatus.openxr.submitted -gt 0) {
+                if ($Slot -ge 0 -and (-not $vrLastStatus.savestate.last_ok -or
+                    $vrLastStatus.savestate.last_op -ne 'load' -or $vrLastStatus.savestate.last_slot -ne $Slot)) {
+                    throw ('VR slot load failed: ' + ($vrLastStatus.savestate | ConvertTo-Json -Compress))
+                }
+                if ($vrLastStatus.openxr.failures -gt 0) { break }
+                if ($vrLogPath) { Copy-Item -LiteralPath $vrReadyPath -Destination (Join-Path $vrLogPath 'startup.json') }
+                Write-Host "VR active; submissions: $($vrLastStatus.openxr.submitted)"
                 $vrReady = $true
                 break
             }
-            if ($vrLastStatus.failures -gt 0) { break }
             Start-Sleep -Milliseconds 200
         }
         if (-not $vrReady) { throw ('VR startup failed; no headset frames submitted. This build needs an OpenGL-capable OpenXR runtime (check the active runtime, or pass -Runtime). Status: ' + ($vrLastStatus | ConvertTo-Json -Compress)) }
@@ -342,5 +339,6 @@ try {
         }
         Write-Host 'SteamVR settings restored and SteamVR stopped.'
     }
+    Remove-Item -LiteralPath $vrReadyPath -ErrorAction SilentlyContinue
     Pop-Location
 }

@@ -1,5 +1,11 @@
 # VR handoff
 
+Current slot-2 follow-up: [VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md) records
+production defaults, the empty-projective-setting correction, overload-flicker
+fix, headless receipts and the measured throughput improvement. Current framework
+pin: `5932092c`; normal `build-release` uses debug tools OFF and PGXP ON.
+
+
 Updated: 2026-10-23. Start here, then read [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md).
 The todo list is the single backlog; historical plans and receipts retain their
 original scope and are not current instructions.

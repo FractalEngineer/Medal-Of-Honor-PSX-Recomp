@@ -627,3 +627,38 @@ correct. Every campaign commit is listed even if it has no net runtime effect.
 | [928c721c](https://github.com/FractalEngineer/psxrecomp/commit/928c721ca2c55d01dc986f36a1a637389bad841e) | Revert "Flip the eye image on the non-sRGB submission branch too" |
 | [96981469](https://github.com/FractalEngineer/psxrecomp/commit/96981469c4a3de0b31c3d2a282efdc7892f81361) | Drop an origin whose up axis points down so the world cannot stay inverted |
 | [efa10eee](https://github.com/FractalEngineer/psxrecomp/commit/efa10eee331bf9d6c5ab4c7ea987bc80e434fa9a) | Fix VR near-plane geometry and preserve precise eye poses |
+
+## Follow-up after the reported campaign tip: slot 2
+
+The original inventories above remain bounded by `60143e2` / `efa10eee`.
+[VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md) records the next delivery:
+
+- **F9 — Production XR startup receipt and lightweight VR performance reporting.**
+  `runtime/src/main.cpp` writes one opt-in readiness/state-load receipt without
+  debug TCP, adds opt-in VR counters/timing logs, and ignores an empty boot-slot
+  setting. Framework stereo docs and session log describe the contract.
+- **G7 — Production VR launch defaults and slot-2 validation.** `CMakeLists.txt`
+  defaults detailed diagnostics OFF; `vr/run_vr.ps1` defaults shedding OFF and
+  projective ON, boot-loads normal slots, verifies the production receipt and
+  supports independent log output. `vr/psx_vr_stereo.c` ignores an empty projective
+  setting. Pin F9 and update the handoff/evidence documents.
+
+These are two additional review units; rejected batching/inlining experiments
+are not source changes in this follow-up. No additional headset check was asked.
+
+Exact follow-up file inventory:
+
+| Repository | File | Proposed PR |
+| --- | --- | --- |
+| Framework | `runtime/src/main.cpp` | F9 |
+| Framework | `docs/STEREO_RENDERING.md` | F9 |
+| Framework | `docs/internal/FAITHFUL_TIMING_PLAN.md` | F9 |
+| Game | `CMakeLists.txt` | G7 |
+| Game | `vr/run_vr.ps1` | G7 |
+| Game | `vr/psx_vr_stereo.c` | G7 |
+| Game | `psxrecomp` gitlink, now `5932092c` | G7 |
+| Game | `docs/reverse/VR_SLOT2_PERFORMANCE.md` | G7 |
+| Game | `docs/reverse/VR_HANDOFF.md` | G7 |
+| Game | `docs/reverse/VR_OPTIMIZATION_STATUS.md` | G7 |
+| Game | `docs/reverse/VR_PROJECTIVE_RENDERING.md` | G7 |
+| Game | `docs/reverse/VR_CAMPAIGN_PR_REPORT.md` | G7 |
