@@ -14,6 +14,11 @@ now enforce the production flags; the launcher uses readiness JSON without TCP.
 Current controls and limitations are in [ALPHA_README.md](../../ALPHA_README.md).
 Jump is left-stick click; crouch is right-stick click; the wrist HUD is shipped.
 
+Local release packaging uses `build-release-emitters`, built with the portable
+static toolchain. Older emitter executables in `psxrecomp/overlay_toolchain`
+failed to load with the staged GCC DLLs; do not package those. The finalizer
+now executes the staged game emitter's `--codegen-hash` before accepting a ZIP.
+
 Performance measurements remain valid, with demanding scenes below target;
 this does not override the owner's playable assessment. See
 [VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md) and

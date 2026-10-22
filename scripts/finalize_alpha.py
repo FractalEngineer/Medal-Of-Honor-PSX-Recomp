@@ -62,6 +62,13 @@ def main():
     if feature["channel"] != "experimental" or not feature["default_enabled"]:
         raise RuntimeError("VR support must survive release filtering and register its runtime hooks")
     exe = stage / "Medal_of_Honor__Recompiled.exe"
+    emitter = subprocess.run(
+        [str(stage / "overlay_toolchain/psxrecomp-game.exe"), "--codegen-hash"],
+        cwd=stage, capture_output=True, text=True, timeout=30,
+    )
+    emitter_hash = emitter.stdout.strip()
+    if emitter.returncode or not re.fullmatch(r"[0-9a-fA-F]{8}", emitter_hash):
+        raise RuntimeError("Bundled overlay emitter cannot run; rebuild it with the portable static toolchain")
     with exe.open("rb") as source:
         exe_hash = hashlib.file_digest(source, "sha256").hexdigest()
     info = {
@@ -75,6 +82,7 @@ def main():
         "openxr": True,
         "pgxp": True,
         "debug_tools": False,
+        "overlay_codegen_hash": emitter_hash,
         "bios_backends": "OpenBIOS",
         "exe_sha256": exe_hash,
     }
