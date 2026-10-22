@@ -2,19 +2,20 @@
 
 Eight stacked pull requests for `RetroPortingToolKit/psxrecomp`, based on
 upstream master `9caf4c22`. Each feature branch contains one commit relative
-to its parent branch and will be submitted in order. After a prerequisite
-merges, rebase the next branch onto upstream master and rerun its listed checks.
+to its parent branch. PR 1 is open for review; PRs 2-8 are dependency drafts.
+After a prerequisite merges, rebase the next branch onto upstream master and
+rerun its listed checks.
 
 | PR | Feature branch | Parent | Commit |
 | --- | --- | --- | --- |
-| 1 | [`vr-pr/01-frame-tracing`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/01-frame-tracing) | `upstream/master` | `8400b55d` |
-| 2 | [`vr-pr/02-bounded-shedding`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/02-bounded-shedding) | PR 1 | `0cdf9595` |
-| 3 | [`vr-pr/03-pair-checkpoint`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/03-pair-checkpoint) | PR 2 | `4419d234` |
-| 4 | [`vr-pr/04-paired-hud-capture`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/04-paired-hud-capture) | PR 3 | `e4f1f985` |
-| 5 | [`vr-pr/05-synthetic-head-pose`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/05-synthetic-head-pose) | PR 4 | `18d52c8b` |
-| 6 | [`vr-pr/06-origin-recovery`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/06-origin-recovery) | PR 5 | `36f1ff3e` |
-| 7 | [`vr-pr/07-projective-replay`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/07-projective-replay) | PR 6 | `fef7a1b6` |
-| 8 | [`vr-pr/08-production-readiness`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/08-production-readiness) | PR 7 | `534f9ce2` |
+| 1 | [#739](https://github.com/RetroPortingToolKit/psxrecomp/pull/739) | [`vr-pr/01-frame-tracing`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/01-frame-tracing) | `upstream/master` | `8400b55d` |
+| 2 | [#740](https://github.com/RetroPortingToolKit/psxrecomp/pull/740) | [`vr-pr/02-bounded-shedding`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/02-bounded-shedding) | PR 1 | `0cdf9595` |
+| 3 | [#741](https://github.com/RetroPortingToolKit/psxrecomp/pull/741) | [`vr-pr/03-pair-checkpoint`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/03-pair-checkpoint) | PR 2 | `4419d234` |
+| 4 | [#742](https://github.com/RetroPortingToolKit/psxrecomp/pull/742) | [`vr-pr/04-paired-hud-capture`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/04-paired-hud-capture) | PR 3 | `e4f1f985` |
+| 5 | [#743](https://github.com/RetroPortingToolKit/psxrecomp/pull/743) | [`vr-pr/05-synthetic-head-pose`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/05-synthetic-head-pose) | PR 4 | `18d52c8b` |
+| 6 | [#744](https://github.com/RetroPortingToolKit/psxrecomp/pull/744) | [`vr-pr/06-origin-recovery`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/06-origin-recovery) | PR 5 | `36f1ff3e` |
+| 7 | [#745](https://github.com/RetroPortingToolKit/psxrecomp/pull/745) | [`vr-pr/07-projective-replay`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/07-projective-replay) | PR 6 | `fef7a1b6` |
+| 8 | [#746](https://github.com/RetroPortingToolKit/psxrecomp/pull/746) | [`vr-pr/08-production-readiness`](https://github.com/FractalEngineer/psxrecomp/tree/vr-pr/08-production-readiness) | PR 7 | `534f9ce2` |
 
 ## 1. VR: add opt-in stereo and XR frame attribution
 
@@ -242,4 +243,4 @@ checks must remain enabled.
 The commits retain Yves `<calibratedbeats@gmail.com>` as author and include the
 source/validation receipts linked above. The existing Medal of Honor v0.1.6
 release remains pinned to the accepted fork and is not changed by this sequence.
-No upstream PR has been opened.
+All eight PRs are open upstream; only PR 1 is ready for review.
