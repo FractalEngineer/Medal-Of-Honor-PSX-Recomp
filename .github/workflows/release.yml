@@ -416,7 +416,7 @@ jobs:
           set -euo pipefail
           EXTRA=()
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            EXTRA+=("-DPSX_OPENXR=ON" "-DPSX_DEBUG_TOOLS=ON")
+            EXTRA+=("-DPSX_OPENXR=ON" "-DPSX_DEBUG_TOOLS=OFF" "-DMOH_PGXP=ON" "-DPSX_GL_BATCH_IMPL=LLE")
           fi
           if [[ -n "${CMAKE_OSX_DEPLOYMENT_TARGET:-}" ]]; then
             EXTRA+=("-DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}")

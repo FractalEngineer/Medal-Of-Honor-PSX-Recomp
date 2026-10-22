@@ -67,6 +67,9 @@
 #include "cpu_state.h"
 #include "psx_cycles.h"
 #include "vr_pose_math.h"
+/* The guest sub-stages this hook brackets (PSX_TRACE_GAME_*) and the record the
+ * runtime writes them into. See psx_mod_frame_trace_stage_begin. */
+#include "frame_trace.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -411,6 +414,11 @@ static int g_pass_watchdog_done;
 static int g_pass_draw;
 
 static int g_stereo;
+#if defined(PSX_PGXP) && PSX_PGXP
+static int g_projective = 1; /* Headset accepted; PSX_VR_PROJECTIVE=0 is the control. */
+#else
+static int g_projective;
+#endif
 static int32_t g_eye_offset = 24;
 /* Provisional scale preserves legacy 48-unit separation at user IPD 67mm.
  * It is a tuning starting point, not a measured physical scale. */
@@ -423,9 +431,37 @@ static int g_movement = -1;
 static double g_move_deadzone = .2, g_turn_gain = .78;
 static int g_authored_focal = 1, g_desktop_fov;
 static double g_head_yaw, g_head_position[3];
+/* Test-only scale on the eye view translation the runtime hands back. The eyes are offsets of the game
+ * camera, so geometry in front of an offset eye crosses that eye's projection origin, and the guest has no
+ * real near clip, so such polygons are dropped rather than clipped. That is the shape of the missing tile
+ * beside the player. 1.0 is shipped; 0.0 collapses the pair onto one camera, which blames the offset if the
+ * tile comes back and the game's own cull if it does not. */
+static double g_eye_scale = 1.0;
+/* Test-only device replay, so a headless null-HMD run can behave like the headset the numbers were
+ * measured on. The null device reports a symmetric FOV and a fixed IPD, and both of those hide real
+ * defects: a symmetric FOV makes the centre deltas zero, so anything wrong in how the projection
+ * handles an asymmetric FOV cannot show, and the fixed IPD hides eye-offset geometry. These are the
+ * projection values a Quest 3 measured through SteamVR/OpenXR, taken from openxr_views
+ * (projection_q16 per eye). Selected by PSX_VR_EYE_PROFILE; default off, so shipped behaviour is the
+ * runtime's own numbers. */
+static int g_eye_profile;
+static const int32_t g_profile_projection[2][4] = {
+    {16880361, 7289275,  4068688, -1519288},   /* left:  fx, fy, cx_delta, cy_delta, Q16 */
+    {16880361, 7289275, -4068688, -1519288},   /* right: the deltas mirror, the focal does not */
+};
 static PSXModRenderView g_eye_view[2];
 static uint32_t g_stereo_eye;
 static int g_head_frustum;
+
+/* Frame-trace guest sub-stages: which call of the per-eye replay is costing.
+ * PSX_FRAME_TRACE is read once, so a normal launch pays one flag test per guest
+ * call and nothing else; the runtime also refuses these spans outside a traced
+ * stereo eye, so a HUD capture's replay can never write them. */
+static int g_trace_spans;
+#define VR_SPAN_BEGIN(stage) \
+    do { if (g_trace_spans) psx_mod_frame_trace_stage_begin(stage); } while (0)
+#define VR_SPAN_END(stage) \
+    do { if (g_trace_spans) psx_mod_frame_trace_stage_end(stage); } while (0)
 
 /* Measured SLUS-00974 tree: bbox shorts at +0/+6, leaf count at +12,
  * PVS masks at +16/+20, children +24/+32/+28; native output queue has
@@ -433,11 +469,16 @@ static int g_head_frustum;
  * The sandbox owns rollback. This opt-in candidate never changes native play. */
 static int vr_head_frustum_filter(CPUState *cpu,uint32_t address) {
     vr_lvtx_entry(cpu,address);
-    if(!g_head_frustum||!g_in_pass||address!=LVTX_8008B3E8||g_stereo_eye>1||
-       psx_mod_read_word(address)!=0x27bdfee0u||
+    if(!g_head_frustum||!g_in_pass||address!=LVTX_8008B3E8||g_stereo_eye>1)return 0;
+    /* This override is host work executed inside the eye's guest traversal, so
+     * its span nests in game_traverse: game_traverse minus game_select is the
+     * guest's own traversal work for the set this selected. */
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_SELECT);
+    if(psx_mod_read_word(address)!=0x27bdfee0u||
        psx_mod_read_word(address+4)!=0x3c02800au||
        psx_mod_read_word(address+8)!=0x3c03800au||
-       psx_mod_read_word(address+12)!=0x8c42d638u) return 0;
+       psx_mod_read_word(address+12)!=0x8c42d638u){
+        VR_SPAN_END(PSX_TRACE_GAME_SELECT);return 0;}
     uint32_t queue[1000];unsigned count=0;
     double matrix[9],tr[3];
     for(int i=0;i<9;i++)matrix[i]=(int16_t)(cpu->gte_ctrl[i/2]>>((i%2)*16))/4096.0;
@@ -446,10 +487,12 @@ static int vr_head_frustum_filter(CPUState *cpu,uint32_t address) {
     uint32_t masks[2]={psx_mod_read_word(0x800aa178u),psx_mod_read_word(0x800aa17cu)};
     int bypass_masks=psx_mod_read_word(0x800aa180u)!=0;
     if(!moh_vr_collect_tree(cpu->gpr[4],queue,&count,matrix,tr,&g_eye_view[g_stereo_eye],
-                            cx,cy,masks,bypass_masks))return 0;
+                            cx,cy,masks,bypass_masks)){
+        VR_SPAN_END(PSX_TRACE_GAME_SELECT);return 0;}
     for(unsigned i=0;i<count;i++)psx_mod_write_word(0x800aa1a0u+i*4,queue[i]);
     psx_mod_write_word(0x800aa19cu,count);psx_mod_write_word(0x800ab140u,0);
     cpu->gte_ctrl[26]=(uint16_t)psx_mod_read_word(0x8009a628u);
+    VR_SPAN_END(PSX_TRACE_GAME_SELECT);
     return 1;
 }
 static uint32_t g_stereo_success;
@@ -575,12 +618,14 @@ static int vr_draw_scene(CPUState* cpu, const PSXModRenderPass* pass) {
     /* Set the game's current draw environment without PutDispEnv or a wait.
      * Then clear the entire pass rect: untouched baseline pixels cannot hide
      * missing coverage in the first replay image. */
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_ENV);
     vr_guest_call(cpu, 0x80017348u, ctx + 16u + 184u * index, 0, 0, ra);
     psx_mod_write_word(0x1f801810u, 0x02000000u);
     psx_mod_write_word(0x1f801810u, ((uint32_t)pass->y << 16) | pass->x);
     psx_mod_write_word(0x1f801810u, ((uint32_t)pass->h << 16) | pass->w);
-    if (g_pass_draw == 2) return 1;
+    if (g_pass_draw == 2) { VR_SPAN_END(PSX_TRACE_GAME_ENV); return 1; }
     vr_guest_call(cpu, 0x80050548u, psx_mod_read_word(0x8009d638u), 0, 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_ENV);
     if (g_pass_draw == 3) {
         /* Resolve the level callback's entity from the current scene list.
          * Do not pin the observed slot-1 entity address. */
@@ -592,16 +637,22 @@ static int vr_draw_scene(CPUState* cpu, const PSXModRenderPass* pass) {
         }
         if (entity < 0x80000000u || entity >= 0x801ff000u ||
             psx_mod_read_word(entity + 880u) != 0x80053c20u) return 0;
+        VR_SPAN_BEGIN(PSX_TRACE_GAME_TRAVERSE);
         vr_guest_call(cpu, 0x80053c20u, entity, ctx, 0, ra);
+        VR_SPAN_END(PSX_TRACE_GAME_TRAVERSE);
+        VR_SPAN_BEGIN(PSX_TRACE_GAME_SUBMIT);
         vr_guest_call(cpu, 0x800172d8u,
                       psx_mod_read_word(ctx + 8728u) + 511u * 4u, 0, 0, ra);
+        VR_SPAN_END(PSX_TRACE_GAME_SUBMIT);
         return 1;
     }
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_WORLD);
     if ((g_draw_mask & 1u) && psx_mod_read_byte(world + 1423u))
         vr_guest_call(cpu, 0x80088368u, ctx, 0, 0, ra);
     if ((g_draw_mask & 2u) && (psx_mod_read_word(world + 1420u) & 0x00ffffffu))
         vr_guest_call(cpu, 0x80089a0cu, ctx, 0, 0, ra);
     vr_guest_call(cpu, 0x80064550u, 0, 0, 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_WORLD);
     unsigned hud_mask=g_menu_flat?0:moh_vr_hud_replacement_mask();
     uint32_t ammo_entries[64],ammo_flags[64],ammo_count=0;
     if(hud_mask&2u) {
@@ -614,17 +665,25 @@ static int vr_draw_scene(CPUState* cpu, const PSXModRenderPass* pass) {
             }
         }
     }
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_TEXT);
     if (g_text_visible && (g_draw_mask & 4u)) vr_guest_call(cpu, 0x8005f86cu, psx_mod_read_word(ctx + 8728u),
                   psx_mod_read_word(ctx + 8732u), 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_TEXT);
     for(uint32_t i=0;i<ammo_count;i++)psx_mod_write_word(ammo_entries[i],ammo_flags[i]);
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_TRAVERSE);
     vr_guest_call(cpu, 0x8006c714u, ctx, psx_mod_read_word(0x8009d64cu), 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_TRAVERSE);
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_ICON);
     if (g_icon_visible && (g_draw_mask & 8u) && !(hud_mask&2u))
         vr_guest_call(cpu, 0x8008019cu, camera, ctx, 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_ICON);
     /* ClearOTagR initializes 512 entries; DrawOTag starts from the final one.
      * 0x800172D8 is DrawOTag, confirmed by its own debug-string producer. */
     if(hud_mask&1u)vr_hud_unlink_health(psx_mod_read_word(ctx+8728u),psx_mod_read_word(ctx+8732u));
+    VR_SPAN_BEGIN(PSX_TRACE_GAME_SUBMIT);
     vr_guest_call(cpu, 0x800172d8u, psx_mod_read_word(ctx + 8728u) + 511u * 4u,
                   0, 0, ra);
+    VR_SPAN_END(PSX_TRACE_GAME_SUBMIT);
     return 1;
 }
 
@@ -663,13 +722,17 @@ static int vr_stereo_fn(CPUState* cpu, void* user, uint32_t eye) {
     if (!psx_mod_render_view(&g_eye_view[eye])) return 0;
     if (!user) return 0;
     int rendered = vr_draw_scene(cpu, user);
-    if (rendered) vr_laser_draw();
+    if (rendered) {
+        VR_SPAN_BEGIN(PSX_TRACE_GAME_LASER);
+        vr_laser_draw();
+        VR_SPAN_END(PSX_TRACE_GAME_LASER);
+    }
     return rendered;
 }
 
-#if defined(PSX_MOD_RENDER_CAPTURE_RGBA)
+#if defined(PSX_MOD_RENDER_CAPTURE_RGBA_PAIR)
 typedef struct {const PSXModRenderPass *rect;uint32_t matte;} VrHudCapture;
-static uint8_t g_hud_black[512*240*4],g_hud_white[512*240*4];
+static uint8_t g_hud_mattes[2][512*240*4];
 static int vr_hud_only_draw(CPUState *cpu,void *user,uint32_t alpha) {
     (void)alpha;const VrHudCapture *capture=user;const PSXModRenderPass *pass=capture->rect;
     const uint32_t ctx=0x8009a620u,ra=cpu->gpr[31];
@@ -706,12 +769,11 @@ static void vr_capture_native_hud(CPUState *cpu,const PSXModRenderPass *rect) {
     /* The SP overlay owns these producers; refuse a different overlay. */
     if(psx_mod_read_word(0x80060afcu)!=0x3c02800au ||
        psx_mod_read_word(0x80060b00u)!=0x8c42a5e0u)return;
-    VrHudCapture capture={rect,0};g_in_pass=1;g_stereo_eye=0;
-    int black=psx_mod_render_capture_rgba(cpu,rect,vr_hud_only_draw,&capture,g_hud_black,sizeof g_hud_black);
-    capture.matte=0xffffffu;
-    int white=black && psx_mod_render_capture_rgba(cpu,rect,vr_hud_only_draw,&capture,g_hud_white,sizeof g_hud_white);
+    VrHudCapture black={rect,0},white={rect,0xffffffu};g_in_pass=1;g_stereo_eye=0;
+    int ok=psx_mod_render_capture_rgba_pair(cpu,rect,vr_hud_only_draw,&black,&white,
+                                            g_hud_mattes[0],sizeof g_hud_mattes);
     g_in_pass=0;
-    (void)moh_vr_hud_set_native(black&&white?g_hud_black:NULL,black&&white?g_hud_white:NULL);
+    (void)moh_vr_hud_set_native(ok?g_hud_mattes[0]:NULL,ok?g_hud_mattes[1]:NULL);
 }
 #endif
 
@@ -809,6 +871,8 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
         frame.struct_size = sizeof frame;
         frame.period_vblanks = MOH_FLIP_PERIOD_VBLANKS;
         frame.x = pass.x; frame.y = pass.y; frame.w = pass.w; frame.h = pass.h;
+        if (g_projective)
+            psx_mod_set_render_projective(1);
         if (g_openxr) {
             if (!psx_mod_openxr_begin(pass.w, pass.h, g_units_per_meter)) return;
             if (!psx_mod_openxr_view(0, &g_eye_view[0]) ||
@@ -816,6 +880,23 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
                 (void)psx_mod_openxr_end(0); return;
             }
             if (g_authored_focal) g_eye_view[0].projection_h_ref = g_eye_view[1].projection_h_ref = 400;
+            if (g_eye_scale != 1.0) for (int i = 0; i < 3; ++i) {
+                g_eye_view[0].translation_precise[i] *= g_eye_scale;
+                g_eye_view[1].translation_precise[i] *= g_eye_scale;
+                g_eye_view[0].translation[i] = (int32_t)llround(g_eye_view[0].translation[i] * g_eye_scale);
+                g_eye_view[1].translation[i] = (int32_t)llround(g_eye_view[1].translation[i] * g_eye_scale);
+            }
+            if (g_eye_profile) for (int eye = 0; eye < 2; ++eye) {
+                g_eye_view[eye].fx_q16 = g_profile_projection[eye][0];
+                g_eye_view[eye].fy_q16 = g_profile_projection[eye][1];
+                g_eye_view[eye].cx_delta_q16 = g_profile_projection[eye][2];
+                g_eye_view[eye].cy_delta_q16 = g_profile_projection[eye][3];
+            }
+            /* Reverted: forcing the guest focal here filled the eye surface but threw away the
+             * headset's projection, which makes both eyes geometrically wrong. The margin needs the
+             * guest render widened to cover the headset frustum instead, not the eye projection
+             * replaced. */
+
         } else {
             double angle = g_head_yaw * 3.141592653589793 / 180;
             double q[4] = {0, sin(angle*.5), 0, cos(angle*.5)};
@@ -832,6 +913,7 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
                 if (g_authored_focal) g_eye_view[eye].projection_h_ref = 400;
             }
         }
+        if (!g_projective) g_eye_view[0].precise=g_eye_view[1].precise=0;
         if(g_menu_flat && g_openxr &&
            !psx_mod_openxr_quad(g_menu_distance,g_menu_width,g_menu_width*.75))g_menu_flat=0;
         if(g_menu_flat)for(int eye=0;eye<2;eye++) {
@@ -841,10 +923,22 @@ static void vr_wait_entry(CPUState* cpu, uint32_t address) {
         }
         moh_vr_hud_frame(g_eye_view[0].fy_q16>0?(float)g_eye_view[0].fx_q16/g_eye_view[0].fy_q16:1);
         if(g_openxr && !g_menu_flat) {
-#if defined(PSX_MOD_RENDER_CAPTURE_RGBA)
+#if defined(PSX_MOD_RENDER_CAPTURE_RGBA_PAIR)
             vr_capture_native_hud(cpu,&pass);
 #endif
             moh_vr_hud_prepare();
+        }
+        /* Scene/state transition: tag the frame trace (headset only, where the
+         * runtime already opened this frame's record in psx_mod_openxr_begin)
+         * and drop the stereo shedding estimate so the new scene starts from a
+         * fresh measurement instead of the previous scene's. */
+        {
+            static int prev_flat = -1, prev_mp = -1;
+            if (g_menu_flat != prev_flat || (int)g_scene_mp != prev_mp) {
+                prev_flat = g_menu_flat; prev_mp = (int)g_scene_mp;
+                if (g_openxr) psx_mod_frame_trace_note(g_menu_flat ? "menu" : "scene");
+                psx_mod_stereo_reset_budget();
+            }
         }
         g_in_pass = 1;
         int rendered = psx_mod_render_stereo(cpu, &frame, vr_stereo_fn, &pass);
@@ -954,9 +1048,9 @@ static void vr_shot_basis_entry(CPUState *cpu,uint32_t address) {
 static void vr_laser_capture(CPUState* cpu,const PSXModRenderView* view,
                              const double r[9],const double t[3],double scale) {
     double R[9],M[9],C[3];
-    for(int i=0;i<9;i++)R[i]=view->rotation_q12[i]/4096.0;
+    for(int i=0;i<9;i++)R[i]=view->precise?view->rotation[i]:view->rotation_q12[i]/4096.0;
     for(int i=0;i<3;i++) {
-        C[i]=view->translation[i];
+        C[i]=view->precise?view->translation_precise[i]:view->translation[i];
         for(int j=0;j<3;j++) {
             M[i*3+j]=R[i*3]*r[j]+R[i*3+1]*r[3+j]+R[i*3+2]*r[6+j];
             C[i]+=R[i*3+j]*t[j];
@@ -1044,11 +1138,11 @@ static void vr_laser_draw(void) {
     if (g_laser_ray && g_level_root && g_camera_valid) {
         const PSXModRenderView* vv=&g_eye_view[g_stereo_eye];
         double R[9],dt[3],gc[3],gd[3],wo[3],wd[3],thit=0;
-        for(int i=0;i<9;i++)R[i]=vv->rotation_q12[i]/4096.0;
+        for(int i=0;i<9;i++)R[i]=vv->precise?vv->rotation[i]:vv->rotation_q12[i]/4096.0;
         /* The muzzle o and its projection live in the weapon's scoped view, whose
          * translation is scaled by g_weapon_projection_scale; undo that before
          * mapping into the level's world space. */
-        for(int i=0;i<3;i++)dt[i]=o[i]/g_weapon_projection_scale-vv->translation[i];
+        for(int i=0;i<3;i++)dt[i]=o[i]/g_weapon_projection_scale-(vv->precise?vv->translation_precise[i]:vv->translation[i]);
         for(int i=0;i<3;i++) {                 /* R^T, R is orthonormal */
             double c=0,g=0;
             for(int j=0;j<3;j++){c+=R[j*3+i]*dt[j];g+=R[j*3+i]*dir[j];}
@@ -1085,7 +1179,7 @@ static void vr_laser_draw(void) {
                 for(int i=0;i<3;i++) {
                     double r2=0;
                     for(int j=0;j<3;j++)r2+=R[i*3+j]*(gh[j]+g_camera_tr[j]);
-                    p1[i]=(r2+vv->translation[i])*g_weapon_projection_scale;
+                    p1[i]=(r2+(vv->precise?vv->translation_precise[i]:vv->translation[i]))*g_weapon_projection_scale;
                 }
                 have_dot=1;
             }
@@ -1181,7 +1275,10 @@ static int vr_weapon_geometry_filter(CPUState *cpu,uint32_t address) {
     /* Uniformly enlarge camera coordinates AND the eye displacement. Ratios
      * X/Z and physical stereo stay fixed, while packed XYZ and native depth
      * retain precision and avoid the original H/2 divide threshold. */
-    for(int i=0;i<3;i++)view.translation[i]=(int32_t)llround(view.translation[i]*g_weapon_projection_scale);
+    for(int i=0;i<3;i++) {
+        view.translation[i]=(int32_t)llround(view.translation[i]*g_weapon_projection_scale);
+        view.translation_precise[i]*=g_weapon_projection_scale;
+    }
     if(g_authored_focal)view.projection_h_ref=133;
     if(!psx_mod_render_view(&view)){g_weapon_outer=0;return 0;}
     vr_laser_capture(cpu,&view,r,t,weapon_scale);
@@ -1244,6 +1341,8 @@ static uint32_t vr_controller_mode(const PSXModControllerInput *input) {
 
 static void vr_entity_activate(void) {
     if (g_stereo) (void)psx_mod_set_stereo_presentation(1);
+    if (g_stereo && g_projective)
+        psx_mod_set_render_projective(1);
     if (g_openxr) (void)psx_mod_openxr_enable(1);
     g_scene_age=4;g_native_surface=-1;vr_native_surface_mode(1);
     if (g_movement) {
@@ -1272,7 +1371,14 @@ static void vr_entity_activate(void) {
 
 PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     const char* e;
+#if defined(PSX_PGXP) && PSX_PGXP
+    if ((e = getenv("PSX_VR_PROJECTIVE")) && *e) g_projective = atoi(e) != 0;
+#else
+    if ((e = getenv("PSX_VR_PROJECTIVE")) && atoi(e))
+        psx_mod_counter_add("vr.projective.requires_pgxp_build",1);
+#endif
     if ((e = getenv("PSX_VR_PROBE"))) g_probe = (e[0] && e[0] != '0');
+    if ((e = getenv("PSX_FRAME_TRACE"))) g_trace_spans = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_TARGET"))) g_target = (uint32_t)strtoul(e, NULL, 0);
     if ((e = getenv("PSX_VR_AXIS"))) g_axis = atoi(e);
     if ((e = getenv("PSX_VR_OFFSET"))) g_offset = (int32_t)strtol(e, NULL, 0);
@@ -1282,7 +1388,10 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
     if ((e = getenv("PSX_VR_PASS_DRAW"))) g_pass_draw = atoi(e);
     if ((e = getenv("PSX_VR_STEREO"))) g_stereo = (e[0] && e[0] != '0');
     if ((e = getenv("PSX_VR_OPENXR"))) g_openxr = atoi(e) != 0;
-    if ((e = getenv("PSX_VR_HEAD_FRUSTUM"))) g_head_frustum = !strcmp(e,"1");
+    if ((e = getenv("PSX_VR_HEAD_FRUSTUM"))) {
+        g_head_frustum = atoi(e) != 0;
+        moh_vr_keep_all = atoi(e) >= 2;
+    }
     if ((e = getenv("PSX_VR_WEAPON_POSE"))) g_weapon_pose = atoi(e) != 0;
     if ((e = getenv("PSX_VR_LASER"))) g_laser = atoi(e) != 0; else g_laser = g_weapon_pose;
     if ((e = getenv("PSX_VR_LASER_RANGE_M"))) g_laser_range_m = strtod(e,NULL);
@@ -1342,6 +1451,16 @@ PSX_MOD_CONSTRUCTOR(psx_register_moh_vr_stereo_plugin) {
                    &g_head_position[2]) != 3) memset(g_head_position,0,sizeof g_head_position);
     }
     if ((e = getenv("PSX_VR_AUTHORED_FOCAL"))) g_authored_focal = atoi(e) != 0;
+    /* Test-only, and deliberately a name the harness does not set: run_vr.ps1 forces
+     * PSX_VR_AUTHORED_FOCAL=1, so anything exported under that name is overwritten before it reaches the
+     * game and cannot be tested. This one turns the projection override off, which isolates whether the
+     * missing near floor is caused by the wider effective frustum the override asks the guest to draw. */
+    if ((e = getenv("PSX_VR_NO_AUTHORED_FOCAL"))) g_authored_focal = 0;
+    if ((e = getenv("PSX_VR_EYE_SCALE"))) {
+        double v = strtod(e, NULL);
+        if (v >= 0.0 && v <= 2.0) g_eye_scale = v;
+    }
+    if ((e = getenv("PSX_VR_EYE_PROFILE"))) g_eye_profile = strcmp(e, "quest3") == 0;
     if ((e = getenv("PSX_VR_DESKTOP_FOV"))) g_desktop_fov = atoi(e) != 0;
     if (g_openxr) g_stereo=1;
     if ((e = getenv("PSX_VR_IPD_MM"))) g_ipd_mm = strtod(e, NULL);

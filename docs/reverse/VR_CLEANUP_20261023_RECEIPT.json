@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-23",
+  "archive": "analysis/cleanup-20261023/retired-vr-evidence.zip",
+  "archived_files": 7206,
+  "archive_sha256": "f269bfdc7e6dbb527f6959651b01af45d85ffde738661670ef59ae2b9735484b",
+  "loose_bytes": 16579830510,
+  "archive_bytes": 3094527364,
+  "reclaimed_bytes": 13616188641,
+  "deleted_regenerable": [
+    {
+      "path": "build-vr-perf-batch",
+      "bytes": 62735947
+    },
+    {
+      "path": "build-vr-perf-production",
+      "bytes": 64033025
+    },
+    {
+      "path": ".pytest_cache",
+      "bytes": 532
+    },
+    {
+      "path": "vr/__pycache__",
+      "bytes": 208945
+    },
+    {
+      "path": "scripts/__pycache__",
+      "bytes": 6889
+    },
+    {
+      "path": "toolchain/history-check-062d6e39",
+      "bytes": 1290680
+    },
+    {
+      "path": "toolchain/history-check-890fed78",
+      "bytes": 1299570
+    },
+    {
+      "path": "toolchain/history-check-99dd1eee",
+      "bytes": 1309907
+    }
+  ],
+  "preserved": [
+    "saves",
+    "disc",
+    "Input",
+    "build-release",
+    "registered worktrees",
+    ".commandcode",
+    "toolchain/vr-hud-*",
+    "dist historical releases"
+  ],
+  "verification": "Every archived member read back and SHA-256 checked before loose deletion"
+}

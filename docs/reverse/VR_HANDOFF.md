@@ -1,10 +1,62 @@
 # VR handoff
 
-Updated: 2026-10-07. Start here, then read [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md).
+## v0.1.6 release baseline (2026-10-23)
+
+The owner considers the current build playable and authorized the game-master
+PR and next release. v0.1.6 retains the accepted nearby-floor/world-stability
+fixes and the slot-2 production improvements. Framework pin: `5932092c`; UI pin:
+`41c88ffe`. Production is Release / OpenGL / OpenXR, PGXP ON, debug tools OFF,
+LLE batching, projective replay ON and stereo shedding OFF by default.
+
+Use `build-release/` for local play. `VERSION`, the packaged executable stamp
+and `BUILD_INFO.json` identify the release. The release workflow and finalizer
+now enforce the production flags; the launcher uses readiness JSON without TCP.
+Current controls and limitations are in [ALPHA_README.md](../../ALPHA_README.md).
+Jump is left-stick click; crouch is right-stick click; the wrist HUD is shipped.
+
+Local release packaging uses `build-release-emitters`, built with the portable
+static toolchain. Older emitter executables in `psxrecomp/overlay_toolchain`
+failed to load with the staged GCC DLLs; do not package those. The finalizer
+now executes the staged game emitter's `--codegen-hash` before accepting a ZIP.
+
+Performance measurements remain valid, with demanding scenes below target;
+this does not override the owner's playable assessment. See
+[VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md) and
+[v0.1.6 notes](VR_RELEASE_V0.1.6.md). Geometry acceptance was on Quest 3 / VDXR;
+the later production performance/flicker checks were headless.
+
+Cleanup retention and archive access are recorded in
+[VR_PROOF_CLEANUP_PLAN.md](VR_PROOF_CLEANUP_PLAN.md). The obsolete alternate
+performance builds are removed; original saves, discs, current build and
+registered worktrees are preserved. The sections below retain historical
+context and must not be used as current release/layout instructions.
+
+Upstream submission text and remaining current-master validation are in
+[VR_UPSTREAM_PR_DRAFT.md](VR_UPSTREAM_PR_DRAFT.md). The game release pins the
+tested fork; it does not depend on upstream merging the framework changes.
+
+Current slot-2 follow-up: [VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md) records
+production defaults, the empty-projective-setting correction, overload-flicker
+fix, headless receipts and the measured throughput improvement. Current framework
+pin: `5932092c`; normal `build-release` uses debug tools OFF and PGXP ON.
+
+
+Updated: 2026-10-23. Start here, then read [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md).
 The todo list is the single backlog; historical plans and receipts retain their
 original scope and are not current instructions.
 
-## Current baseline
+## Current source result (2026-10-23)
+
+Nearby missing floor and world shakiness are fixed and owner-accepted on Quest 3 /
+VDXR. Normal VR now defaults to projective replay with `MOH_PGXP=ON`; framework
+`efa10eee` on `vr-head-pitch`, parent `vr-perf-pr1-pr2`, UI `41c88ffe`.
+[VR_PROJECTIVE_RENDERING.md](VR_PROJECTIVE_RENDERING.md) owns the implementation,
+headless/headset evidence, measured rendering cost and old-savestate compatibility
+limit. The rebuilt normal target is `build-release`. This supersedes earlier
+jitter shelving for this source branch; it is not a new published release.
+Implementation was committed in the active `psxrecomp/` submodule checkout.
+
+## Historical published baseline
 
 - Published release: [v0.1.3 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.3),
   source `c72ddc95`, Windows x64 / OpenGL / optional OpenXR / bundled OpenBIOS.
@@ -13,9 +65,15 @@ original scope and are not current instructions.
 - Accepted on Quest 3 / Virtual Desktop VDXR: normal boot/menu/briefing,
   genuine per-eye gameplay, locomotion, tracked weapon visuals for all ten supplied
   weapon controls, headset color, head-turn visibility and the rebuilt normal launcher.
+- World orientation on SteamVR: the origin pose a session captures can sit a half turn from every pose
+  after it. The world is drawn with `conj(origin) * pose`, so it hangs upside down while the 2D HUD, the
+  tracked weapon and the pose deltas all stay correct. Re-capturing the origin
+  (`openxr_control recenter=1` on the debug surface) restores it live, and the runtime now drops an origin
+  whose up axis points down so it cannot persist past the frame it appears on. Measured matrices before and
+  after, and the mirror captures, are in [VR_OPTIMIZATION_STATUS.md](VR_OPTIMIZATION_STATUS.md).
 - Jump is right-stick click. [ALPHA_README.md](../../ALPHA_README.md) owns the
   current installation and control chart; do not copy old Y-button mappings.
-- Jitter is shelved at `04624df`, preserved in the local retired-branch bundle
+- The older jitter experiment was shelved at `04624df`, preserved in the local retired-branch bundle
   described below. The tolerance experiment worsened distant-enemy stability;
   it is not in the release.
 - Visual acceptance does not close physical damage alignment, scoped/special

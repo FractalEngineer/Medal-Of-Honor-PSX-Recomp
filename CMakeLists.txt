@@ -23,6 +23,9 @@ project(Medal_of_Honor_Recomp LANGUAGES C CXX)
 # endif()
 set(PSX_SETUP_WIZARD ON CACHE BOOL
     "Advertise first-run setup wizard + Generate & rebuild in recomp-ui" FORCE)
+# Detailed per-instruction diagnostics are for dedicated profiling builds.
+# Keep them opt-in for normal play; -DPSX_DEBUG_TOOLS=ON selects that build.
+set(PSX_DEBUG_TOOLS OFF CACHE BOOL "Build detailed developer diagnostics")
 include("${PSXRECOMP_ROOT}/runtime/runtime.cmake")
 
 # This project's own mod catalog. The FRAMEWORK stages it -- together with its
@@ -35,7 +38,13 @@ if(NOT IS_DIRECTORY "${PSX_PRELOADED_MODS}")
     set(PSX_PRELOADED_MODS "NONE")
 endif()
 
+option(MOH_PGXP "Compile precision provenance hooks for VR projective rendering" ON)
+set(MOH_PRECISION_OPTIONS)
+if(MOH_PGXP)
+    list(APPEND MOH_PRECISION_OPTIONS PGXP)
+endif()
 psxrecomp_add_game_runtime(psx-runtime
+    ${MOH_PRECISION_OPTIONS}
     PRELOADED_MODS_DIR "${PSX_PRELOADED_MODS}"
     # ENABLE_NETPLAY_IF_PRESENT
     # NETPLAY_LOBBY_URL "ws://netplay.retcomm.net:8765"

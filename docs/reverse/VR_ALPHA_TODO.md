@@ -1,11 +1,14 @@
 # VR alpha follow-up checklist
 
-Updated: 2026-10-07. Baseline: published v0.1.3 (`c72ddc95`), framework
-`3618bc00`, Quest 3 / Virtual Desktop VDXR. Current build/layout and evidence
+Updated: 2026-10-23. Release baseline: v0.1.6, framework
+`5932092c`, Quest 3 / Virtual Desktop VDXR; owner considers the build playable.
+Further performance optimization remains open. Current build/layout and evidence
 are in [VR_HANDOFF.md](VR_HANDOFF.md); controls are in
 [ALPHA_README.md](../../ALPHA_README.md). This is the single active backlog.
 
-Follow the numbered order below, with jitter explicitly shelved by the user.
+Follow the numbered order below. The owner resumed floor/stability work and
+accepted the projective replay fix on 2026-10-23; see
+[VR_PROJECTIVE_RENDERING.md](VR_PROJECTIVE_RENDERING.md).
 All ten supplied weapon tracking controls are visually accepted and released;
 remaining combat/special-mode/asset checks are separate. Batch future headset
 checks, defaulting to 30 seconds with movement enabled. Cleanup does not start
@@ -19,26 +22,13 @@ bicubic and jitter experiments are excluded.
 
 ## 1. World rendering and level correctness - highest priority
 
-- [ ] **Shelved: garbled and shaky world, even while stationary.** Reproduce
-  in a fixed scene. Compare flat/native, neutral stereo, fixed synthetic head
-  pose, and actual tracked poses. Establish whether vertices/packets change at
-  a frozen guest checkpoint, whether small pose noise is amplified, or whether
-  the visible effect comes from frame delivery. Investigate precision,
-  transforms, packet interpretation and draw order as hypotheses; do not call
-  it tracking jitter or a PSX limitation without a control. Success: stable
-  geometry with a fixed pose and no new folding/corruption relative to flat.
-  Frozen render views stop the shaking, but are diagnostic. Continuous-pose
-  experiments were unchanged/possibly worse; tolerance 1 reduced world/weapon
-  shaking while worsening sky/compass. Candidates remain outside the release.
-  Commit `04624df` in the local retired-branch bundle preserves the experiment;
-  its walking test worsened distant-enemy stability. See the handoff for its path.
-  Resume only when requested, then investigate draw provenance before accepting a fix.
-- [ ] **Reported: floor immediately below the player appears unrendered.**
-  Also reproduce the previously captured large black lower-world polygon.
-  Determine whether these share a producer: absent geometry, an occluding
-  polygon, clipping, winding/culling, or insufficient game visibility coverage.
-  Compare both eyes and flat output at the same player position while looking
-  down and leaning. Success: expected floor coverage without a covering artifact.
+- [x] **World shakiness during head movement / near-player missing floor.**
+  Owner accepted both fixes in a 30-second Quest 3 / VDXR check on 2026-10-23.
+  Exact eye poses and provenance-backed homogeneous clipping are normal VR
+  defaults. Translation/rotation sweeps and floor screenshots passed; prior
+  tolerance experiments remain retired. See VR_PROJECTIVE_RENDERING.md for
+  scope, rollback checks, save compatibility and measured performance cost.
+  Later-area corruption and broader sector coverage remain separate open items.
 - [ ] **Reported: significant pop-in.** Separate native game draw distance,
   portal/sector visibility, asset streaming, and VR-induced rejection. Inspect
   what geometry is submitted before changing renderer settings. Expand the
@@ -181,6 +171,45 @@ bicubic and jitter experiments are excluded.
   movement or a grip action held, or unexpectedly change guest simulation speed.
 
 ## 6. Calibration, regression coverage and release follow-up
+
+**PINNED: per-headset compatibility.** The engine must project correctly on any commercial headset, and
+four device properties vary legitimately and are currently only exercised by one of them, because the
+null HMD reports a symmetric FOV, identity orientation, head-height origin and a fixed IPD. Every one of
+those is a blind spot:
+
+- **FOV asymmetry, per eye.** Every real headset reports an asymmetric, per-eye FOV. The projection
+  currently scales the focal lengths by `guestH/projection_h_ref` but not the centre deltas
+  (`gte.cpp`: `sx = OFX + cx_delta + (IR1*fx/SZ) * h/ref`), so an asymmetric FOV gets a principal-point
+  error that grows with the distance of the guest's H from the reference, and the two eyes get opposite
+  cx deltas. Measured on the user's Quest 3 through SteamVR: `cx_delta +/-4068688`, `cy_delta -1519288`
+  in Q16, against exactly zero on the null device. **Fix: scale the centre deltas by the same factor, or
+  express the override as a focal plus principal point.** Until then no headset other than the null
+  device is proven correct.
+- **IPD and eye positions.** 58 to 72 mm, not symmetric about the head origin, and the space origin is
+  not at eye height (the Quest 3 run reports `y = -1.11 m`, a floor origin). Taken from the runtime, but
+  never exercised headlessly beyond a fixed 63 mm.
+- **Pose space.** LOCAL versus STAGE, seated versus standing, and the space orientation. A SteamVR
+  standing space was measured 180 degrees rotated against the pose the origin had been captured from,
+  which hung the world upside down while the HUD and the pose deltas stayed correct. Guarded since (an
+  origin whose up axis points down is dropped), but the general rule is to define the reference frame
+  from the live pose and validate it, never to assume the first pose is level.
+- **Display period and swapchain format.** 72 to 144 Hz, and the swapchain format decides which branch
+  the eye image is submitted through (`35907`, SRGB8_ALPHA8, on the SteamVR runs). A device that
+  reports a different format takes a different copy branch, which is where an earlier flip fix went
+  wrong on the user's runtime while the null device hid it.
+
+**Device replay, first increment landed.** `PSX_VR_EYE_PROFILE=quest3` replays the measured Quest 3 eye
+projection (focal plus deltas, per eye) from a null-HMD headless run, so the asymmetric-FOV case above can
+be reproduced and fixed headless. Still to do: per-eye position and orientation from the recording, the
+display period and swapchain format, a recorder that samples `openxr_views` into a descriptor file rather
+than hand-copied constants, and one descriptor per device so each new headset is a data point instead of a
+fresh bug hunt. Replay cannot cover the runtime's own compositor behaviour, only what the app computes.
+
+**Retraction: `analysis/vr-proof/headset-capture/` is a null-HMD run, not a headset capture.** Its own
+stats carry the null signature (identity orientation, symmetric `+/-0.785398` FOV, `y = 0`, IPD `0.063`)
+while the live Quest 3 run differs in every one of those fields. The belief that headless and headset
+"reproduce to the digit" came from that mislabelled directory and is false; the earlier preamble above it
+in the status record stands corrected.
 
 - [ ] **Known gap: physical world scale and relative actor size.** Use a
   documented physical reference and measured game units. Check enemy/world/

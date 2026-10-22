@@ -33,8 +33,10 @@ def main():
     cache = (args.build_dir / "CMakeCache.txt").read_text(encoding="utf-8")
     if "PSX_OPENXR:BOOL=ON" not in cache:
         raise RuntimeError("The Windows alpha must be built with OpenXR support")
-    if "PSX_DEBUG_TOOLS:BOOL=ON" not in cache:
-        raise RuntimeError("The alpha launcher requires TCP startup inspection")
+    if "PSX_DEBUG_TOOLS:BOOL=OFF" not in cache:
+        raise RuntimeError("Public releases must disable heavyweight debug tools")
+    if "MOH_PGXP:BOOL=ON" not in cache:
+        raise RuntimeError("The VR floor/stability fix requires PGXP")
     if "PSXRECOMP_BIOS_STEMS:STRING=OpenBIOS\n" not in cache:
         raise RuntimeError("The alpha must link only the bundled OpenBIOS backend")
     if (stage / "psx_game_version.txt").read_text().strip() != args.version:
@@ -60,6 +62,13 @@ def main():
     if feature["channel"] != "experimental" or not feature["default_enabled"]:
         raise RuntimeError("VR support must survive release filtering and register its runtime hooks")
     exe = stage / "Medal_of_Honor__Recompiled.exe"
+    emitter = subprocess.run(
+        [str(stage / "overlay_toolchain/psxrecomp-game.exe"), "--codegen-hash"],
+        cwd=stage, capture_output=True, text=True, timeout=30,
+    )
+    emitter_hash = emitter.stdout.strip()
+    if emitter.returncode or not re.fullmatch(r"[0-9a-fA-F]{8}", emitter_hash):
+        raise RuntimeError("Bundled overlay emitter cannot run; rebuild it with the portable static toolchain")
     with exe.open("rb") as source:
         exe_hash = hashlib.file_digest(source, "sha256").hexdigest()
     info = {
@@ -71,6 +80,9 @@ def main():
         "framework_commit": revision(ROOT / "psxrecomp"),
         "ui_commit": revision(ROOT / "recomp-ui"),
         "openxr": True,
+        "pgxp": True,
+        "debug_tools": False,
+        "overlay_codegen_hash": emitter_hash,
         "bios_backends": "OpenBIOS",
         "exe_sha256": exe_hash,
     }

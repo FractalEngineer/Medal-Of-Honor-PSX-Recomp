@@ -1,5 +1,25 @@
 # Build and proof retention
 
+## Current cleanup: 2026-10-23
+
+The v0.1.6 cleanup consolidates retired loose VR captures into
+`analysis/cleanup-20261023/retired-vr-evidence.zip`. Each member is read back and
+checked against its SHA-256 before its loose source is removed. The archive's
+`CLEANUP_MANIFEST.json` preserves original repository-relative paths, sizes and
+hashes. Adjacent `manifest.json` and `receipt.json` record the completed cleanup.
+Historical receipt paths can therefore refer to archive members.
+
+The accepted floor, head-motion sweeps, headset check, matched projective
+performance controls, final slot-2 production/verification receipts and isolated
+fixtures remain loose. The current `build-release`, original `saves/`, `disc/`,
+`Input/`, registered worktrees and historical release ZIPs are retained.
+Superseded performance builds, old history-check copies and Python/test caches
+are regenerable and removed. Unrelated `.commandcode/` is preserved.
+
+Extract an individual archive member into a separate analysis directory when
+rechecking old evidence. Do not restore fixture saves over personal saves.
+The remaining sections document earlier cleanups and historical layouts.
+
 Updated: 2026-10-06. Current status: [VR_HANDOFF.md](VR_HANDOFF.md).
 Cleanup reclaimed 11.71 GiB. [VR_CLEANUP_RECEIPT.json](VR_CLEANUP_RECEIPT.json)
 records the compact result; full manifests and hashes remain local under
