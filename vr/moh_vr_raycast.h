@@ -1,5 +1,6 @@
 #pragma once
 #include "mod_plugins.h"
+#include "vr_geometry_math.h"
 #include <math.h>
 #include <stdint.h>
 /* Raycast against the level visibility BVH (see VR_LASER_RAYCAST_PLAN.md).
@@ -17,23 +18,7 @@
 static inline int moh_vr_ray_box(const double o[3],const double d[3],
                                  const int16_t bounds[6],double tmin,double tmax,
                                  double *t_enter) {
-    double t0=tmin,t1=tmax;
-    for(int i=0;i<3;i++) {
-        double lo=bounds[i],hi=bounds[i+3];
-        if(lo>hi)return 0;
-        if(fabs(d[i])<1e-9) {
-            if(o[i]<lo||o[i]>hi)return 0;
-            continue;
-        }
-        double inv=1.0/d[i];
-        double ta=(lo-o[i])*inv,tb=(hi-o[i])*inv;
-        if(ta>tb){double s=ta;ta=tb;tb=s;}
-        if(ta>t0)t0=ta;
-        if(tb<t1)t1=tb;
-        if(t0>t1)return 0;
-    }
-    *t_enter=t0;
-    return 1;
+    return psx_vr_ray_box(o,d,bounds,tmin,tmax,t_enter);
 }
 
 /* Ray vs triangle (Moeller-Trumbore, no back-face cull). */

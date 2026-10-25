@@ -41,6 +41,49 @@ fix, headless receipts and the measured throughput improvement. Current framewor
 pin: `9b2100fe`, which merges upstream `9caf4c22` into the combined VR branch.
 Normal `build-release` uses debug tools OFF and PGXP ON.
 
+## Shared VR helper reconciliation (2026-10-26)
+
+The C1-C4 consistency pass is complete for shared math ownership and host
+parity, but its reference runtime gate remains blocked. The current checkout is
+`b33a7d96` with framework gitlink `555e1eab`. Both this game and Underground
+now use the same `vr_geometry_math.c` content SHA-256
+`9e51708f0f05a16182e4d5893063a06f656d4fc723965f72cea9191632661a23`.
+The shared framework commit is pushed to the framework fork.
+
+The shared module owns only 3x3 inverse calculation, conservative eye-space box
+visibility, and slab ray/box intersection. This game retains its
+determinant/coefficient rejection policy and its tree/mask traversal; Underground
+retains its wider inverse coefficient bound, MP center/radius expansion, P1
+guards and native fallback. Projection/clipping, input, weapon hooks and
+calibration remain title-owned and unchanged.
+
+The repeatable host check takes both roots explicitly and does not create a
+sibling dependency in shipped code:
+
+```powershell
+python vr/tools/check_reference_parity.py `
+  --reference-root <reference-checkout> `
+  --out-dir analysis/reference-parity/<fresh-directory>
+```
+
+Run it from the Underground checkout. This checkout's local workflow also runs
+`vr/tests/test_shared_geometry_policy.py`. The final compact record is
+[reference parity receipt](../../vr/proof/reference-parity-receipt.json).
+
+The reference Release build passes, as do its aim, frustum and raycast fixtures.
+Headless runtime validation is blocked at fixture loading by a diagnostic
+execution-profile mismatch:
+`enhancement_memory_layout_or_execution_profile`. The normal-build save slots
+load successfully when tested manually; this is not a bad-save conclusion. The
+next action is to use one copied reference PGXP slot produced by the debug
+profile and rerun the existing world-stability batch. Do not patch a save header
+and do not claim the reference runtime gate from the Underground pass.
+
+Source-of-truth rule: fix shared matrix/visibility/slab math once in
+`psxrecomp/runtime`; keep measured bindings and title policy in the game adapter.
+A later generic fix must reach both consumers or record which one remains
+pending.
+
 
 Updated: 2026-10-23. Start here, then read [VR_ALPHA_TODO.md](VR_ALPHA_TODO.md).
 The todo list is the single backlog; historical plans and receipts retain their

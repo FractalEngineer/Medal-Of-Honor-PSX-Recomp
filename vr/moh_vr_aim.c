@@ -1,17 +1,15 @@
 #include "moh_vr_aim.h"
+#include "vr_geometry_math.h"
 #include "vr_pose_math.h"
 #include <math.h>
 #include <string.h>
 int moh_vr_matrix_inverse(const double m[9],double inverse[9]) {
-    if(!m || !inverse)return 0;
-    for(int i=0;i<9;i++)if(!isfinite(m[i]))return 0;
-    double r[9]={m[4]*m[8]-m[5]*m[7],m[2]*m[7]-m[1]*m[8],m[1]*m[5]-m[2]*m[4],
-                 m[5]*m[6]-m[3]*m[8],m[0]*m[8]-m[2]*m[6],m[2]*m[3]-m[0]*m[5],
-                 m[3]*m[7]-m[4]*m[6],m[1]*m[6]-m[0]*m[7],m[0]*m[4]-m[1]*m[3]};
-    double det=m[0]*r[0]+m[1]*r[3]+m[2]*r[6];
-    if(!isfinite(det) || fabs(det)<.01 || fabs(det)>64)return 0;
-    for(int i=0;i<9;i++){r[i]/=det;if(!isfinite(r[i]) || fabs(r[i])>8)return 0;}
-    memcpy(inverse,r,sizeof r);return 1;
+    const PSXVRMatrixInversePolicy policy = {
+        .min_abs_determinant = .01,
+        .max_abs_determinant = 64,
+        .max_abs_coefficient = 8,
+    };
+    return psx_vr_inverse3x3(m,&policy,inverse);
 }
 int moh_vr_aim_shot(const PSXModOpenXRHands *h,const double inv[9],
                     const double tr[3],double units,int32_t position[3],int32_t angles[2]) {
