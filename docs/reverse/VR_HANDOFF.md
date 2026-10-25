@@ -43,9 +43,9 @@ Normal `build-release` uses debug tools OFF and PGXP ON.
 
 ## Shared VR helper reconciliation (2026-10-26)
 
-The C1-C4 consistency pass is complete for shared math ownership and host
-parity, but its reference runtime gate remains blocked. The current checkout is
-`b33a7d96` with framework gitlink `555e1eab`. Both this game and Underground
+The C1-C4 consistency pass is complete, including this game's runtime gate. The
+current source revision is `f37efb7` with framework gitlink `555e1eab`. Both
+this game and Underground
 now use the same `vr_geometry_math.c` content SHA-256
 `9e51708f0f05a16182e4d5893063a06f656d4fc723965f72cea9191632661a23`.
 The shared framework commit is pushed to the framework fork.
@@ -71,13 +71,17 @@ Run it from the Underground checkout. This checkout's local workflow also runs
 [reference parity receipt](../../vr/proof/reference-parity-receipt.json).
 
 The reference Release build passes, as do its aim, frustum and raycast fixtures.
-Headless runtime validation is blocked at fixture loading by a diagnostic
-execution-profile mismatch:
-`enhancement_memory_layout_or_execution_profile`. The normal-build save slots
-load successfully when tested manually; this is not a bad-save conclusion. The
-next action is to use one copied reference PGXP slot produced by the debug
-profile and rerun the existing world-stability batch. Do not patch a save header
-and do not claim the reference runtime gate from the Underground pass.
+For runtime validation, a headless diagnostic session used repeated Start and
+Cross to reach Mission 1, then saved a fresh slot 9 under the same execution
+identity. Five world-stability views produced unique crops in both eyes with
+1,546 rollback checks and zero mismatches. All eight weapon-aim controls passed.
+A tracked-weapon watchdog deliberately aborted one right eye, retained pair
+1065 and resumed with later complete pairs; the run recorded one watchdog, one
+nesting repair, 2,328 verification checks and zero mismatches. Source `.pst`
+files stayed unchanged. The separate Release build with OpenXR OFF links
+successfully. Evidence is in
+[the runtime receipt](../../analysis/reference-parity/c3-runtime-20261026/receipt.json)
+and the compact parity receipt.
 
 Source-of-truth rule: fix shared matrix/visibility/slab math once in
 `psxrecomp/runtime`; keep measured bindings and title policy in the game adapter.
