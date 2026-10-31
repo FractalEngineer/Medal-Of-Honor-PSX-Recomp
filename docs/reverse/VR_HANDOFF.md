@@ -5,7 +5,7 @@
 The current dependency set is framework `e696907e` (upstream `a7b37e07`, the
 three shared VR commits, updated engine pins, and hook-safe native overlays),
 recomp-ui `a956157`, recomp-net `7a4d330`, and rbengine `28a2a47`. The tested
-game revision is `0ab8a1f`.
+game revision is `65239dd`.
 
 Normal production uses Release / OpenGL / OpenXR with the ENHANCED execution
 profile, generated native CPU spans, ordered HLE GL batching, PGXP enabled and
