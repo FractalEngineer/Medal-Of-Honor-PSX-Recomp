@@ -2,15 +2,19 @@
 
 ## Current dependency baseline (2026-10-31)
 
-The current dependency set is framework `cdfdb73c` (upstream `a7b37e07` plus the
-three shared VR commits), recomp-ui `a956157`, recomp-net `e530593`, and
-rbengine `b29bdde`. The tested game revision is `7966b4a`.
+The current dependency set is framework `e696907e` (upstream `a7b37e07`, the
+three shared VR commits, updated engine pins, and hook-safe native overlays),
+recomp-ui `a956157`, recomp-net `7a4d330`, and rbengine `28a2a47`. The tested
+game revision is `0ab8a1f`.
 
 Normal production uses Release / OpenGL / OpenXR with the ENHANCED execution
 profile, generated native CPU spans, ordered HLE GL batching, PGXP enabled and
 debug tools disabled. The `build-release/` headless slot-2 check reached a
-59.90 Hz median guest rate with zero empty XR submissions; exact evidence and the
-comparison with the preceding 48.65 Hz result are in
+59.94 Hz median guest rate with complete synthetic-controller stereo pairs and
+no empty XR submissions. The final 35-second audio check requested a 260 ms
+reserve, kept at least 211.5 ms buffered through a 44 Hz startup sample and
+logged no underruns or overflows. Exact evidence and the comparison with earlier
+results are in
 [VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md).
 
 The UI labels save-state slots from 1 while the backend filenames remain
