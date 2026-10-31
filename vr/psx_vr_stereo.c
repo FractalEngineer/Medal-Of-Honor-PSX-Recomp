@@ -66,6 +66,7 @@
 #include "mod_plugins.h"
 #include "cpu_state.h"
 #include "psx_cycles.h"
+#include "psx_openxr.h"
 #include "vr_pose_math.h"
 /* The guest sub-stages this hook brackets (PSX_TRACE_GAME_*) and the record the
  * runtime writes them into. See psx_mod_frame_trace_stage_begin. */
@@ -338,6 +339,7 @@ static int g_laser_axis=2;               /* model axis the barrel points along *
 static double g_laser_sign=1;            /* +1/-1 flips that axis */
 static int g_laser_valid;                /* placement captured for this eye */
 static int g_laser_grip;                 /* right grip held, sampled off-replay */
+static unsigned g_synthetic_controller_frame;
 static double g_laser_M[9],g_laser_C[3],g_laser_scale;
 static int32_t g_laser_ofx,g_laser_ofy,g_laser_fx,g_laser_fy,g_laser_cx,g_laser_cy;
 static uint32_t g_laser_h,g_laser_href;
@@ -507,7 +509,47 @@ static void vr_native_surface_mode(int enabled) {
     g_native_surface=enabled;
     (void)psx_mod_set_stereo_presentation(enabled?0:1);
 }
+static void vr_synthetic_controller_tick(void) {
+    const char *enabled = getenv("PSX_VR_SYNTHETIC_CONTROLLERS");
+    if (!enabled || !atoi(enabled)) return;
+
+    PSXModOpenXRHands hands;
+    memset(&hands,0,sizeof hands);
+    hands.struct_size=sizeof hands;
+    hands.focused=1;
+    hands.origin_valid=1;
+    hands.origin_orientation_xyzw[3]=1;
+    for(unsigned side=0;side<2;side++) {
+        for(unsigned pose=0;pose<2;pose++) {
+            PSXModTrackedPose *tracked=&hands.pose[side][pose];
+            tracked->active=1;
+            tracked->flags=15;
+            tracked->position_m[0]=side ? .18 : -.18;
+            tracked->position_m[1]=-.18;
+            tracked->position_m[2]=-.45;
+            tracked->orientation_xyzw[2]=side ? -.707107 : .707107;
+            tracked->orientation_xyzw[3]=.707107;
+        }
+    }
+    (void)psx_openxr_hands_override(&hands);
+
+    PSXModOpenXRInput input;
+    memset(&input,0,sizeof input);
+    input.struct_size=sizeof input;
+    input.focused=1;
+    input.active[0]=input.active[1]=1;
+    /* The verified slot load starts paused. Press Start once after it applies,
+     * then leave a focused, otherwise neutral controller pair active. */
+    if(g_synthetic_controller_frame>=30 && g_synthetic_controller_frame<34) {
+        input.buttons[0]=PSX_MOD_XR_MENU;
+        input.buttons_active[0]=PSX_MOD_XR_MENU;
+    }
+    (void)psx_openxr_input_override(&input);
+    g_synthetic_controller_frame++;
+}
+
 static void vr_surface_vblank(void) {
+    vr_synthetic_controller_tick();
     if(!g_stereo || g_in_pass)return;
     /* Explicit render-activity policy: allow two missed 30Hz draw intervals
      * before returning to native UI/video presentation. A claimed draw keeps

@@ -128,6 +128,9 @@ $vrVariables = @{
     # PS1 dithering by default. The enlarged pattern is distracting in the headset.
     PSX_DITHERING = $(if ($Desktop) { [Environment]::GetEnvironmentVariable('PSX_DITHERING','Process') } else { '0' });
     PSX_VR_WRIST_HUD_TEST = [string][int]$WristHudTest.IsPresent;
+    # The mirror checker drives its own moving-hand scenarios. Built-in release
+    # controls are only for timing runs that have no debug override client.
+    PSX_VR_SYNTHETIC_CONTROLLERS = [string][int]($WristHudTest -and -not $HeadlessMirrorCheck);
     PSX_VR_WRIST_HUD = [string][int]$WristHud.IsPresent;
     PSX_VR_WRIST_REPLACE = [string][int]$WristHudReplace.IsPresent;
     PSX_VR_WRIST_DUMP_DIRECTORY = $(if ($WristHud -and $CaptureDirectory) { [IO.Path]::GetFullPath((Join-Path $vrRoot $CaptureDirectory)) } else { $null });

@@ -1,5 +1,27 @@
 # VR handoff
 
+## Current dependency baseline (2026-10-31)
+
+The current dependency set is framework `e696907e` (upstream `a7b37e07`, the
+three shared VR commits, updated engine pins, and hook-safe native overlays),
+recomp-ui `a956157`, recomp-net `7a4d330`, and rbengine `28a2a47`. The tested
+game revision is `65239dd`.
+
+Normal production uses Release / OpenGL / OpenXR with the ENHANCED execution
+profile, generated native CPU spans, ordered HLE GL batching, PGXP enabled and
+debug tools disabled. The `build-release/` headless slot-2 check reached a
+59.94 Hz median guest rate with complete synthetic-controller stereo pairs and
+no empty XR submissions. The final 35-second audio check requested a 260 ms
+reserve, kept at least 211.5 ms buffered through a 44 Hz startup sample and
+logged no underruns or overflows. Exact evidence and the comparison with earlier
+results are in
+[VR_SLOT2_PERFORMANCE.md](VR_SLOT2_PERFORMANCE.md).
+
+The UI labels save-state slots from 1 while the backend filenames remain
+zero-based, so UI slot 2 is `state_8001DFD4_slot01.pst`. Existing snapshots from
+the previous execution/codegen identity are deliberately rejected after this
+update. This is the snapshot compatibility guard, not a corrupt save.
+
 ## v0.1.6 release baseline (2026-10-23)
 
 The owner considers the current build playable and authorized the game-master
