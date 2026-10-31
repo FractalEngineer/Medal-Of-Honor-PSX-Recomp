@@ -136,6 +136,52 @@ RGB difference about 0.93/255 in the backbuffer and 1.02/255 in the application
 layer. Over half the pixels have small differences; do not call this bit-identical
 fidelity or infer their cause without a separate controlled comparison.
 
+## 2026-10-31 upstream optimization update
+
+The game now pins framework `cdfdb73c` (upstream `a7b37e07` plus the three shared
+VR commits) and recomp-ui `a956157`. The production configuration is Release /
+OpenGL / OpenXR with `PSX_EXECUTION_PROFILE=ENHANCED`, generated native CPU spans,
+ordered HLE GL batching, PGXP enabled and debug tools disabled.
+
+The owner created a fresh state in UI slot 2. In this menu, UI slot 2 maps to the
+backend file `state_8001DFD4_slot01.pst`; its SHA-256 is
+`63f9d66a63c8fdc148d2190d5607ea6d5d67e8b0fb71da0e5bf2315771382ded`.
+The snapshot header is version 9 with codegen `0xe060fa62`, ABI `0x00020023`,
+execution cookie `0x534bcb13`, and 19 sections.
+
+The isolated 45-second production run produced 1,337 stereo pairs with zero
+sheds, empty submissions or XR failures. After excluding five startup samples,
+the median sampled guest rate was **59.90 Hz** and the mean was **59.34 Hz**.
+The final average pair-time EMA was **14.384 ms**. This is a 23.1% increase over
+the previous 48.65 Hz median, and the pair-time EMA is 41.0% below the previous
+24.365 ms.
+
+The separate debug verifier loaded the same state and captured two complete,
+nonblank eye pairs. It reported 52 pairs, zero refusals/failures/sheds, and a
+17.261 ms average pair time. The pair receipts retain distinct left/right images
+at the expected +/-8 view offsets.
+
+An identical production repeat was cleaner: 1,348 pairs, zero
+sheds/empty submissions/XR failures, a **59.90 Hz** median and **59.95 Hz** mean,
+with every post-warmup one-second sample at or above **59.6 Hz** and a final
+**14.441 ms** pair-time EMA. The first run's one two-second dip was not reproduced.
+
+Raw evidence:
+
+- `analysis/runtime/upstream-792-ui-slot2-perf/runtime.stdout.log`
+- `analysis/runtime/upstream-792-ui-slot2-perf-repeat/runtime.stdout.log`
+- `analysis/runtime/upstream-792-ui-slot2-perf/startup.json`
+- `analysis/runtime/upstream-792-ui-slot2-capture/p000001_sbs.png`
+- `analysis/runtime/upstream-792-ui-slot2-capture/p000002_sbs.png`
+- `analysis/runtime/upstream-792-ui-slot2-capture/stereo_stats.json`
+
+The previous slot-2 state remains intentionally rejected by the snapshot guard:
+its codegen/execution/ABI identity is older. The exact reason is
+`enhancement_memory_layout_or_execution_profile_or_host_provider`; this is an
+identity mismatch, not a damaged save file. A snapshot format migration would
+need separate validation before old states could be accepted across framework
+updates.
+
 ## Rejected/invalid experiments
 
 `20261023-slot2-baseline`, `slot2-noshed`, `slot2-batch` and `slot2-inline` predate
