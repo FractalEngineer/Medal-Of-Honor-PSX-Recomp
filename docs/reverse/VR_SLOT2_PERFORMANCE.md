@@ -210,6 +210,7 @@ run order produced:
 | PGO A | 59.93 Hz | 59.00 Hz | 806.9 ms/s | 814.8 ms/s | 12.64 ms |
 | PGO B | 59.93 Hz | 59.08 Hz | 839.9 ms/s | 832.5 ms/s | 12.53 ms |
 | control B | 59.94 Hz | 59.21 Hz | 834.9 ms/s | 833.9 ms/s | 13.41 ms |
+| final PGO + 260 ms audio | 59.96 Hz | 43.99 Hz* | 759.3 ms/s | 763.6 ms/s | 12.32 ms |
 
 All four comparison runs had zero audio underruns, overflows, sheds, empty
 submissions and XR failures. Pooled guest work decreased by about 0.4%; the
@@ -220,6 +221,10 @@ the default 180 ms reserve, producing 12,913 underrun samples. The title now
 requests a 260 ms reserve with `[audio] buffer_ms`. A 35-second reproduction
 still contained a 44 Hz startup sample but kept at least 211.5 ms buffered and
 logged zero underruns and overflows while completing 1,051 pairs.
+
+\* The final row includes the one startup sample. Its 31 post-warmup samples
+median 59.96 Hz; the low minimum is a transient, not a sustained guest-rate
+drop. It also kept a median native-overlay rate near 641,680 calls/s.
 
 After the fork gained updated netplay and capture-engine pins, the profile was
 rebuilt against the final dependency set. The PGO-use executable is installed in
