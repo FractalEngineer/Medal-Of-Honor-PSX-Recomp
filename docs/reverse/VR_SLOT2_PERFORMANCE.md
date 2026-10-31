@@ -182,6 +182,65 @@ identity mismatch, not a damaged save file. A snapshot format migration would
 need separate validation before old states could be accepted across framework
 updates.
 
+## 2026-10-31 native overlays, synthetic controls, and selective PGO
+
+The rebuilt native overlay cache replaced about 3,450 interpreted calls/s with
+roughly 622,000 to 668,000 native calls/s, but its first version also compiled
+the measured pair hook at `0x80090B80`. That bypassed the stereo replay path and
+reduced the live workload to zero new pairs. The framework overlay dispatcher
+now leaves every active `mod_function_entry_funcs` alias on the interpreter.
+The same cache then retained high native coverage while producing about 30
+complete pairs/s.
+
+`-WristHudTest` now installs two focused synthetic grips and a one-shot Start
+press in production builds. This makes the copied paused state reach gameplay
+and exercises the wrist/aim paths without opening TCP debug tools. The startup
+receipts for the corrected runs record three XR layers, including both wrist
+surfaces, instead of the two-layer flat fallback.
+
+Selective GCC PGO was trained and consumed from framework changes through
+`cdfdb73c` plus the overlay routing fix. Four 35-second headless runs used the
+same UI slot-2 copy, 1080p/5x output, HLE batching, native CPU spans, PGXP,
+native overlay cache, projective stereo, and synthetic controllers. Reversed
+run order produced:
+
+| Build | Guest median | Guest minimum | Work median | Work mean | Final pair EMA |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| control A | 59.95 Hz | 59.04 Hz | 812.4 ms/s | 819.5 ms/s | 13.75 ms |
+| PGO A | 59.93 Hz | 59.00 Hz | 806.9 ms/s | 814.8 ms/s | 12.64 ms |
+| PGO B | 59.93 Hz | 59.08 Hz | 839.9 ms/s | 832.5 ms/s | 12.53 ms |
+| control B | 59.94 Hz | 59.21 Hz | 834.9 ms/s | 833.9 ms/s | 13.41 ms |
+
+All four comparison runs had zero audio underruns, overflows, sheds, empty
+submissions and XR failures. Pooled guest work decreased by about 0.4%; the
+pair-time change is larger but remains partly run-to-run load variation, so it
+is not claimed as a fixed percentage. A later heavier run exposed the remaining
+audio hazard: short scene spikes reduced guest cadence to about 49 Hz and drained
+the default 180 ms reserve, producing 12,913 underrun samples. The title now
+requests a 260 ms reserve with `[audio] buffer_ms`. A 35-second reproduction
+still contained a 44 Hz startup sample but kept at least 211.5 ms buffered and
+logged zero underruns and overflows while completing 1,051 pairs.
+
+After the fork gained updated netplay and capture-engine pins, the profile was
+rebuilt against the final dependency set. The PGO-use executable is installed in
+`build-release`; its three GCC instrumentation receipts remain under
+`build-pgo4/runtime-hot-pgo/psx-runtime/`.
+
+The final debug capture at
+`analysis/runtime/pgo-final-ui-capture2/p000031_sbs.png` shows both rendered
+hands, wrist panels, weapon, and HUD in each eye. The eye images differ over
+44.37% of pixels with a mean absolute RGB difference of roughly 1.6 to 2.3 per
+channel, and the stereo receipt has nonzero matching eye cycles with expected
+`+8/-8` view offsets. The old mirror-check panel ROI fails on this layout, so
+that harness result is retained as a known detector limitation rather than a
+rendering failure.
+
+The debug verifier intentionally remains unsuitable for audio/performance
+judgment: verification duplication drove guest cadence into the low 20s and
+reported tens of thousands of underruns in the same capture. Production and the
+corrected release runs stayed near 60 Hz with a 170-183 ms audio fill and no
+underruns or overflows.
+
 ## Rejected/invalid experiments
 
 `20261023-slot2-baseline`, `slot2-noshed`, `slot2-batch` and `slot2-inline` predate
