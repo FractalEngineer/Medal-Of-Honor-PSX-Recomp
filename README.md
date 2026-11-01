@@ -18,6 +18,7 @@ Static recompilation of **Medal of Honor** built on
 Play the original game on a flat display, or opt into the experimental native
 VR alpha with head tracking, per-eye rendering and tracked-weapon controls.
 Flat play is the default; VR is enabled through a separate launcher.
+Watch the [VR video demo](https://youtu.be/aS8N94uO3M0) for gameplay footage.
 
 The **v0.1.6 Windows native alpha** is available from this fork's
 [releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.6).
@@ -102,6 +103,14 @@ weapons, the hand-anchored native HUD, desktop spectator mirror, barrel laser,
 and 1080p default. Production builds disable heavyweight debug instrumentation.
 The owner considers this build playable on Quest 3 through Virtual Desktop
 with **VDXR**; demanding scenes can still slow down.
+
+<p align="center">
+  <a href="https://youtu.be/aS8N94uO3M0" title="Watch the Medal of Honor VR alpha gameplay demo">
+    <img src="assets/vr-alpha-video-thumbnail.jpg" alt="Medal of Honor VR alpha gameplay demo" width="900">
+  </a>
+  <br>
+  <a href="https://youtu.be/aS8N94uO3M0"><strong>&#9654; WATCH THE VR ALPHA GAMEPLAY DEMO</strong></a>
+</p>
 
 ### Setup and launch
 
