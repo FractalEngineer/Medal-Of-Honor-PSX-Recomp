@@ -68,6 +68,29 @@ static uint32_t owned_camera(uint32_t player) {
     return camera;
 }
 
+/* Slot 01 identifies the mounted player update and its linked gun actor.
+ * The native gun update resolves this handle and clamps yaw around its anchor. */
+static uint32_t mounted_gun(uint32_t player, uint32_t input) {
+    if (!input || !(psx_mod_read_word(input) & 0x4000u) ||
+        psx_mod_read_word(player + 0x36cu) != 0x8007a32cu ||
+        code_hash(0x8007a32cu, 0x384u) != 0xc2998445u ||
+        code_hash(0x8005da24u, 0x864u) != 0x58e2a79cu) return 0;
+    const uint32_t handle = psx_mod_read_word(input + 0x1b0u);
+    if (!handle || (handle & 0xffffu) >= 512u) return 0;
+    const uint32_t gun = psx_mod_read_word(0x8009d678u + 4u * (handle & 0xffffu));
+    if (gun < 0x800b0000u || gun > 0x801fc000u || (gun & 3u) ||
+        psx_mod_read_word(gun + 8u) != 0x1772u ||
+        psx_mod_read_word(gun + 0x36cu) != 0x8005da24u ||
+        !psx_mod_read_word(gun + 0x70u)) return 0;
+    return gun;
+}
+
+int moh_mkb_guest_mounted(void) {
+    if (!moh_mkb_guest_eligible()) return 0;
+    const uint32_t player = psx_mod_read_word(MOH_PLAYER_ROOT);
+    return mounted_gun(player, owned_input(player)) != 0;
+}
+
 int moh_mkb_guest_context(void) {
     if (!psx_mod_game_started() || psx_openxr_session_active() ||
         g_psx_render_pass_active) return 0;
@@ -347,6 +370,17 @@ int moh_mkb_guest_camera_update(CPUState *cpu, MohMkbMouse *mouse,
     int64_t yaw = 0, pitch = 0;
     moh_mkb_mouse_take_scaled(mouse, gain, &yaw, &pitch);
     if (!moh_mkb_apply_look(&angles, yaw, pitch)) return 0;
+    const uint32_t gun = mounted_gun(player, input);
+    if (gun && yaw) {
+        const uint32_t parent = psx_mod_read_word(gun + 0x1cu);
+        if (parent < 0x800b0000u || parent > 0x801ff000u || (parent & 3u)) return 0;
+        const uint32_t anchor = psx_mod_read_word(parent + 4u);
+        if (anchor < 0x800b0000u || anchor > 0x801ff000u || (anchor & 3u)) return 0;
+        const int32_t base = (int32_t)(int16_t)psx_mod_read_half(anchor + 0x1au) * 65536;
+        angles.player_yaw = moh_mkb_mounted_yaw(
+            (int32_t)psx_mod_read_word(gun + 0x22cu), base, yaw);
+        psx_mod_write_word(gun + 0x22cu, (uint32_t)angles.player_yaw);
+    }
     state->player = player;
     state->camera = 0;
     psx_mod_write_word(player + 0x228u, (uint32_t)angles.player_pitch);

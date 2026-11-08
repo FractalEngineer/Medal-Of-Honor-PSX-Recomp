@@ -21,7 +21,7 @@ static PSXModOptionChangedCallback registered_option;
 static PSXModFunctionEntryCallback registered_update;
 static PSXModFunctionEntryCallback registered_weapon;
 static PSXModFunctionEntryCallback registered_camera, registered_aim;
-static int registered_sites, registered_filters, test_aim_kind = 1;
+static int registered_sites, registered_filters, test_aim_kind = 1, test_mounted;
 static PSXModActivationCallback registered_restore, registered_vblank;
 static PSXModPadTransform installed_transform;
 static PSXModMousePolicy installed_mouse;
@@ -74,6 +74,7 @@ int psx_mod_register_instruction_plugin(const char *id, uint32_t address, uint32
     return 1;
 }
 int moh_mkb_guest_aim_kind(void) { return test_aim_kind; }
+int moh_mkb_guest_mounted(void) { return test_mounted; }
 int moh_mkb_guest_camera_update(CPUState *cpu, MohMkbMouse *m, const MohMkbAim *a,
                                 int look, int scoped, MohMkbCamera *s) {
     (void)cpu; (void)m; (void)a; (void)look; (void)scoped; (void)s; return 1;
@@ -223,6 +224,11 @@ int main(void) {
     test_keys[SDL_SCANCODE_W] = test_keys[SDL_SCANCODE_D] = 1;
     CHECK(installed_transform.transform(&frame, &out));
     CHECK(out.ly == 0 && out.rx == 128 && mouse_strafe == 255);
+    test_mounted = 1; out.lx = out.ly = out.rx = out.ry = 128;
+    CHECK(installed_transform.transform(&frame, &out));
+    CHECK(out.lx == 255 && out.ly == 0 && out.rx == 128 && mouse_strafe == 128);
+    test_mounted = 0;
+    CHECK(installed_transform.transform(&frame, &out));
     PSXModMouseOutput output = {.struct_size = sizeof(output)};
     installed_mouse.sample(0, &output);
     CHECK(output.override_right && output.rx == 255 && output.ry == 128);

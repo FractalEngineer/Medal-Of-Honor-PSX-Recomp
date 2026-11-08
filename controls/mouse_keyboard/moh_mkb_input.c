@@ -136,6 +136,19 @@ static int32_t wrap_yaw(int64_t angle, int64_t displacement) {
     return (int32_t)result;
 }
 
+int32_t moh_mkb_mounted_yaw(int32_t current, int32_t anchor, int64_t delta) {
+    const int64_t turn = 0x10000000LL, half = turn / 2, limit = 0x02940000LL;
+    int64_t relative = ((int64_t)current - anchor + delta % turn) % turn;
+    if (relative > half) relative -= turn;
+    if (relative < -half) relative += turn;
+    if (relative > limit) relative = limit;
+    if (relative < -limit) relative = -limit;
+    int64_t result = ((int64_t)anchor + relative) % turn;
+    if (result > half) result -= turn;
+    if (result < -half) result += turn;
+    return (int32_t)result;
+}
+
 int moh_mkb_apply_look(MohMkbAngles *angles, int64_t yaw, int64_t pitch) {
     const int64_t limit = 0x02aa0000LL;
     if (!angles || angles->player_pitch < -limit || angles->player_pitch > limit ||

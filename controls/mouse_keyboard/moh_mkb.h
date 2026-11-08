@@ -36,11 +36,13 @@ typedef struct MohMkbAngles {
     int32_t player_pitch, player_yaw, input_pitch, input_yaw;
 } MohMkbAngles;
 int moh_mkb_apply_look(MohMkbAngles *angles, int64_t yaw, int64_t pitch);
+int32_t moh_mkb_mounted_yaw(int32_t current, int32_t anchor, int64_t delta);
 
 struct CPUState;
 /* Look is restricted to campaign weapon/mode pairs in the shared native
  * aim branch; unsupported contexts discard motion. */
 int moh_mkb_guest_eligible(void);
+int moh_mkb_guest_mounted(void);
 /* 0 unsupported, 1 custom zoom (firearm or grenade), 2 scoped rifle. */
 int moh_mkb_guest_aim_kind(void);
 /* 0 unsupported, 1 owned campaign player, 2 native pause menu. */

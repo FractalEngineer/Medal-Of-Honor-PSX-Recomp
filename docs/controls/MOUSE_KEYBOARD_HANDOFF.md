@@ -43,6 +43,14 @@ describes these limitations in the UI.
 
 The following evidence records the port and its verification history:
 
+- The user's mounted-gun save identifies input flag `0x4000`, player update
+  `0x8007a32c`, and a linked class-`0x1772` gun actor with update `0x8005da24`.
+  The gun owns yaw and clamps it around its native anchor. Mouse horizontal
+  displacement now updates the guarded gun yaw; A/D uses the gun's native
+  left-stick traverse instead of strafe. The Release suite covers the guard,
+  mapping and yaw limits. The user confirmed mouse and A/D traverse work in
+  the mounted-gun save.
+
 - `docs/reverse/VR_INPUT_ONE_STICK.md` records the campaign player root
   `0x8009d654`, input pointer at player + `0x388`, and weapon ID at input +
   `0x55` in sampled states, including silenced pistol ID 9 in mode 7.

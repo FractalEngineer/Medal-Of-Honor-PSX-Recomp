@@ -197,15 +197,16 @@ static int transform_pad(const PSXModPadFrame *frame, PSXModPadOutput *out) {
         out->buttons &= ~0x2000u;
     const int moving = down[MOH_MKB_LEFT] || down[MOH_MKB_RIGHT] ||
                        down[MOH_MKB_FORWARD] || down[MOH_MKB_BACKWARD];
+    const int mounted = moh_mkb_guest_mounted();
     if (moving) {
         uint8_t x, y;
         moh_mkb_stick_pair(down[MOH_MKB_LEFT], down[MOH_MKB_RIGHT],
                            down[MOH_MKB_FORWARD], down[MOH_MKB_BACKWARD], &x, &y);
-        out->lx = 128; out->ly = y; out->rx = x;
+        out->lx = mounted ? x : 128; out->ly = y; out->rx = mounted ? 128 : x;
     }
     mouse_strafe = out->rx;
     if (mouse_captured) {
-        out->lx = 128;
+        if (!mounted) out->lx = 128;
         if (moving) out->rx = 128;
     }
     return 1;

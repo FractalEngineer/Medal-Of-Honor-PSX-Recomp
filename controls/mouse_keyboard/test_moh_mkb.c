@@ -39,6 +39,9 @@ int main(void) {
     CHECK(moh_mkb_shot_angles(origin, rightward, &shot_pitch, &shot_yaw));
     CHECK(shot_pitch == 0 && shot_yaw == 0x04000000);
     CHECK(!moh_mkb_shot_angles(origin, upward, &shot_pitch, &shot_yaw));
+    CHECK(moh_mkb_mounted_yaw(0x01000000, 0x01000000, 0x10000) == 0x01010000);
+    CHECK(moh_mkb_mounted_yaw(0x01000000, 0x01000000, 0x08000000) == 0x03940000);
+    CHECK(moh_mkb_mounted_yaw(0x0aaa0000, 0x0aaa0000, -0x10000) == (int32_t)0xfaa90000u);
     MohMkbMouse mouse = {0};
     int64_t yaw = 0, pitch = 0;
     moh_mkb_mouse_motion(&mouse, 12.25, -3.5);

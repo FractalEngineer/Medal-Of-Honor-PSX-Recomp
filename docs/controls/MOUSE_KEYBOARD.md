@@ -27,6 +27,9 @@ zoom and reticle while retaining their native throwing physics; the sniper uses
 its native scope zoom.
 Ordinary saved keyboard and controller profiles are not changed.
 
+At a mounted machine gun, mouse motion aims the gun and A/D traverse it rather
+than strafe. The gun's native horizontal travel limits still apply.
+
 This feature targets single-player campaign play. The user confirmed the
 reported aiming, sniper, weapon-switching and throwable issues were fixed,
 including right-click grenade aiming. Front-end menu bindings have automated
