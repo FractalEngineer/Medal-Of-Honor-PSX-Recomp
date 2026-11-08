@@ -416,7 +416,7 @@ jobs:
           set -euo pipefail
           EXTRA=()
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            EXTRA+=("-DPSX_OPENXR=ON" "-DPSX_DEBUG_TOOLS=OFF" "-DMOH_PGXP=ON" "-DPSX_GL_BATCH_IMPL=LLE")
+            EXTRA+=("-DPSX_OPENXR=ON" "-DPSX_DEBUG_TOOLS=OFF" "-DMOHU_VR_NATIVE_PROFILE=OFF" "-DPSX_RUNTIME_IPO=OFF" "-DMOH_PGXP=ON" "-DPSX_GL_BATCH_IMPL=LLE")
           fi
           if [[ -n "${CMAKE_OSX_DEPLOYMENT_TARGET:-}" ]]; then
             EXTRA+=("-DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}")
@@ -462,7 +462,7 @@ jobs:
           if command -v glslc >/dev/null 2>&1; then
             EXTRA+=("-DGLSLC_EXE=$(command -v glslc)")
           fi
-          JOBS="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
+          JOBS=2
           # Emitters may have set PSXRECOMP_TOOLCHAIN_DIR (llvm-mingw) via
           # GITHUB_ENV. Clear it before the MSYS2 g++ configure so the pack's
           # lib/ cannot win -L for -static-libstdc++ (codecvt link errors).
@@ -603,6 +603,10 @@ jobs:
             echo "::error::release zip ships no mod catalog (mods/bundled/*/manifest.toml)" >&2
             exit 1
           fi
+          if ! grep -q '^mods/bundled/moh\.input\.mouse-keyboard/0\.1\.0/manifest\.toml$' <<<"${LIST}"; then
+            echo "::error::release zip lacks the mouse and keyboard mod manifest" >&2
+            exit 1
+          fi
           # 2. It is NOT a build kit: no framework tree, no CLI, no emitters at
           #    the root, no sources, no generated C.
           for never in '^psxrecomp/' '^recomp-ui/' '^psxrecomp_cli.py' '^psxrecomp-game' '^psxrecomp-bios' \
@@ -702,7 +706,7 @@ jobs:
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
           # Quoted: titles may contain ':' (e.g. "Marvel vs. Capcom: …").
-          name: "${{ needs.prepare.outputs.tag }} - Native VR Alpha"
+          name: "Medal of Honor Recompiled + Full 6dof VR + Mouse/Keyboard - ${{ needs.prepare.outputs.tag }} Alpha"
           files: |
             dist/moh-*.zip
           body_path: docs/reverse/VR_RELEASE_V${{ needs.prepare.outputs.version }}.md

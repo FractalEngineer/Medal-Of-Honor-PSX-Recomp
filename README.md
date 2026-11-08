@@ -1,8 +1,8 @@
-# Medal of Honor  Recompiled + Full 6dof VR
+# Medal of Honor Recompiled + Full 6dof VR + Mouse/Keyboard
 
 <!-- retcomm-readme-metrics -->
 [![GitHub downloads (all assets, all releases)](https://img.shields.io/github/downloads/FractalEngineer/Medal-Of-Honor-PSX-Recomp/total)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases)
-[![Alpha v0.1.6](https://img.shields.io/badge/alpha-v0.1.6-orange)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.6)
+[![Latest release](https://img.shields.io/github/v/release/FractalEngineer/Medal-Of-Honor-PSX-Recomp)](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/latest)
 <!-- /retcomm-readme-metrics -->
 
 <!-- retcomm-readme-boxart -->
@@ -12,16 +12,19 @@
 <!-- /retcomm-readme-boxart -->
 
 Static recompilation of **Medal of Honor** built on
-[psxrecomp](https://github.com/mstan/psxrecomp) and
+[psxrecomp](https://github.com/RetroPortingToolKit/psxrecomp) and
 [recomp-ui](https://github.com/RetroPortingToolKit/recomp-ui).
 
 Play the original game on a flat display, or opt into the experimental native
 VR alpha with head tracking, per-eye rendering and tracked-weapon controls.
 Flat play is the default; VR is enabled through a separate launcher.
+Flat gameplay also supports direct mouse look and keyboard movement, with
+editable bindings, independent sensitivity sliders and adjustable aiming zoom.
+Enable **Mouse and keyboard** in the launcher's **Mods** page.
 Watch the [VR video demo](https://youtu.be/aS8N94uO3M0) for gameplay footage.
 
-The **v0.1.6 Windows native alpha** is available from this fork's
-[releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.6).
+The latest **Windows native alpha** is available from this fork's
+[releases](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/latest).
 See [alpha installation and controls](ALPHA_README.md) before testing.
 
 | | |
@@ -113,7 +116,7 @@ override the defaults.
 
 ## Experimental VR alpha (Windows)
 
-The current [v0.1.6 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.6)
+[v0.1.6 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.6)
 fixes the missing nearby floor and world shakiness during head movement, and
 prevents overload shedding from flashing black frames. It retains tracked
 weapons, the hand-anchored native HUD, desktop spectator mirror, barrel laser,
@@ -193,6 +196,27 @@ For development context, start with the
 and HUD changes belong here; generic framework work is tracked in
 [the upstream inventory](docs/UPSTREAM_PENDING.md).
 
+## Mouse and keyboard gameplay
+
+Enable **Mouse and keyboard** under **Mods** for single-player campaign play.
+It provides direct mouse look, WASD movement, R reload, mouse-wheel weapon
+cycling and keyboard menu navigation. Every gameplay/menu action is editable.
+
+Global and aiming sensitivity use independent **1-10 sliders**, defaulting to
+**5** and **4**. Aimed zoom ranges from **1.00x to 2.50x**, default **1.25x**,
+with a quick smooth transition. Firearms and grenades keep their held weapon
+visible and show the native crosshair only while aiming; the sniper retains its
+native scope with mouse aiming and movement. Number keys retain PSXRecomp's
+filter shortcuts. See the [full controls guide](docs/controls/MOUSE_KEYBOARD.md).
+
+<p align="center">
+  <a href="https://youtu.be/oN-fc_6xWl4" title="Watch the Medal of Honor Underground mouse and keyboard gameplay demo">
+    <img src="https://img.youtube.com/vi/oN-fc_6xWl4/hqdefault.jpg" alt="Medal of Honor Underground mouse and keyboard gameplay demo" width="900">
+  </a>
+  <br>
+  <a href="https://youtu.be/oN-fc_6xWl4"><strong>&#9654; WATCH THE MOUSE AND KEYBOARD GAMEPLAY DEMO</strong></a>
+</p>
+
 ## Development build
 
 ```bash
@@ -212,12 +236,9 @@ executable.
 
 Releases `v0.1.0` through `v0.1.3` use locally verified Windows alpha packages. CI builds
 its platform matrix without replacing those tested assets. Other tags `vX.Y.Z`
-(or the *Release builds* workflow) build the
-committed `generated/` C on Linux, Windows and macOS and attach
-`moh-<version>-<platform>.zip`, the compiled game. Locally:
-`scripts/package_release.sh build-release linux-x64`.
-Windows packaging requires OpenXR and TCP startup inspection to be enabled
-(`-DPSX_OPENXR=ON -DPSX_DEBUG_TOOLS=ON`), and includes both launchers.
+(or the *Release builds* workflow) build the committed `generated/` C for
+Windows x64 and attach `moh-<version>-windows-x64.zip`, the compiled game.
+Windows release builds use OpenXR and disable debug tools.
 
 ## Symbols
 
