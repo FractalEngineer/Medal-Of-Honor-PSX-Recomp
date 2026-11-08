@@ -70,6 +70,78 @@ target_sources(psx-runtime PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/vr/moh_vr_hud.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/vr/moh_vr_aim.c")
 
+# Opt-in mouse and keyboard plugin and its game-specific input adapter.
+target_sources(psx-runtime PRIVATE
+    controls/mouse_keyboard/moh_mkb.c
+    controls/mouse_keyboard/moh_mkb_input.c
+    controls/mouse_keyboard/moh_mkb_guest.c
+    controls/mouse_keyboard/moh_mkb_plugin.c)
+
+if(BUILD_TESTING)
+    enable_testing()
+    find_package(Python3 3.11 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME moh_mkb_manifest_test COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/controls/mouse_keyboard/test_manifest.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/mods/preloaded/packages/moh.input.mouse-keyboard/0.1.0/manifest.toml")
+    add_executable(moh_mkb_input_test
+        controls/mouse_keyboard/test_moh_mkb.c
+        controls/mouse_keyboard/moh_mkb_input.c)
+    target_include_directories(moh_mkb_input_test PRIVATE "${PSXRECOMP_ROOT}/runtime/include")
+    if(NOT WIN32)
+        target_link_libraries(moh_mkb_input_test PRIVATE m)
+    endif()
+    add_test(NAME moh_mkb_input_test COMMAND moh_mkb_input_test)
+
+    add_executable(moh_mkb_controls_test
+        controls/mouse_keyboard/test_moh_mkb_controls.c
+        controls/mouse_keyboard/moh_mkb.c)
+    target_include_directories(moh_mkb_controls_test PRIVATE "${PSXRECOMP_ROOT}/runtime/include")
+    if(NOT WIN32)
+        target_link_libraries(moh_mkb_controls_test PRIVATE m)
+    endif()
+    add_test(NAME moh_mkb_controls_test COMMAND moh_mkb_controls_test)
+
+    add_executable(moh_mkb_guest_test
+        controls/mouse_keyboard/test_moh_mkb_guest.c
+        controls/mouse_keyboard/moh_mkb_guest.c
+        controls/mouse_keyboard/moh_mkb_input.c)
+    target_include_directories(moh_mkb_guest_test PRIVATE "${PSXRECOMP_ROOT}/runtime/include")
+    if(NOT WIN32)
+        target_link_libraries(moh_mkb_guest_test PRIVATE m)
+    endif()
+    add_test(NAME moh_mkb_guest_test COMMAND moh_mkb_guest_test)
+
+    add_executable(moh_mkb_plugin_test
+        controls/mouse_keyboard/test_moh_mkb_plugin.c
+        controls/mouse_keyboard/moh_mkb.c
+        controls/mouse_keyboard/moh_mkb_input.c)
+    target_include_directories(moh_mkb_plugin_test PRIVATE "${PSXRECOMP_ROOT}/runtime/include")
+    target_link_libraries(moh_mkb_plugin_test PRIVATE ${PSX_SDL_LIBRARIES})
+    if(PSX_SDL3)
+        target_compile_definitions(moh_mkb_plugin_test PRIVATE PSX_SDL3)
+    endif()
+    if(NOT WIN32)
+        target_link_libraries(moh_mkb_plugin_test PRIVATE m)
+    endif()
+    add_test(NAME moh_mkb_plugin_test COMMAND moh_mkb_plugin_test)
+
+    add_executable(moh_mod_binding_options_test
+        "${PSXRECOMP_ROOT}/runtime/tests/test_mod_binding_options.cpp"
+        "${PSXRECOMP_ROOT}/runtime/src/mod_packages.cpp"
+        "${PSXRECOMP_ROOT}/runtime/src/mod_media.cpp"
+        "${PSXRECOMP_ROOT}/runtime/src/iso_reader.cpp"
+        "${PSXRECOMP_ROOT}/runtime/src/cue_sheet.cpp"
+        "${PSXRECOMP_ROOT}/runtime/src/crc32.c"
+        "${PSXRECOMP_ROOT}/runtime/src/psx_sha256.c")
+    target_include_directories(moh_mod_binding_options_test PRIVATE
+        "${PSXRECOMP_ROOT}/runtime/include" "${PSXRECOMP_ROOT}/recompiler/include"
+        "${PSXRECOMP_ROOT}/recompiler/lib/toml11")
+    target_link_libraries(moh_mod_binding_options_test PRIVATE chdr-static)
+    set_target_properties(moh_mod_binding_options_test PROPERTIES
+        CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+    add_test(NAME moh_mod_binding_options_test COMMAND moh_mod_binding_options_test)
+endif()
+
 # Current psxrecomp embeds its UTF-8 manifest as an object library. recomp-ui
 # cannot detect that when adding its older fallback manifest, so keep the
 # framework manifest and drop the duplicate resource source.

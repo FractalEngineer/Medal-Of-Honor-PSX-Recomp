@@ -44,7 +44,13 @@ strict = true
 # Gameplay probes and paired stereo hook overlay entry 0x80090B80 at runtime.
 # PSX_VR_PASS_PROBE=1 selects temporal diagnostics; PSX_VR_STEREO=1 selects
 # explicit paired-eye capture/SBS without enabling temporal interpolation.
-mod_function_entry_funcs = ["0x80084718", "0x80016E38"]
+mod_function_entry_funcs = ["0x80084718", "0x80016E38", "0x8007F300", "0x800473DC", "0x80048EEC", "0x8007BADC"]
+mod_instruction_sites = [
+  "0x8007A948", "0x8007B254", "0x8007E06C", "0x8007B91C", "0x8007CB8C", "0x8007CF14",
+  "0x8007A864", "0x8007F34C", "0x8007F360", "0x8007E1F0", "0x8007E1FC", "0x8007E218",
+  "0x8007E87C", "0x80045524", "0x80080134", "0x8007E0E0", "0x8007E10C", "0x8007E128",
+  "0x8007ECB0", "0x8007ECB8", "0x8007ED04", "0x8007EE70", "0x8007EFB8",
+]
 
 [runtime]
 window_title = "Medal of Honor Recompiled"
