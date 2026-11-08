@@ -94,6 +94,23 @@ environment when it exits.
 
 `RunVR-VDXR.bat -Desktop` is a stereo diagnostic mode, not the ordinary flat launch.
 
+### Sharper flat-play image
+
+If gameplay looks blurred or has a CRT-like pattern even with **CRT Filter**
+disabled, check **Image Filtering** in the launcher's Mods tab. Smooth window
+scaling and native-grid PS1 dithering are enabled by default, including when
+the Image Filtering mod is disabled. To get the clear image confirmed in flat
+play, enable **Image Filtering** and set:
+
+- **Smoothing:** Sharp
+- **Texture filtering:** Nearest
+- **Dithering:** Off
+
+Keep **CRT Filter** disabled. These settings can be used with the **Internal
+Resolution** mod, including its 6x setting. Restart the game after changing
+the settings. The Image Filtering mod must remain enabled for its choices to
+override the defaults.
+
 ## Experimental VR alpha (Windows)
 
 The current [v0.1.6 Alpha](https://github.com/FractalEngineer/Medal-Of-Honor-PSX-Recomp/releases/tag/v0.1.6)

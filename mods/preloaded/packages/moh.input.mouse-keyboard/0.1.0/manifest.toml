@@ -1,0 +1,221 @@
+format_version = 13
+id = "moh.input.mouse-keyboard"
+version = "0.1.0"
+name = "Mouse and keyboard gameplay"
+author = "Medal-Of-Honor-PSX-Recomp"
+description = "Experimental campaign mouse look, aiming, configurable controls and weapon cycling."
+license = "MIT"
+resolver = "declarative"
+
+[[target]]
+game_id = "SLUS-00974"
+
+[[feature]]
+id = "mouse-keyboard"
+name = "Mouse and keyboard"
+description = "Click to capture in campaign gameplay; Escape releases. Aiming and scoped behavior need gameplay verification."
+channel = "experimental"
+default_enabled = false
+
+[[option]]
+feature = "mouse-keyboard"
+id = "look_sensitivity"
+label = "Global mouse sensitivity"
+group = "Sensitivity"
+type = "integer"
+min = 1
+max = 10
+step = 1
+slider = true
+default = 5
+
+[[option]]
+feature = "mouse-keyboard"
+id = "aim_sensitivity"
+label = "Aiming sensitivity"
+group = "Sensitivity"
+type = "integer"
+min = 1
+max = 10
+step = 1
+slider = true
+default = 4
+
+[[option]]
+feature = "mouse-keyboard"
+id = "aimed_zoom"
+label = "Aimed zoom (x)"
+group = "Aiming"
+type = "integer"
+min = 100
+max = 250
+step = 1
+slider = true
+display_divisor = 100
+default = 125
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_forward"
+label = "Forward"
+group = "Movement"
+type = "binding"
+default = "key:26"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_backward"
+label = "Backward"
+group = "Movement"
+type = "binding"
+default = "key:22"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_left"
+label = "Strafe left"
+group = "Movement"
+type = "binding"
+default = "key:4"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_right"
+label = "Strafe right"
+group = "Movement"
+type = "binding"
+default = "key:7"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_jump"
+label = "Jump"
+group = "Movement"
+type = "binding"
+default = "key:44,key:42"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_crouch"
+label = "Crouch"
+group = "Movement"
+type = "binding"
+default = "key:224"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_fire"
+label = "Fire"
+group = "Combat"
+type = "binding"
+default = "mouse:1,key:40"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_aim"
+label = "Aim / scope"
+group = "Combat"
+type = "binding"
+default = "mouse:3"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_reload"
+label = "Reload"
+group = "Combat"
+type = "binding"
+default = "key:21"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_use"
+label = "Use / interact"
+group = "Combat"
+type = "binding"
+default = "key:8"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_next_weapon"
+label = "Next weapon"
+group = "Weapons"
+type = "binding"
+allow_wheel = true
+default = "key:20,wheel:down"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_prev_weapon"
+label = "Previous weapon"
+group = "Weapons"
+type = "binding"
+allow_wheel = true
+default = "wheel:up"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_pause"
+label = "Pause / start"
+group = "Menus"
+type = "binding"
+default = "key:19"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_objectives"
+label = "Objectives / select"
+group = "Menus"
+type = "binding"
+default = "key:43"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_menu_up"
+label = "Menu up"
+group = "Menus"
+type = "binding"
+default = "key:26,key:82"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_menu_down"
+label = "Menu down"
+group = "Menus"
+type = "binding"
+default = "key:22,key:81"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_menu_left"
+label = "Menu left"
+group = "Menus"
+type = "binding"
+default = "key:4,key:80"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_menu_right"
+label = "Menu right"
+group = "Menus"
+type = "binding"
+default = "key:7,key:79"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_menu_confirm"
+label = "Menu confirm"
+group = "Menus"
+type = "binding"
+default = "key:8,key:40,mouse:1"
+
+[[option]]
+feature = "mouse-keyboard"
+id = "bind_menu_back"
+label = "Menu back"
+group = "Menus"
+type = "binding"
+default = "key:20,key:42"
+
+[[plugin]]
+feature = "mouse-keyboard"
+id = "moh.input.mouse-keyboard"
